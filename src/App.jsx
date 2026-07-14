@@ -1,162 +1,124 @@
-import React, { useState, useRef, useEffect } from 'react';
-import FaceTracker from './FaceTracker';
-import Scene3D from './Scene3D';
+import React, { useState, useEffect } from 'react';
+import { RouterProvider, Route, useRouter } from './router';
+import LoginPage from './pages/LoginPage';
+import AdminDashboard from './pages/AdminDashboard';
+import ModelEditPage from './pages/ModelEditPage';
+import ARViewPage from './pages/ARViewPage';
 import './index.css';
 
-function App() {
-  const landmarksRef = useRef(null);
-  const videoFrameRef = useRef(null);
-
-  // State for Navigation and Data
-  const [activeView, setActiveView] = useState('home'); // 'home' | 'ar'
+// Public Home Page
+function HomePage() {
+  const { navigate } = useRouter();
   const [catalog, setCatalog] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [activeCategory, setActiveCategory] = useState(null);
-  const [activeModel, setActiveModel] = useState(null);
 
-  // AR State
-  const [showFaceMesh, setShowFaceMesh] = useState(true);
-  const [modelPos, setModelPos] = useState([0, 0, 0]);
-  const [modelRot, setModelRot] = useState([0, 0, 0]);
-
-  // Load Catalog on Mount
   useEffect(() => {
     fetch('/models/catalog.json')
       .then(res => res.json())
       .then(data => {
-        if (data && data.models) {
+        if (data?.models) {
           setCatalog(data.models);
-          const uniqueCategories = [...new Set(data.models.map(m => m.category))];
-          setCategories(uniqueCategories);
+          const cats = [...new Set(data.models.map(m => m.category))];
+          setCategories(cats);
         }
       })
-      .catch(err => console.error("Error loading catalog:", err));
+      .catch(console.error);
   }, []);
 
-  const handleCategorySelect = (category) => {
-    setActiveCategory(category);
-    // Find the first model in this category
-    const firstModel = catalog.find(m => m.category === category);
-    setActiveModel(firstModel);
-    setActiveView('ar');
+  const CATEGORY_META = {
+    eyewear:   { emoji: '👓', gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6)', label: 'Eyewear' },
+    necklace:  { emoji: '📿', gradient: 'linear-gradient(135deg, #ec4899, #f43f5e)', label: 'Necklaces' },
+    rings:     { emoji: '💍', gradient: 'linear-gradient(135deg, #f59e0b, #f97316)', label: 'Rings' },
+    bracelets: { emoji: '⌚', gradient: 'linear-gradient(135deg, #10b981, #06b6d4)', label: 'Bracelets' },
+    watch:     { emoji: '🕐', gradient: 'linear-gradient(135deg, #3b82f6, #6366f1)', label: 'Watches' },
+    earrings:  { emoji: '✨', gradient: 'linear-gradient(135deg, #a855f7, #ec4899)', label: 'Earrings' },
   };
 
-  const activeCategoryModels = catalog.filter(m => m.category === activeCategory);
+  const handleCategorySelect = (cat) => {
+    const firstModel = catalog.find(m => m.category === cat);
+    if (firstModel) {
+      navigate(`/ar/${cat}/${firstModel.id}`);
+    }
+  };
 
-  if (activeView === 'home') {
-    return (
-      <div className="home-container">
-        <header className="home-header">
-          <h1>Mystic AR</h1>
-          <p>Select a category to try on</p>
-        </header>
-        <div className="category-grid">
-          {categories.map(cat => (
-            <div key={cat} className="category-card" onClick={() => handleCategorySelect(cat)}>
-              <div className="category-icon">
-                {/* Fallback styling for category thumbnail using its name */}
-                <span>{cat.charAt(0).toUpperCase()}</span>
-              </div>
-              <h3>{cat.charAt(0).toUpperCase() + cat.slice(1)}</h3>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // AR View
   return (
-    <div className="app-container">
-
-      {/* Navigation and Controls */}
-      <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 1000, display: 'flex', gap: '10px' }}>
-        <button 
-          className="btn back-btn" 
-          onClick={() => setActiveView('home')}
-        >
-          ← Back
-        </button>
-        <button 
-          className="btn back-btn" 
-          onClick={() => setShowFaceMesh(!showFaceMesh)}
-        >
-          {showFaceMesh ? 'Hide Mask' : 'Show Mask'}
-        </button>
+    <div className="home-container">
+      <div className="home-bg-orbs">
+        <div className="orb orb-1" />
+        <div className="orb orb-2" />
       </div>
 
-      {/* Live Tuning Panel for Perfect Alignment (Safely outside AR view!) */}
-      <div
-        style={{
-          position: 'absolute', top: 10, right: 10, zIndex: 99999,
-          background: 'rgba(0, 0, 0, 0.7)', padding: '15px', borderRadius: '8px',
-          color: 'white', display: 'flex', flexDirection: 'column', gap: '10px',
-          width: '250px', fontSize: '12px', pointerEvents: 'auto'
-        }}
-      >
-        <h4 style={{ margin: 0, borderBottom: '1px solid #555', paddingBottom: '5px' }}>Model Tuning</h4>
-
-        <label style={{ display: 'flex', flexDirection: 'column' }}>
-          Pos Y (Up/Down): {modelPos[1].toFixed(2)}
-          <input type="range" min="-5" max="5" step="0.01" value={modelPos[1]} onChange={e => setModelPos([modelPos[0], parseFloat(e.target.value), modelPos[2]])} />
-        </label>
-        <label style={{ display: 'flex', flexDirection: 'column' }}>
-          Pos Z (Forward/Back): {modelPos[2].toFixed(2)}
-          <input type="range" min="-5" max="5" step="0.01" value={modelPos[2]} onChange={e => setModelPos([modelPos[0], modelPos[1], parseFloat(e.target.value)])} />
-        </label>
-
-        <div style={{ height: '1px', background: '#555', margin: '5px 0' }} />
-
-        <label style={{ display: 'flex', flexDirection: 'column' }}>
-          Rot X (Pitch/Tilt): {(modelRot[0] * (180 / Math.PI)).toFixed(0)}°
-          <input type="range" min="-3.14" max="3.14" step="0.01" value={modelRot[0]} onChange={e => setModelRot([parseFloat(e.target.value), modelRot[1], modelRot[2]])} />
-        </label>
-        <label style={{ display: 'flex', flexDirection: 'column' }}>
-          Rot Y (Yaw/Turn): {(modelRot[1] * (180 / Math.PI)).toFixed(0)}°
-          <input type="range" min="-3.14" max="3.14" step="0.01" value={modelRot[1]} onChange={e => setModelRot([modelRot[0], parseFloat(e.target.value), modelRot[2]])} />
-        </label>
-        <label style={{ display: 'flex', flexDirection: 'column' }}>
-          Rot Z (Roll/Upside down): {(modelRot[2] * (180 / Math.PI)).toFixed(0)}°
-          <input type="range" min="-3.14" max="3.14" step="0.01" value={modelRot[2]} onChange={e => setModelRot([modelRot[0], modelRot[1], parseFloat(e.target.value)])} />
-        </label>
-      </div>
-
-      <div className="tracking-container">
-        <div className="ar-content">
-          <FaceTracker onLandmarks={(lm, img) => {
-            landmarksRef.current = lm;
-            videoFrameRef.current = img;
-          }} />
-          <Scene3D
-            landmarksRef={landmarksRef}
-            videoFrameRef={videoFrameRef}
-            showFaceMesh={showFaceMesh}
-            modelPos={modelPos}
-            modelRot={modelRot}
-            activeModel={activeModel}
-          />
+      <header className="home-header">
+        <div className="home-logo">
+          <div className="home-logo-icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
         </div>
-      </div>
+        <h1>Mystic AR</h1>
+        <p>Experience jewellery & eyewear in augmented reality</p>
+        <div className="home-header-chips">
+          <span className="home-chip">✦ Face Tracking</span>
+          <span className="home-chip">✦ 3D Try-On</span>
+          <span className="home-chip">✦ Real-Time</span>
+        </div>
+      </header>
 
-      {/* Bottom Model Carousel */}
-      <div className="carousel-container">
-        <div className="carousel-track">
-          {activeCategoryModels.map(model => (
+      <div className="home-section-label">Choose a Category</div>
+      <div className="category-grid">
+        {categories.map(cat => {
+          const meta = CATEGORY_META[cat] || { emoji: '📦', gradient: 'linear-gradient(135deg, #64748b, #475569)', label: cat };
+          const count = catalog.filter(m => m.category === cat).length;
+          return (
             <div
-              key={model.id}
-              className={`carousel-item ${activeModel?.id === model.id ? 'active' : ''}`}
-              onClick={() => setActiveModel(model)}
+              key={cat}
+              id={`category-${cat}`}
+              className="category-card"
+              onClick={() => handleCategorySelect(cat)}
             >
-              <img src={model.thumbnailPath} alt={model.name} />
+              <div className="category-icon" style={{ background: meta.gradient }}>
+                <span>{meta.emoji}</span>
+              </div>
+              <h3>{meta.label}</h3>
+              <p className="category-count">{count} models</p>
             </div>
-          ))}
-        </div>
-        <div className="carousel-title">
-          {activeModel?.name} - {activeCategory}
-        </div>
+          );
+        })}
       </div>
+
+      <button
+        className="home-admin-link"
+        onClick={() => navigate('/admin')}
+      >
+        <svg viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd"/>
+        </svg>
+        Admin Portal
+      </button>
     </div>
   );
 }
 
-export default App;
+// Root App with Router
+function AppRoutes() {
+  const { currentPath } = useRouter();
+
+  return (
+    <>
+      <Route pattern="/" component={HomePage} />
+      <Route pattern="/admin" component={LoginPage} />
+      <Route pattern="/admin/dashboard" component={AdminDashboard} />
+      <Route pattern="/admin/model/:id/edit" component={ModelEditPage} />
+      <Route pattern="/ar/:category/:modelId" component={ARViewPage} />
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <RouterProvider>
+      <AppRoutes />
+    </RouterProvider>
+  );
+}

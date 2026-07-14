@@ -145,7 +145,7 @@ const FullFaceMesh = ({ landmarksRef, showFaceMesh, sharedState }) => {
   );
 };
 
-const EyewearMesh = ({ landmarksRef, modelPos, modelRot, sharedState, activeModel }) => {
+const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState, activeModel }) => {
   const groupRef = useRef();
 
   // Custom uniforms for dynamic temple fade-out
@@ -277,14 +277,14 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, sharedState, activeMode
     const targetEuler = new THREE.Euler(pitch, yaw, roll, 'YXZ');
     const targetQuat = new THREE.Quaternion().setFromEuler(targetEuler);
 
-    // Define the target scale based on face width
-    const scale = faceWidth * 1.05;
+    // Define the target scale based on face width, multiplied by the user's custom scale tuning
+    const finalScale = faceWidth * 1.05 * (modelScale || 1);
 
     // Initial snap if scale is 0 (uninitialized)
     if (groupRef.current.scale.x === 1) { // 1 is default Three.js scale
       groupRef.current.position.set(anchorX, anchorY, anchorZ);
       groupRef.current.quaternion.copy(targetQuat);
-      groupRef.current.scale.set(scale, scale, scale);
+      groupRef.current.scale.set(finalScale, finalScale, finalScale);
     } else {
       // Adaptive Tracking Stabilization Engine!
       const targetPos = new THREE.Vector3(anchorX, anchorY, anchorZ);
@@ -304,7 +304,7 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, sharedState, activeMode
 
       groupRef.current.position.lerp(targetPos, masterLerp);
       groupRef.current.quaternion.slerp(targetQuat, masterLerp);
-      groupRef.current.scale.lerp(new THREE.Vector3(scale, scale, scale), masterLerp);
+      groupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), masterLerp);
     }
 
     // Update dynamic fade boundaries!
@@ -316,8 +316,8 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, sharedState, activeMode
     uniformsRef.current.uHeadBackward.value.copy(backward).normalize();
 
     // Start fading temples halfway to the ear, fully invisible right at the ear
-    uniformsRef.current.fadeStart.value = scale * 0.25;
-    uniformsRef.current.fadeEnd.value = scale * 0.55;
+    uniformsRef.current.fadeStart.value = finalScale * 0.25;
+    uniformsRef.current.fadeEnd.value = finalScale * 0.55;
   });
 
   return (
@@ -403,7 +403,7 @@ const FaceStatus = ({ landmarksRef }) => {
   );
 };
 
-const Scene3D = ({ landmarksRef, videoFrameRef, showFaceMesh, modelPos, modelRot, activeModel }) => {
+const Scene3D = ({ landmarksRef, videoFrameRef, showFaceMesh, modelPos, modelRot, modelScale, activeModel }) => {
   // Shared state ensures the face mask and the glasses always use the EXACT same tracking speed!
   const sharedState = useRef({ adaptiveLerp: 0.5 });
 
@@ -426,6 +426,7 @@ const Scene3D = ({ landmarksRef, videoFrameRef, showFaceMesh, modelPos, modelRot
             landmarksRef={landmarksRef}
             modelPos={modelPos}
             modelRot={modelRot}
+            modelScale={modelScale}
             sharedState={sharedState}
             activeModel={activeModel}
           />

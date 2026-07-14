@@ -1,0 +1,274 @@
+{
+  "modelDefaults": {
+    "a063ddd9afb4": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "necklace"
+    },
+    "ea5ace30985b": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "rings"
+    },
+    "fd62c174d37c": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "necklace"
+    },
+    "d9a1822e7a88": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "necklace"
+    },
+    "c881a885b4f2": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "necklace"
+    },
+    "ca404a5ea0ea": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "necklace"
+    },
+    "3c1d189ac571": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "necklace"
+    },
+    "3c1d189abcd123": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "earrings"
+    },
+    "fd27ab032085": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "rings"
+    },
+    "57688ecd8143": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 1.5708,
+      "rotY": 1.5708,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "rings"
+    },
+    "57688ecd8144": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "rings"
+    },
+    "b623455781f5": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": -1.5708,
+      "scale": 1,
+      "category": "bracelets"
+    },
+    "f2014bec9852": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "bracelets"
+    },
+    "935859567149": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "bracelets"
+    },
+    "60f4edf99880": {
+      "posY": 0.01,
+      "posZ": -0.45,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 3.14159,
+      "scale": 1,
+      "category": "eyewear"
+    },
+    "e17313c13115": {
+      "posY": 0.01,
+      "posZ": -0.45,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 3.14159,
+      "scale": 1,
+      "category": "eyewear"
+    },
+    "6186cc04383e": {
+      "posY": 0.01,
+      "posZ": -0.45,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 3.14159,
+      "scale": 1,
+      "category": "eyewear"
+    },
+    "9850fa9afb6c": {
+      "posY": 0.01,
+      "posZ": -0.45,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 3.14159,
+      "scale": 1,
+      "category": "eyewear"
+    },
+    "94866bbb0628": {
+      "posY": 0.01,
+      "posZ": -0.45,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 3.14159,
+      "scale": 1,
+      "category": "eyewear"
+    },
+    "911a064c83c7": {
+      "posY": 0.01,
+      "posZ": -0.45,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 3.14159,
+      "scale": 1,
+      "category": "eyewear"
+    },
+    "99485d5c3e37": {
+      "posY": 0.01,
+      "posZ": -0.45,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 3.14159,
+      "scale": 1,
+      "category": "eyewear"
+    },
+    "712d8c134dbf": {
+      "posY": 0.01,
+      "posZ": -0.45,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 3.14159,
+      "scale": 1,
+      "category": "eyewear"
+    },
+    "1a29effbb509": {
+      "posY": 0.01,
+      "posZ": -0.45,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 3.14159,
+      "scale": 1,
+      "category": "eyewear"
+    },
+    "afb107d68cc0": {
+      "posY": 0.01,
+      "posZ": -0.45,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 3.14159,
+      "scale": 1,
+      "category": "eyewear"
+    },
+    "7787b85ace51": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "watch"
+    },
+    "f2917202433f": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "watch"
+    },
+    "3558c75c2158": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "watch"
+    },
+    "8e04d85bdb63": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "watch"
+    },
+    "8a940de62f28": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "watch"
+    },
+    "ed9a4fb27d75": {
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "watch"
+    }
+  }
+}
