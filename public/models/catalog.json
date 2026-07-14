@@ -1,0 +1,814 @@
+{
+  "models": [
+    {
+      "id": "a063ddd9afb4",
+      "name": "neck1",
+      "category": "necklace",
+      "modelPath": "/models/necklace/a063ddd9afb4.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/a063ddd9afb4.glb",
+      "thumbnailPath": "/models/necklace/a063ddd9afb4.jpg",
+      "uploadedAt": "2026-06-24T12:37:25.1945948Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "ea5ace30985b",
+      "name": "Ring",
+      "category": "rings",
+      "modelPath": "/models/rings/ea5ace30985b.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/rings/ea5ace30985b.glb",
+      "thumbnailPath": "/models/rings/ea5ace30985b.jpg",
+      "uploadedAt": "2026-06-24T12:48:50.5060282Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "fd62c174d37c",
+      "name": "pngneck",
+      "category": "necklace",
+      "modelPath": "/models/necklace/fd62c174d37c.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/fd62c174d37c.png",
+      "thumbnailPath": "/models/necklace/fd62c174d37c.png",
+      "uploadedAt": "2026-06-29T05:20:13.120519Z",
+      "scale": [
+        1.5,
+        1.8,
+        1.5
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "d9a1822e7a88",
+      "name": "Diamond Necklace 1",
+      "category": "necklace",
+      "modelPath": "/models/necklace/d9a1822e7a88.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/d9a1822e7a88.png",
+      "thumbnailPath": "/models/necklace/d9a1822e7a88.png",
+      "uploadedAt": "2026-06-30T05:41:02.7324511Z",
+      "scale": [
+        1.8,
+        1.4,
+        1.8
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "c881a885b4f2",
+      "name": "Diamond Necklace 2",
+      "category": "necklace",
+      "modelPath": "/models/necklace/c881a885b4f2.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/c881a885b4f2.png",
+      "thumbnailPath": "/models/necklace/c881a885b4f2.png",
+      "uploadedAt": "2026-06-30T05:41:48.3352255Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "ca404a5ea0ea",
+      "name": "Gold Necklace",
+      "category": "necklace",
+      "modelPath": "/models/necklace/ca404a5ea0ea.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/ca404a5ea0ea.png",
+      "thumbnailPath": "/models/necklace/ca404a5ea0ea.png",
+      "uploadedAt": "2026-06-30T05:42:16.8626539Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "3c1d189ac571",
+      "name": "Gold Neclace 2",
+      "category": "necklace",
+      "modelPath": "/models/necklace/3c1d189ac571.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/3c1d189ac571.png",
+      "thumbnailPath": "/models/necklace/3c1d189ac571.png",
+      "uploadedAt": "2026-06-30T05:42:41.3805306Z",
+      "scale": [
+        1,
+        1.3,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "3c1d189abcd123",
+      "name": "Earring",
+      "category": "earrings",
+      "modelPath": "/models/earrings/3c1d189abcd123.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/earrings/3c1d189abcd123.glb",
+      "thumbnailPath": "/models/necklace/3c1d189ac571.png",
+      "uploadedAt": "2026-06-30T05:42:41.3805306Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "fd27ab032085",
+      "name": "ringd",
+      "category": "rings",
+      "modelPath": "/models/rings/fd27ab032085.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/rings/fd27ab032085.glb",
+      "thumbnailPath": "/models/rings/fd27ab032085.jpg",
+      "uploadedAt": "2026-07-06T06:18:15.899185Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "57688ecd8143",
+      "name": "rinff",
+      "category": "rings",
+      "modelPath": "/models/rings/57688ecd8143.obj",
+      "mtlPath": "/models/rings/57688ecd8143.mtl",
+      "texturePath": "",
+      "glbPath": "/models/rings/57688ecd8143.obj",
+      "thumbnailPath": "/models/rings/57688ecd8143.jpg",
+      "uploadedAt": "2026-07-07T09:04:21.6375687Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        90,
+        90,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "57688ecd8144",
+      "name": "black diamond ring",
+      "category": "rings",
+      "modelPath": "/models/rings/57688ecd8144.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/rings/57688ecd8144.glb",
+      "thumbnailPath": "/models/rings/57688ecd8143.jpg",
+      "uploadedAt": "2026-07-07T09:04:21.6375687Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "b623455781f5",
+      "name": "bracs-1",
+      "category": "bracelets",
+      "modelPath": "/models/bracelets/b623455781f5.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/bracelets/b623455781f5.glb",
+      "thumbnailPath": "/models/bracelets/b623455781f5.jpg",
+      "uploadedAt": "2026-07-03T07:30:52.4811992Z",
+      "scale": [
+        0.9,
+        0.9,
+        0.9
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        -90
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "f2014bec9852",
+      "name": "dcs",
+      "category": "bracelets",
+      "modelPath": "/models/bracelets/f2014bec9852.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/bracelets/f2014bec9852.glb",
+      "thumbnailPath": "/models/bracelets/f2014bec9852.jpg",
+      "uploadedAt": "2026-07-03T07:31:11.1172405Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "935859567149",
+      "name": "dfd",
+      "category": "bracelets",
+      "modelPath": "/models/bracelets/935859567149.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/bracelets/935859567149.glb",
+      "thumbnailPath": "/models/bracelets/935859567149.jpg",
+      "uploadedAt": "2026-07-03T07:31:31.80413Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "60f4edf99880",
+      "name": "green glass",
+      "category": "eyewear",
+      "modelPath": "/models/eyewear/60f4edf99880.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/eyewear/60f4edf99880.glb",
+      "thumbnailPath": "/models/eyewear/60f4edf99880.jpg",
+      "uploadedAt": "2026-07-11T06:57:02.2567711Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "e17313c13115",
+      "name": "glass 2",
+      "category": "eyewear",
+      "modelPath": "/models/eyewear/e17313c13115.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/eyewear/e17313c13115.glb",
+      "thumbnailPath": "/models/eyewear/e17313c13115.jpg",
+      "uploadedAt": "2026-07-11T06:58:57.3278768Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "6186cc04383e",
+      "name": "glass 3",
+      "category": "eyewear",
+      "modelPath": "/models/eyewear/6186cc04383e.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/eyewear/6186cc04383e.glb",
+      "thumbnailPath": "/models/eyewear/6186cc04383e.jpg",
+      "uploadedAt": "2026-07-11T06:59:53.2775724Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "9850fa9afb6c",
+      "name": "glass 4",
+      "category": "eyewear",
+      "modelPath": "/models/eyewear/9850fa9afb6c.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/eyewear/9850fa9afb6c.glb",
+      "thumbnailPath": "/models/eyewear/9850fa9afb6c.jpg",
+      "uploadedAt": "2026-07-11T07:01:55.2124557Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "94866bbb0628",
+      "name": "glass 5",
+      "category": "eyewear",
+      "modelPath": "/models/eyewear/94866bbb0628.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/eyewear/94866bbb0628.glb",
+      "thumbnailPath": "/models/eyewear/94866bbb0628.jpg",
+      "uploadedAt": "2026-07-11T07:02:44.3010781Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "911a064c83c7",
+      "name": "glass 6",
+      "category": "eyewear",
+      "modelPath": "/models/eyewear/911a064c83c7.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/eyewear/911a064c83c7.glb",
+      "thumbnailPath": "/models/eyewear/911a064c83c7.jpg",
+      "uploadedAt": "2026-07-11T07:03:46.0572268Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "99485d5c3e37",
+      "name": "glass 7",
+      "category": "eyewear",
+      "modelPath": "/models/eyewear/99485d5c3e37.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/eyewear/99485d5c3e37.glb",
+      "thumbnailPath": "/models/eyewear/99485d5c3e37.jpg",
+      "uploadedAt": "2026-07-11T07:04:36.4081182Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "712d8c134dbf",
+      "name": "glass 8",
+      "category": "eyewear",
+      "modelPath": "/models/eyewear/712d8c134dbf.glb",
+      "mtlPath": "",
+      "texturePath": "/models/eyewear/Glasses_Alpha.jpg",
+      "glbPath": "/models/eyewear/712d8c134dbf.glb",
+      "thumbnailPath": "/models/eyewear/712d8c134dbf.jpg",
+      "uploadedAt": "2026-07-11T07:05:39.332685Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "1a29effbb509",
+      "name": "glass 9",
+      "category": "eyewear",
+      "modelPath": "/models/eyewear/1a29effbb509.glb",
+      "mtlPath": "",
+      "texturePath": "/models/eyewear/Glasses_Alpha.jpg",
+      "glbPath": "/models/eyewear/1a29effbb509.glb",
+      "thumbnailPath": "/models/eyewear/1a29effbb509.jpg",
+      "uploadedAt": "2026-07-11T07:12:14.1224438Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "afb107d68cc0",
+      "name": "glass 10",
+      "category": "eyewear",
+      "modelPath": "/models/eyewear/afb107d68cc0.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/eyewear/afb107d68cc0.glb",
+      "thumbnailPath": "/models/eyewear/afb107d68cc0.jpg",
+      "uploadedAt": "2026-07-11T07:19:14.5036525Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "7787b85ace51",
+      "name": "fds",
+      "category": "watch",
+      "modelPath": "/models/watch/7787b85ace51.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/watch/7787b85ace51.glb",
+      "thumbnailPath": "/models/watch/7787b85ace51.png",
+      "uploadedAt": "2026-07-11T08:22:10.6456106Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "f2917202433f",
+      "name": "watch 1",
+      "category": "watch",
+      "modelPath": "/models/watch/f2917202433f.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/watch/f2917202433f.glb",
+      "thumbnailPath": "/models/watch/f2917202433f.png",
+      "uploadedAt": "2026-07-11T12:57:19.1548567Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "3558c75c2158",
+      "name": "watch 2",
+      "category": "watch",
+      "modelPath": "/models/watch/3558c75c2158.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/watch/3558c75c2158.glb",
+      "thumbnailPath": "/models/watch/3558c75c2158.png",
+      "uploadedAt": "2026-07-11T13:01:58.5566807Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "8e04d85bdb63",
+      "name": "watch 4",
+      "category": "watch",
+      "modelPath": "/models/watch/8e04d85bdb63.glb",
+      "mtlPath": "",
+      "texturePath": "/models/watch/8e04d85bdb63_tex0.png,/models/watch/8e04d85bdb63_tex1.jpg,/models/watch/8e04d85bdb63_tex2.jpg,/models/watch/8e04d85bdb63_tex3.png,/models/watch/8e04d85bdb63_tex4.png,/models/watch/8e04d85bdb63_tex5.png,/models/watch/8e04d85bdb63_tex6.png",
+      "glbPath": "/models/watch/8e04d85bdb63.glb",
+      "thumbnailPath": "/models/watch/8e04d85bdb63.png",
+      "uploadedAt": "2026-07-11T13:30:35.6506521Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "8a940de62f28",
+      "name": "watch 5",
+      "category": "watch",
+      "modelPath": "/models/watch/8a940de62f28.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/watch/8a940de62f28.glb",
+      "thumbnailPath": "/models/watch/8a940de62f28.png",
+      "uploadedAt": "2026-07-11T13:42:44.0403376Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "ed9a4fb27d75",
+      "name": "watch 6",
+      "category": "watch",
+      "modelPath": "/models/watch/ed9a4fb27d75.glb",
+      "mtlPath": "",
+      "texturePath": "/models/watch/Clock_default_BaseColor.png",
+      "glbPath": "/models/watch/ed9a4fb27d75.glb",
+      "thumbnailPath": "/models/watch/ed9a4fb27d75.png",
+      "uploadedAt": "2026-07-11T14:05:53.3618103Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    }
+  ]
+}
