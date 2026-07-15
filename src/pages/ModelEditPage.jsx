@@ -4,6 +4,16 @@ import { getModelConfig, saveModelConfig, resetModelConfig, hasCustomConfig } fr
 
 const SLIDER_CONFIG = [
   {
+    key: 'posX',
+    label: 'Pos X (Left / Right)',
+    min: -5,
+    max: 5,
+    step: 0.01,
+    unit: '',
+    format: v => v.toFixed(2),
+    color: '#3b82f6',
+  },
+  {
     key: 'posY',
     label: 'Pos Y (Up / Down)',
     min: -5,
@@ -16,8 +26,8 @@ const SLIDER_CONFIG = [
   {
     key: 'posZ',
     label: 'Pos Z (Forward / Back)',
-    min: -5,
-    max: 5,
+    min: -10,
+    max: 10,
     step: 0.01,
     unit: '',
     format: v => v.toFixed(2),
@@ -71,7 +81,7 @@ export default function ModelEditPage({ params }) {
 
   const [model, setModel] = useState(null);
   const [defaults, setDefaults] = useState({});
-  const [config, setConfig] = useState({ posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1 });
+  const [config, setConfig] = useState({ posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1 });
   const [originalDefaults, setOriginalDefaults] = useState(null);
   const [saved, setSaved] = useState(false);
   const [isCustomized, setIsCustomized] = useState(false);
@@ -99,7 +109,7 @@ export default function ModelEditPage({ params }) {
       const defs = defaultsData.modelDefaults || {};
       setDefaults(defs);
 
-      const jsonDefault = defs[modelId] || { posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1 };
+      const jsonDefault = defs[modelId] || { posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1 };
       setOriginalDefaults(jsonDefault);
 
       // Load current config (localStorage override or JSON default)
@@ -125,7 +135,7 @@ export default function ModelEditPage({ params }) {
   const handleReset = () => {
     if (originalDefaults) {
       resetModelConfig(modelId);
-      setConfig({ ...originalDefaults, scale: originalDefaults.scale ?? 1 });
+      setConfig({ posX: originalDefaults.posX ?? 0, ...originalDefaults, scale: originalDefaults.scale ?? 1 });
       setIsCustomized(false);
       setSaved(false);
     }
@@ -151,6 +161,8 @@ export default function ModelEditPage({ params }) {
     );
   }
 
+  const canPreview = ['eyewear', 'necklace', 'rings'].includes(model.category);
+
   return (
     <div className="edit-page">
       {/* Header */}
@@ -166,7 +178,7 @@ export default function ModelEditPage({ params }) {
           <p>Adjust tuning parameters for AR rendering</p>
         </div>
         <div className="edit-header-actions">
-          {model.category === 'eyewear' && (
+          {canPreview && (
             <button
               className="edit-preview-btn"
               onClick={() => navigate(`/ar/${model.category}/${model.id}`)}
@@ -239,8 +251,8 @@ export default function ModelEditPage({ params }) {
 
           <div className="tuning-sliders">
             {SLIDER_CONFIG.map((s, idx) => {
-              const isFirst = idx === 0;
-              const showDivider = idx === 2 || idx === 5;
+              // Divider before Rot section (idx 3) and Scale section (idx 6)
+              const showDivider = idx === 3 || idx === 6;
               const displayVal = `${s.format(config[s.key] ?? 0)}${s.unit}`;
               const percentage = ((config[s.key] - s.min) / (s.max - s.min)) * 100;
 
@@ -309,13 +321,15 @@ export default function ModelEditPage({ params }) {
             </button>
           </div>
 
-          {model.category === 'eyewear' && (
+          {canPreview && (
             <div className="tuning-note">
               <svg viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
               </svg>
               <span>
-                Saved values will automatically be applied when this eyewear model is rendered in the AR view.
+                Saved values will automatically be applied when this{' '}
+                {model.category === 'eyewear' ? 'eyewear' : model.category === 'necklace' ? 'necklace' : 'ring'}{' '}
+                model is rendered in the AR view.
                 Click <strong>Live Preview</strong> above to test in AR.
               </span>
             </div>

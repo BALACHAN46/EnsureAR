@@ -2,6 +2,13 @@ import React, { useRef, Suspense, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, useGLTF, Html, useProgress } from '@react-three/drei';
 import * as THREE from 'three';
+import NecklaceMesh from './components/ar/NecklaceMesh';
+
+// Categories that use the face-landmark eyewear AR
+const FACE_AR_CATEGORIES = ['eyewear'];
+// Ring AR: fixed position in frame (no body tracking)
+const RING_AR_CATEGORIES = ['rings'];
+
 
 const FullFaceMesh = ({ landmarksRef, showFaceMesh, sharedState }) => {
   const meshRef = useRef();
@@ -331,6 +338,74 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
   );
 };
 
+// -------------------------------------------------------------------
+// JewelryMesh — Renders RING models in AR (fixed position in frame)
+//   - posX  → left/right position in viewport units
+//   - posY  → up/down position in viewport units (negative = lower)
+//   - posZ  → depth only (layering)
+// -------------------------------------------------------------------
+const JewelryMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, category }) => {
+  const groupRef = useRef();
+  const gltfPath = activeModel?.glbPath || activeModel?.modelPath;
+  if (!gltfPath) return null;
+
+  return (
+    <JewelryMeshInner
+      groupRef={groupRef}
+      landmarksRef={landmarksRef}
+      modelPos={modelPos}
+      modelRot={modelRot}
+      modelScale={modelScale}
+      gltfPath={gltfPath}
+    />
+  );
+};
+
+const JewelryMeshInner = ({ groupRef, landmarksRef, modelPos, modelRot, modelScale, gltfPath }) => {
+  const { scene } = useGLTF(gltfPath);
+
+  // Keep a ref to latest props so useFrame always reads current values (avoids stale closure)
+  const propsRef = useRef({ modelPos, modelRot, modelScale });
+  React.useEffect(() => {
+    propsRef.current = { modelPos, modelRot, modelScale };
+  });
+
+  useFrame((state) => {
+    if (!groupRef.current) return;
+    const { viewport } = state;
+
+    // Always read the freshest tuning values
+    const { modelPos: mp, modelRot: mr, modelScale: ms } = propsRef.current;
+    const offsetX = mp ? (mp[0] ?? 0) : 0;
+    const offsetY = mp ? (mp[1] ?? 0) : 0;
+    const offsetZ = mp ? (mp[2] ?? 0) : 0;
+
+    // Rings: fixed position in frame (no hand/body tracking)
+    groupRef.current.visible = true;
+
+    // Default position: center horizontally, slightly below center vertically
+    const targetX = offsetX;
+    const targetY = offsetY !== 0 ? offsetY : -viewport.height * 0.25;
+    const targetZ = offsetZ;
+    const finalScale = ms || 1;
+
+    const rx = mr ? (mr[0] ?? 0) : 0;
+    const ry = mr ? (mr[1] ?? 0) : 0;
+    const rz = mr ? (mr[2] ?? 0) : 0;
+
+    groupRef.current.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), 0.15);
+    groupRef.current.rotation.set(rx, ry, rz);
+    groupRef.current.scale.set(finalScale, finalScale, finalScale);
+  });
+
+  return (
+    <group ref={groupRef}>
+      <primitive object={scene} />
+    </group>
+  );
+};
+
+
 const VideoBackground = ({ videoFrameRef }) => {
   const { scene } = useThree();
   const textureRef = useRef(null);
@@ -361,6 +436,66 @@ const VideoBackground = ({ videoFrameRef }) => {
   return null;
 };
 
+// Estimates ambient light color/intensity from the live webcam feed so jewelry gets
+// lit by roughly the same light as the user's face, instead of a fixed generic light
+// that makes the model look pasted on regardless of the room. Downsamples the current
+// video frame to a tiny 16x16 canvas and averages it — cheap enough to run every frame,
+// but throttled further since room lighting changes slowly.
+const DynamicLighting = ({ videoFrameRef }) => {
+  const ambientRef = useRef();
+  const dirRef = useRef();
+  const sampleCanvasRef = useRef(null);
+  const frameCountRef = useRef(0);
+
+  useFrame(() => {
+    frameCountRef.current++;
+    if (frameCountRef.current % 15 !== 0) return; // ~2x/sec at 30fps is plenty for ambient light
+
+    const video = videoFrameRef.current;
+    if (!video || !ambientRef.current || !dirRef.current) return;
+
+    if (!sampleCanvasRef.current) {
+      const c = document.createElement('canvas');
+      c.width = 16;
+      c.height = 16;
+      sampleCanvasRef.current = c;
+    }
+
+    const canvas = sampleCanvasRef.current;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    try {
+      ctx.drawImage(video, 0, 0, 16, 16);
+    } catch {
+      return; // frame not yet a drawable source
+    }
+
+    const { data } = ctx.getImageData(0, 0, 16, 16);
+    let r = 0, g = 0, b = 0;
+    const pixelCount = data.length / 4;
+    for (let i = 0; i < data.length; i += 4) {
+      r += data[i];
+      g += data[i + 1];
+      b += data[i + 2];
+    }
+    r /= pixelCount; g /= pixelCount; b /= pixelCount;
+
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+    ambientRef.current.color.setRGB(r / 255, g / 255, b / 255);
+    ambientRef.current.intensity = 0.35 + luminance * 0.4;
+
+    dirRef.current.color.setRGB(r / 255, g / 255, b / 255);
+    dirRef.current.intensity = 0.5 + luminance * 0.8;
+  });
+
+  return (
+    <>
+      <ambientLight ref={ambientRef} intensity={0.5} />
+      <directionalLight ref={dirRef} position={[10, 10, 10]} intensity={1} />
+    </>
+  );
+};
+
 const Loader = () => {
   const { progress } = useProgress();
   return (
@@ -376,19 +511,20 @@ const Loader = () => {
   );
 };
 
-const FaceStatus = ({ landmarksRef }) => {
+const FaceStatus = ({ landmarksRef, category }) => {
   const [detected, setDetected] = useState(true);
+  // Rings don't need face detection — suppress warning
+  const needsFace = category !== 'rings';
 
   useFrame(() => {
-    // Check if face data exists in the current frame
+    if (!needsFace) return;
     const isDetected = landmarksRef.current && landmarksRef.current.length > 0;
-    // Only trigger a React state update if the status actually changes!
     if (detected !== isDetected) {
       setDetected(isDetected);
     }
   });
 
-  if (detected) return null;
+  if (!needsFace || detected) return null;
   return (
     <Html center>
       <div style={{
@@ -403,9 +539,11 @@ const FaceStatus = ({ landmarksRef }) => {
   );
 };
 
-const Scene3D = ({ landmarksRef, videoFrameRef, showFaceMesh, modelPos, modelRot, modelScale, activeModel }) => {
-  // Shared state ensures the face mask and the glasses always use the EXACT same tracking speed!
+const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, modelPos, modelRot, modelScale, activeModel, category }) => {
   const sharedState = useRef({ adaptiveLerp: 0.5 });
+  const isEyewear  = FACE_AR_CATEGORIES.includes(category);
+  const isNecklace = category === 'necklace';
+  const isRing     = RING_AR_CATEGORIES.includes(category);
 
   return (
     <div className="canvas-container" style={{ position: 'relative' }}>
@@ -413,23 +551,59 @@ const Scene3D = ({ landmarksRef, videoFrameRef, showFaceMesh, modelPos, modelRot
       <Canvas orthographic camera={{ zoom: 150, position: [0, 0, 100] }}>
         <VideoBackground videoFrameRef={videoFrameRef} />
 
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[10, 10, 10]} intensity={1} />
+        <DynamicLighting videoFrameRef={videoFrameRef} />
         <Environment preset="city" />
 
-        <FaceStatus landmarksRef={landmarksRef} />
+        <FaceStatus landmarksRef={landmarksRef} category={category} />
 
-        <FullFaceMesh landmarksRef={landmarksRef} showFaceMesh={showFaceMesh} sharedState={sharedState} />
+        {/* Face mesh depth occluder — needed for eyewear (temple hiding) AND necklace
+            (so the chin/jaw correctly hides the necklace when the user looks down or a
+            pendant swings up near the neck). The colored overlay mesh is an eyewear-only
+            debug toggle, so it stays gated on isEyewear even though the occluder itself
+            now renders for both categories. */}
+        {(isEyewear || isNecklace) && (
+          <FullFaceMesh landmarksRef={landmarksRef} showFaceMesh={isEyewear && showFaceMesh} sharedState={sharedState} />
+        )}
 
         <Suspense fallback={<Loader />}>
-          <EyewearMesh
-            landmarksRef={landmarksRef}
-            modelPos={modelPos}
-            modelRot={modelRot}
-            modelScale={modelScale}
-            sharedState={sharedState}
-            activeModel={activeModel}
-          />
+          {/* Eyewear: full face-tracked mesh with temple fade */}
+          {isEyewear && (
+            <EyewearMesh
+              landmarksRef={landmarksRef}
+              modelPos={modelPos}
+              modelRot={modelRot}
+              modelScale={modelScale}
+              sharedState={sharedState}
+              activeModel={activeModel}
+            />
+          )}
+
+          {/* Necklace: dedicated component — collarbone anchor, no rotation */}
+          {isNecklace && activeModel && (
+            <NecklaceMesh
+              landmarksRef={landmarksRef}
+              poseLandmarksRef={poseLandmarksRef}
+              modelPos={modelPos}
+              modelRot={modelRot}
+              modelScale={modelScale}
+              activeModel={activeModel}
+              showFaceMesh={showFaceMesh}
+            />
+          )}
+
+
+
+          {/* Rings: fixed-position in frame */}
+          {isRing && activeModel && (
+            <JewelryMesh
+              landmarksRef={landmarksRef}
+              modelPos={modelPos}
+              modelRot={modelRot}
+              modelScale={modelScale}
+              activeModel={activeModel}
+              category={category}
+            />
+          )}
         </Suspense>
 
       </Canvas>
