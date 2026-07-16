@@ -4,6 +4,16 @@ import { getModelConfig, saveModelConfig, resetModelConfig, hasCustomConfig } fr
 
 const SLIDER_CONFIG = [
   {
+    key: 'posX',
+    label: 'Pos X (Left / Right)',
+    min: -5,
+    max: 5,
+    step: 0.01,
+    unit: '',
+    format: v => v.toFixed(2),
+    color: '#3b82f6',
+  },
+  {
     key: 'posY',
     label: 'Pos Y (Up / Down)',
     min: -5,
@@ -16,8 +26,8 @@ const SLIDER_CONFIG = [
   {
     key: 'posZ',
     label: 'Pos Z (Forward / Back)',
-    min: -5,
-    max: 5,
+    min: -10,
+    max: 10,
     step: 0.01,
     unit: '',
     format: v => v.toFixed(2),
@@ -71,7 +81,7 @@ export default function ModelEditPage({ params }) {
 
   const [model, setModel] = useState(null);
   const [defaults, setDefaults] = useState({});
-  const [config, setConfig] = useState({ posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1 });
+  const [config, setConfig] = useState({ posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1 });
   const [originalDefaults, setOriginalDefaults] = useState(null);
   const [saved, setSaved] = useState(false);
   const [isCustomized, setIsCustomized] = useState(false);
@@ -99,7 +109,7 @@ export default function ModelEditPage({ params }) {
       const defs = defaultsData.modelDefaults || {};
       setDefaults(defs);
 
-      const jsonDefault = defs[modelId] || { posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1 };
+      const jsonDefault = defs[modelId] || { posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1 };
       setOriginalDefaults(jsonDefault);
 
       // Load current config (localStorage override or JSON default)
@@ -125,7 +135,7 @@ export default function ModelEditPage({ params }) {
   const handleReset = () => {
     if (originalDefaults) {
       resetModelConfig(modelId);
-      setConfig({ ...originalDefaults, scale: originalDefaults.scale ?? 1 });
+      setConfig({ posX: originalDefaults.posX ?? 0, ...originalDefaults, scale: originalDefaults.scale ?? 1 });
       setIsCustomized(false);
       setSaved(false);
     }
@@ -151,13 +161,16 @@ export default function ModelEditPage({ params }) {
     );
   }
 
+  const canPreview = ['eyewear', 'watch', 'bracelets', 'rings', 'necklace', 'earrings', 'nosepin'].includes(model.category)
+  // ['eyewear', 'necklace', 'rings'].includes(model.category);
+
   return (
     <div className="edit-page">
       {/* Header */}
       <header className="edit-header">
         <button className="edit-back-btn" onClick={handleBack}>
           <svg viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd"/>
+            <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
           </svg>
           Back to Dashboard
         </button>
@@ -166,14 +179,14 @@ export default function ModelEditPage({ params }) {
           <p>Adjust tuning parameters for AR rendering</p>
         </div>
         <div className="edit-header-actions">
-          {['eyewear', 'watch', 'bracelets', 'rings', 'necklace', 'earrings', 'nosepin'].includes(model.category) && (
+          {canPreview && (
             <button
               className="edit-preview-btn"
               onClick={() => navigate(`/ar/${model.category}/${model.id}`)}
             >
               <svg viewBox="0 0 20 20" fill="currentColor">
-                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-                <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
+                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
               </svg>
               Live Preview
             </button>
@@ -201,14 +214,14 @@ export default function ModelEditPage({ params }) {
               {isCustomized ? (
                 <div className="edit-status-badge edit-status-badge--custom">
                   <svg viewBox="0 0 12 12" fill="currentColor">
-                    <circle cx="6" cy="6" r="6"/>
+                    <circle cx="6" cy="6" r="6" />
                   </svg>
                   Custom Config Active
                 </div>
               ) : (
                 <div className="edit-status-badge edit-status-badge--default">
                   <svg viewBox="0 0 12 12" fill="currentColor">
-                    <circle cx="6" cy="6" r="6"/>
+                    <circle cx="6" cy="6" r="6" />
                   </svg>
                   Using Defaults
                 </div>
@@ -239,8 +252,8 @@ export default function ModelEditPage({ params }) {
 
           <div className="tuning-sliders">
             {SLIDER_CONFIG.map((s, idx) => {
-              const isFirst = idx === 0;
-              const showDivider = idx === 2 || idx === 5;
+              // Divider before Rot section (idx 3) and Scale section (idx 6)
+              const showDivider = idx === 3 || idx === 6;
               const displayVal = `${s.format(config[s.key] ?? 0)}${s.unit}`;
               const percentage = ((config[s.key] - s.min) / (s.max - s.min)) * 100;
 
@@ -281,7 +294,7 @@ export default function ModelEditPage({ params }) {
               title="Reset to default values from model-defaults.json"
             >
               <svg viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd"/>
+                <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
               </svg>
               Reset to Defaults
             </button>
@@ -294,14 +307,14 @@ export default function ModelEditPage({ params }) {
               {saved ? (
                 <>
                   <svg viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                   Configuration Saved!
                 </>
               ) : (
                 <>
                   <svg viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z"/>
+                    <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z" />
                   </svg>
                   Save Configuration
                 </>
@@ -309,13 +322,15 @@ export default function ModelEditPage({ params }) {
             </button>
           </div>
 
-          {['eyewear', 'watch', 'bracelets', 'rings', 'necklace', 'earrings', 'nosepin'].includes(model.category) && (
+          {canPreview && (
             <div className="tuning-note">
               <svg viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>
               <span>
-                Saved values will automatically be applied when this model is rendered in the AR view.
+                Saved values will automatically be applied when this{' '}
+                {model.category === 'eyewear' ? 'eyewear' : model.category === 'necklace' ? 'necklace' : model.category}{' '}
+                model is rendered in the AR view.
                 Click <strong>Live Preview</strong> above to test in AR.
               </span>
             </div>

@@ -3,11 +3,12 @@ import { useRouter } from '../router';
 import FaceTracker from '../FaceTracker';
 import HandTracker from '../HandTracker';
 import Scene3D from '../Scene3D';
-import { getModelConfig, saveModelConfig, configToPosition, configToRotation, configToScale } from '../utils/modelConfig';
+import { getModelConfig, saveModelConfig, resetModelConfig, configToPosition, configToRotation, configToScale } from '../utils/modelConfig';
 
 export default function ARViewPage({ params }) {
   const { navigate } = useRouter();
   const landmarksRef = useRef(null);
+  const poseLandmarksRef = useRef(null);
   const videoFrameRef = useRef(null);
 
   const [catalog, setCatalog] = useState([]);
@@ -74,6 +75,16 @@ export default function ARViewPage({ params }) {
     setTimeout(() => setSaved(false), 2000);
   };
 
+  const handleResetTuning = () => {
+    if (!activeModel) return;
+    resetModelConfig(activeModel.id);
+    setModelPos([0, 0, 0]);
+    setModelRot([0, 0, 0]);
+    setModelScale(1);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
   const isAdmin = sessionStorage.getItem('sa_auth') === 'true';
   const isHandTracking = category === 'watch' || category === 'bracelets' || category === 'rings';
 
@@ -91,12 +102,15 @@ export default function ARViewPage({ params }) {
         >
           ← {isAdmin ? 'Dashboard' : 'Home'}
         </button>
-        <button
-          className={`ar-ctrl-btn ${showFaceMesh ? 'ar-ctrl-btn--active' : ''}`}
-          onClick={() => setShowFaceMesh(p => !p)}
-        >
-          {showFaceMesh ? 'Hide Mesh' : 'Show Mesh'}
-        </button>
+        {/* Face mesh toggle: only relevant for eyewear */}
+        {category === 'eyewear' && (
+          <button
+            className={`ar-ctrl-btn ${showFaceMesh ? 'ar-ctrl-btn--active' : ''}`}
+            onClick={() => setShowFaceMesh(p => !p)}
+          >
+            {showFaceMesh ? 'Hide Mesh' : 'Show Mesh'}
+          </button>
+        )}
         {isAdmin && (
           <button
             className={`ar-ctrl-btn ${showTuning ? 'ar-ctrl-btn--active' : ''}`}
@@ -106,6 +120,29 @@ export default function ARViewPage({ params }) {
           </button>
         )}
       </div>
+
+      {/* Hint overlays for jewelry */}
+      {category === 'rings' && (
+        <div style={{
+          position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 900, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)',
+          border: '1px solid rgba(245,158,11,0.4)', borderRadius: '12px',
+          padding: '8px 18px', color: '#fbbf24', fontSize: '13px', fontWeight: 500,
+          whiteSpace: 'nowrap', pointerEvents: 'none',
+        }}>
+          💍 Hold your hand up to try the ring — use Tuning to adjust position &amp; size
+        </div>
+      )}
+      {/* {category === 'necklace' && (
+        <div style={{
+          position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 900, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)',
+          border: '1px solid rgba(236,72,153,0.4)', borderRadius: '12px',
+          padding: '8px 18px', color: '#f9a8d4', fontSize: '13px', fontWeight: 500,
+          whiteSpace: 'nowrap', pointerEvents: 'none',
+        }}>
+        </div>
+      )} */}
 
       {/* Live Tuning Panel (Admin only) */}
       {isAdmin && showTuning && (
@@ -122,12 +159,12 @@ export default function ARViewPage({ params }) {
           </label>
           <label className="ar-tuning-label">
             <span>Pos Y (Up/Down): <strong>{modelPos[1].toFixed(2)}</strong></span>
-            <input type="range" min="-5" max="5" step="0.01" value={modelPos[1]}
+            <input type="range" min="-10" max="10" step="0.01" value={modelPos[1]}
               onChange={e => setModelPos([modelPos[0], parseFloat(e.target.value), modelPos[2]])} />
           </label>
           <label className="ar-tuning-label">
             <span>Pos Z (Forward/Back): <strong>{modelPos[2].toFixed(2)}</strong></span>
-            <input type="range" min="-5" max="5" step="0.01" value={modelPos[2]}
+            <input type="range" min="-10" max="10" step="0.01" value={modelPos[2]}
               onChange={e => setModelPos([modelPos[0], modelPos[1], parseFloat(e.target.value)])} />
           </label>
 
@@ -159,7 +196,10 @@ export default function ARViewPage({ params }) {
 
           <div className="ar-tuning-actions">
             <button className={`ar-tuning-save-btn ${saved ? 'saved' : ''}`} onClick={handleSaveTuning}>
-              {saved ? '✅ Saved!' : '💾 Save Config'}
+              {saved ? '✅ Saved!' : '💾 Save'}
+            </button>
+            <button className="ar-tuning-save-btn" style={{ background: '#ef4444', borderColor: '#ef4444' }} onClick={handleResetTuning}>
+              🔄 Reset
             </button>
             <button
               className="ar-tuning-edit-btn"
@@ -184,13 +224,26 @@ export default function ARViewPage({ params }) {
               videoFrameRef.current = img;
             }} />
           ) : (
-            <FaceTracker onLandmarks={(lm, img) => {
-              landmarksRef.current = lm;
-              videoFrameRef.current = img;
-            }} />
+            category != "necklace" ? (
+              <FaceTracker onLandmarks={(lm, img) => {
+                landmarksRef.current = lm;
+                videoFrameRef.current = img;
+              }} />
+            ) : (
+              <FaceTracker
+                category={category}
+                onLandmarks={(lm, img) => {
+                  landmarksRef.current = lm;
+                  videoFrameRef.current = img;
+                }}
+                onPoseLandmarks={(lm) => {
+                  poseLandmarksRef.current = lm;
+                }}
+              />)
           )}
           <Scene3D
             landmarksRef={landmarksRef}
+            poseLandmarksRef={poseLandmarksRef}
             videoFrameRef={videoFrameRef}
             showFaceMesh={showFaceMesh}
             modelPos={modelPos}
@@ -198,6 +251,7 @@ export default function ARViewPage({ params }) {
             modelScale={modelScale}
             activeModel={activeModel}
             isHandTracking={isHandTracking}
+            category={category}
           />
         </div>
       </div>

@@ -28,7 +28,7 @@ export function getModelConfig(modelId, defaults = {}) {
 /**
  * Save tuning config for a model to localStorage, and if in development, to model-defaults.json.
  * @param {string} modelId
- * @param {object} config - { posY, posZ, rotX, rotY, rotZ, scale }
+ * @param {object} config - { posX, posY, posZ, rotX, rotY, rotZ, scale }
  */
 export async function saveModelConfig(modelId, config) {
   localStorage.setItem(`${STORAGE_PREFIX}${modelId}`, JSON.stringify(config));
