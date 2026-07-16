@@ -3,6 +3,8 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 
+const getAdaptiveFactor = (vel, scale, base = 0.08) => Math.min(1.0, base + Math.pow(vel * scale, 2));
+
 /**
  * NecklaceMesh — Collarbone-stable anchor (NO chin landmark used)
  * ─────────────────────────────────────────────────────────────────────
@@ -26,7 +28,7 @@ function toVP(lm, viewport) {
 }
 
 // ── Shared composite anchor computation ──────────────────────────────
-export function computeCollarbone(faceLandmarks, poseLandmarks, viewport, offsetY = 0) {
+export function computeCollarbone(faceLandmarks, poseLandmarks, viewport, offsetY = 0, chestSmoothRef = null) {
   // 1. IPD Scale Calibration (Interpupillary Distance)
   // With refineLandmarks: true, iris centers 468/473 are now available.
   // These give the TRUE interpupillary distance (biological constant ~63mm).
@@ -145,9 +147,33 @@ export function computeCollarbone(faceLandmarks, poseLandmarks, viewport, offset
     if (chestBlend > 0) {
       const lsVP = toVP(ls, viewport);
       const rsVP = toVP(rs, viewport);
-      const chestX = (lsVP.x + rsVP.x) / 2;
-      const chestY = (lsVP.y + rsVP.y) / 2;
-      const chestZ = (lsVP.z + rsVP.z) / 2;
+      let chestX = (lsVP.x + rsVP.x) / 2;
+      let chestY = (lsVP.y + rsVP.y) / 2;
+      let chestZ = (lsVP.z + rsVP.z) / 2;
+
+      // MediaPipe Pose's shoulder landmarks are noisier frame-to-frame than the face mesh
+      // (lower resolution model, more affected by low light) — and X was just tuned to lean
+      // on them much harder (up to 85%) to fix the turn-stretch bug. That shifted more raw
+      // shoulder noise into the anchor than before, which is what kept reading as jitter even
+      // after the anchor-level smoothing downstream. Smoothing the chest point itself, before
+      // it ever reaches the blend, fixes it at the source instead of chasing it after the fact.
+      if (chestSmoothRef) {
+        if (!chestSmoothRef.current) {
+          chestSmoothRef.current = { x: chestX, y: chestY, z: chestZ };
+        } else {
+          // Velocity-adaptive: fast for real shoulder movement, filtered for sensor noise
+          const cdx = chestX - chestSmoothRef.current.x;
+          const cdy = chestY - chestSmoothRef.current.y;
+          const cVel = Math.sqrt(cdx * cdx + cdy * cdy);
+          const f = getAdaptiveFactor(cVel, 40.0, 0.08);
+          chestSmoothRef.current.x += cdx * f;
+          chestSmoothRef.current.y += cdy * f;
+          chestSmoothRef.current.z += (chestZ - chestSmoothRef.current.z) * f;
+        }
+        chestX = chestSmoothRef.current.x;
+        chestY = chestSmoothRef.current.y;
+        chestZ = chestSmoothRef.current.z;
+      }
 
       const chestShoulderAngle = Math.atan2(rsVP.y - lsVP.y, rsVP.x - lsVP.x);
       shoulderAngle = shoulderAngle * (1 - chestBlend) + chestShoulderAngle * chestBlend;
@@ -337,6 +363,18 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
   // though the true (shoulder-based) width hadn't changed. Corrected live (see useFrame)
   // rather than frozen, so approaching/receding from the camera always tracks immediately.
   const stableFaceWidthRef = useRef(0);
+  // Smooths the raw shoulder/chest point before it enters the anchor blend — see
+  // computeCollarbone for why (Pose landmarks are noisier than the face mesh).
+  const chestSmoothRef = useRef(null);
+  // Dead-zone smoothing for the rotation drivers (yaw/pitch sway + shoulder roll) — these
+  // were being fed straight from raw per-frame angle estimates into the quaternion slerp
+  // below with zero smoothing at all, and atan2-based angles (shoulderAngle/roll especially)
+  // are very noise-sensitive when the two reference points are near-level. That was very
+  // likely the real remaining "shake" after position was already dead-zoned.
+  const smoothedRotRef = useRef(null);
+  // Smooths yaw specifically for the width-correction multiplier below (kept independent
+  // of smoothedRotRef so it's available regardless of code ordering within the frame).
+  const smoothedYawForScaleRef = useRef(0);
   // Low-pass filter for the raw per-frame anchor (landmark tracking noise) — the
   // position/quaternion lerp below already smooths toward the target, but its adaptive
   // factor ramps to ~1.0 for anything but the tiniest motion, so noisy input was passing
@@ -386,13 +424,13 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
 
     // Use the composite anchor math (passing offsetY directly to compute
     // the style-specific Choker/Standard/Pendant drop percentage)
-    const cb = computeCollarbone(landmarks, poseLandmarks, viewport, offsetY);
-    const trueCb = computeCollarbone(landmarks, poseLandmarks, viewport, 0);
+    const cb = computeCollarbone(landmarks, poseLandmarks, viewport, offsetY, chestSmoothRef);
+    const trueCb = computeCollarbone(landmarks, poseLandmarks, viewport, 0, chestSmoothRef);
 
-    // Smooth the raw anchor (jitter fix) before it's used as a lerp target or fade center
-    // Lower = stronger smoothing. Was 0.35 (too reactive — small head wobble/nodding
-    // was passing straight through and reading as the necklace shaking with the head).
-    const jitterFilter = 0.18;
+    // Velocity-adaptive anchor EMA:
+    //   fast movement  → EMA factor → 1.0  (snaps instantly, zero lag)
+    //   noise at rest  → EMA factor → 0.30 (heavy filtering, no jitter)
+    // This replaces all the previous dead-zones / fixed-factor compromises.
     if (!smoothedAnchorRef.current) {
       smoothedAnchorRef.current = {
         x: cb.x, y: cb.y, z: cb.z,
@@ -400,107 +438,105 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
       };
     } else {
       const sm = smoothedAnchorRef.current;
-      sm.x += (cb.x - sm.x) * jitterFilter;
-      sm.y += (cb.y - sm.y) * jitterFilter;
-      sm.z += (cb.z - sm.z) * jitterFilter;
-      sm.trueX += (trueCb.x - sm.trueX) * jitterFilter;
-      sm.trueY += (trueCb.y - sm.trueY) * jitterFilter;
-      sm.trueZ += (trueCb.z - sm.trueZ) * jitterFilter;
+      const adx = cb.x - sm.x;
+      const ady = cb.y - sm.y;
+      const aVel = Math.sqrt(adx * adx + ady * ady);
+      const anchorEMA = getAdaptiveFactor(aVel, 45.0, 0.08);
+      sm.x += adx * anchorEMA;
+      sm.y += ady * anchorEMA;
+      sm.z += (cb.z - sm.z) * anchorEMA;
+      const tdx = trueCb.x - sm.trueX;
+      const tdy = trueCb.y - sm.trueY;
+      const trueVel = Math.sqrt(tdx * tdx + tdy * tdy);
+      const trueEMA = getAdaptiveFactor(trueVel, 45.0, 0.08);
+      sm.trueX += tdx * trueEMA;
+      sm.trueY += tdy * trueEMA;
+      sm.trueZ += (trueCb.z - sm.trueZ) * trueEMA;
     }
     const anchor = smoothedAnchorRef.current;
 
     // posZ depth-perception scale multiplier
     const depthScale = Math.pow(1.15, offsetZ);
 
-    // Dynamic Body-Type Scale Calibration
+    // Shoulder width — velocity-adaptive smooth
     if (cb.shoulderWidth > 0) {
       if (smoothedShoulderWidthRef.current === 0) {
-        smoothedShoulderWidthRef.current = cb.shoulderWidth; // Init
+        smoothedShoulderWidthRef.current = cb.shoulderWidth;
       } else {
-        // Slow EMA smoothing to prevent popping when tracking drops
-        smoothedShoulderWidthRef.current += (cb.shoulderWidth - smoothedShoulderWidthRef.current) * 0.05;
+        const swDelta = Math.abs(cb.shoulderWidth - smoothedShoulderWidthRef.current);
+        const swEMA = getAdaptiveFactor(swDelta, 25.0, 0.08);
+        smoothedShoulderWidthRef.current += (cb.shoulderWidth - smoothedShoulderWidthRef.current) * swEMA;
       }
     }
 
-    // Compensate the yaw-driven overestimate directly instead of freezing updates while
-    // turned — freezing on a rotation-confidence gate meant a plain forward/backward
-    // approach (no rotation at all) could still get stuck holding a stale, smaller width
-    // whenever incidental yaw noise crossed the trust threshold, making the necklace lag
-    // behind / look like it was shrinking while the face grew bigger on screen. This way
-    // width always updates live — turning is corrected, approaching is never gated.
-    const yawCorrection = 1 - Math.min(1, Math.abs(cb.yaw)) * 0.35;
+    // Yaw + face width — velocity-adaptive
+    const yawDelta = Math.abs(cb.yaw - smoothedYawForScaleRef.current);
+    const yawEMA = getAdaptiveFactor(yawDelta, 35.0, 0.08);
+    smoothedYawForScaleRef.current += (cb.yaw - smoothedYawForScaleRef.current) * yawEMA;
+    const yawCorrection = 1 - Math.min(1, Math.abs(smoothedYawForScaleRef.current)) * 0.35;
     const correctedFaceWidth = cb.faceWidth * yawCorrection;
     if (stableFaceWidthRef.current === 0) {
       stableFaceWidthRef.current = correctedFaceWidth;
     } else {
-      stableFaceWidthRef.current += (correctedFaceWidth - stableFaceWidthRef.current) * 0.35;
+      const fwDelta = Math.abs(correctedFaceWidth - stableFaceWidthRef.current);
+      const fwEMA = Math.min(1.0, 0.25 + fwDelta * 25.0);
+      stableFaceWidthRef.current += (correctedFaceWidth - stableFaceWidthRef.current) * fwEMA;
     }
     const faceWidth = stableFaceWidthRef.current;
 
     // 2. Correct Architecture Scale (No Magic Numbers!)
-    // MediaPipe Pose's shoulder-landmark distance is unreliable at typical webcam framing
-    // (shoulders partly cropped at the bottom of frame) — it has been observed to both
-    // under-shoot (collapsing the necklace narrower than the face) and over-shoot
-    // (ballooning it past the shoulders) depending on framing. The iris-based face width
-    // is far more stable, so treat it as the primary anchor and only let the shoulder
-    // reading nudge the result within a tight, physically plausible band (a necklace
-    // realistically spans roughly 1.1x-1.45x face width to sit on the collarbone without
-    // spilling past the shoulders).
     const minPhysicalWidth = faceWidth * 1.10;
     const maxPhysicalWidth = faceWidth * 1.45;
-    let targetPhysicalWidth = faceWidth * 1.25; // default when shoulders aren't tracked
+    let targetPhysicalWidth = faceWidth * 1.25;
     if (smoothedShoulderWidthRef.current > 0) {
       targetPhysicalWidth = smoothedShoulderWidthRef.current * 0.42;
     }
     targetPhysicalWidth = Math.min(maxPhysicalWidth, Math.max(minPhysicalWidth, targetPhysicalWidth));
 
-    // Mathematically scale the specific 3D model's geometry to match the target physical width!
     const baseScale = targetPhysicalWidth / boxWidthRef.current;
-    
-    // Exact dynamic sizing perfectly wraps around any neck!
     const finalScale = baseScale * (ms || 1) * depthScale;
 
-    // Never let the necklace render above the chin, however close the face gets to the
-    // camera. The 3D chain's pivot is already its top edge, so no extra offset is needed.
     const chinCapY = cb.chinY != null ? cb.chinY - faceWidth * 0.08 : Infinity;
     const anchoredY = Math.min(anchor.y, chinCapY);
 
-    // We add the manual offsets
     const targetPos = new THREE.Vector3(
       anchor.x + offsetX,
       anchoredY,
       anchor.z
     );
 
-    // 2. 6-DOF Orientation & Sway Blend
     const rotX = propsRef.current.modelRot ? (propsRef.current.modelRot[0] ?? 0) : 0;
     const rotY = propsRef.current.modelRot ? (propsRef.current.modelRot[1] ?? 0) : 0;
     const rotZ = propsRef.current.modelRot ? (propsRef.current.modelRot[2] ?? 0) : 0;
 
-    // Apply 20% of the head's pitch and yaw to make the pendant sway naturally when turning
-    // max sway is approx 45deg (PI/4), blended by 0.20
-    const swayPitch = cb.pitch * (Math.PI / 4) * 0.20;
-    const swayYaw = cb.yaw * (Math.PI / 4) * 0.20;
+    // Velocity-adaptive rotation smooth
+    if (!smoothedRotRef.current) {
+      smoothedRotRef.current = { yaw: cb.yaw, pitch: cb.pitch, shoulderAngle: cb.shoulderAngle || 0 };
+    } else {
+      const sr = smoothedRotRef.current;
+      const ryDelta = Math.abs(cb.yaw - sr.yaw);
+      sr.yaw += (cb.yaw - sr.yaw) * getAdaptiveFactor(ryDelta, 35.0, 0.08);
+      const rpDelta = Math.abs(cb.pitch - sr.pitch);
+      sr.pitch += (cb.pitch - sr.pitch) * getAdaptiveFactor(rpDelta, 35.0, 0.08);
+      const rsDelta = Math.abs((cb.shoulderAngle || 0) - sr.shoulderAngle);
+      sr.shoulderAngle += ((cb.shoulderAngle || 0) - sr.shoulderAngle) * getAdaptiveFactor(rsDelta, 35.0, 0.08);
+    }
+    const smoothedRot = smoothedRotRef.current;
 
+    const swayPitch = smoothedRot.pitch * (Math.PI / 4) * 0.20;
+    const swayYaw = smoothedRot.yaw * (Math.PI / 4) * 0.20;
     const finalRotX = rotX + swayPitch;
     const finalRotY = rotY + swayYaw;
-    const finalRotZ = rotZ + (cb.shoulderAngle || 0);
-
+    const finalRotZ = rotZ + smoothedRot.shoulderAngle;
     const targetQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(finalRotX, finalRotY, finalRotZ));
 
-    // 4. Natural Hang Simulation & Adaptive Smoothing
-    // A fixed EMA factor forces a choice between "laggy but smooth" and "snappy but jittery".
-    // Instead, scale the lerp factor with how far off target we are: small deviations (head
-    // micro-movement, camera noise) get light smoothing to take the edge off jitter, while any
-    // real movement (nodding down, turning to look over a shoulder) gets pulled toward the
-    // target almost immediately so the necklace reads as physically stuck to the neck instead
-    // of trailing/floating away from it.
+    // Adaptive lerp on top: quadratic curve for ultimate stillness at rest
     const dist = groupRef.current.position.distanceTo(targetPos);
-    const posLerp = Math.min(1.0, 0.20 + dist * 6.0);
+    const posLerp = getAdaptiveFactor(dist, 15.0, 0.20);
     groupRef.current.position.lerp(targetPos, posLerp);
 
     const angle = groupRef.current.quaternion.angleTo(targetQuat);
-    const rotLerp = Math.min(1.0, 0.18 + angle * 6.0);
+    const rotLerp = getAdaptiveFactor(angle, 15.0, 0.20);
     groupRef.current.quaternion.slerp(targetQuat, rotLerp);
 
     groupRef.current.scale.lerp(
@@ -531,7 +567,7 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
 
     // 3. Tip Blur: Pass the absolute highest point of the necklace in world space
     uniformsRef.current.uNecklaceTopY.value = anchoredY;
-    uniformsRef.current.uFadeDistTip.value = (boxHeightRef.current || 0) * finalScale * 0.15; // Blur top 15%
+    uniformsRef.current.uFadeDistTip.value = (boxHeightRef.current || 0) * finalScale * 0.22; // Blur top 22%
   });
 
   return (
@@ -561,8 +597,10 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
   const material = React.useMemo(() => {
     const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide });
     mat.onBeforeCompile = (shader) => {
-      shader.uniforms.uFadeStart = { value: 0.65 };
-      shader.uniforms.uFadeEnd = { value: 1.0 };
+      // Start fading halfway up (0.53) and fully disappear by 0.93, 
+      // ensuring the top tips are fully invisible to look like they go behind the neck
+      shader.uniforms.uFadeStart = { value: 0.53 };
+      shader.uniforms.uFadeEnd = { value: 0.93 };
 
       // Declare our own varying rather than relying on the built-in vUv/vMapUv
       // (its name/availability differs across three.js versions).
@@ -587,8 +625,8 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <dithering_fragment>',
         `#include <dithering_fragment>
-         // Fade the top ~35% of the plane to transparent (blur effect) so the chain
-         // appears to disappear behind the neck instead of ending in a sharp edge.
+         // Fade the top portion of the plane to transparent (blur effect) so the chain
+         // appears to disappear completely behind the neck instead of sitting on top.
          float topFade = 1.0 - smoothstep(uFadeStart, uFadeEnd, vFadeUv.y);
          gl_FragColor.a *= topFade;`
       );
@@ -607,6 +645,14 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
   // width isn't rotation-invariant, so it read wider as the head yawed, ballooning the
   // 2D necklace's scale since this component drives size straight off cb.faceWidth).
   const stableFaceWidthRef = useRef(0);
+  // Smooths the raw shoulder/chest point before it enters the anchor blend — see
+  // computeCollarbone for why (Pose landmarks are noisier than the face mesh).
+  const chestSmoothRef = useRef(null);
+  // Dead-zone smoothing for the shoulder-roll angle — see NecklaceMeshInner for why
+  // (atan2-based angles are very noise-sensitive, and this fed the quaternion raw).
+  const smoothedShoulderAngleRef = useRef(null);
+  // Smooths yaw specifically for the width-correction multiplier below.
+  const smoothedYawForScaleRef = useRef(0);
 
   useFrame((state) => {
     if (!groupRef.current) return;
@@ -625,34 +671,35 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
     const offsetY = mp ? (mp[1] ?? 0) : 0;
     const offsetZ = mp ? (mp[2] ?? 0) : 0;
 
-    const cb = computeCollarbone(landmarks, poseLandmarks, viewport, offsetY);
+    const cb = computeCollarbone(landmarks, poseLandmarks, viewport, offsetY, chestSmoothRef);
 
-    // Smooth the raw anchor to remove landmark tracking noise (jitter fix)
-    // Lower = stronger smoothing. Was 0.35 (too reactive — small head wobble/nodding
-    // was passing straight through and reading as the necklace shaking with the head).
-    const jitterFilter = 0.18;
+    // Velocity-adaptive anchor EMA (same as NecklaceMeshInner)
     if (!smoothedAnchorRef.current) {
       smoothedAnchorRef.current = { x: cb.x, y: cb.y, z: cb.z };
     } else {
       const sm = smoothedAnchorRef.current;
-      sm.x += (cb.x - sm.x) * jitterFilter;
-      sm.y += (cb.y - sm.y) * jitterFilter;
-      sm.z += (cb.z - sm.z) * jitterFilter;
+      const adx = cb.x - sm.x;
+      const ady = cb.y - sm.y;
+      const aVel = Math.sqrt(adx * adx + ady * ady);
+      const anchorEMA = getAdaptiveFactor(aVel, 45.0, 0.08);
+      sm.x += adx * anchorEMA;
+      sm.y += ady * anchorEMA;
+      sm.z += (cb.z - sm.z) * anchorEMA;
     }
     const anchor = smoothedAnchorRef.current;
 
-    // Compensate the yaw-driven overestimate directly instead of freezing updates while
-    // turned — freezing on a rotation-confidence gate meant a plain forward/backward
-    // approach (no rotation at all) could still get stuck holding a stale, smaller width
-    // whenever incidental yaw noise crossed the trust threshold, making the necklace lag
-    // behind / look like it was shrinking while the face grew bigger on screen. This way
-    // width always updates live — turning is corrected, approaching is never gated.
-    const yawCorrection = 1 - Math.min(1, Math.abs(cb.yaw)) * 0.35;
+    // Velocity-adaptive yaw + face width
+    const yawDelta = Math.abs(cb.yaw - smoothedYawForScaleRef.current);
+    const yawEMA = getAdaptiveFactor(yawDelta, 35.0, 0.08);
+    smoothedYawForScaleRef.current += (cb.yaw - smoothedYawForScaleRef.current) * yawEMA;
+    const yawCorrection = 1 - Math.min(1, Math.abs(smoothedYawForScaleRef.current)) * 0.35;
     const correctedFaceWidth = cb.faceWidth * yawCorrection;
     if (stableFaceWidthRef.current === 0) {
       stableFaceWidthRef.current = correctedFaceWidth;
     } else {
-      stableFaceWidthRef.current += (correctedFaceWidth - stableFaceWidthRef.current) * 0.35;
+      const fwDelta = Math.abs(correctedFaceWidth - stableFaceWidthRef.current);
+      const fwEMA = getAdaptiveFactor(fwDelta, 30.0, 0.08);
+      stableFaceWidthRef.current += (correctedFaceWidth - stableFaceWidthRef.current) * fwEMA;
     }
 
     const depthScale = Math.pow(1.15, offsetZ);
@@ -672,21 +719,27 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
       anchor.z
     );
 
+    // ADAPTIVE LERP — quadratic curve for ultimate stillness at rest
     const dist = groupRef.current.position.distanceTo(targetPos);
-    const lerpF = Math.min(1.0, 0.20 + dist * 6.0);
-
+    const lerpF = getAdaptiveFactor(dist, 15.0, 0.20);
     groupRef.current.position.lerp(targetPos, lerpF);
 
-    // Completely stable rotation (ignoring head tilt/turn)
     const rotX = propsRef.current.modelRot ? (propsRef.current.modelRot[0] ?? 0) : 0;
     const rotY = propsRef.current.modelRot ? (propsRef.current.modelRot[1] ?? 0) : 0;
-    // We add the user's shoulder tilt so the necklace naturally rests on their chest angle
-    const rotZ = (propsRef.current.modelRot ? (propsRef.current.modelRot[2] ?? 0) : 0) + (cb.shoulderAngle || 0);
 
+    // Velocity-adaptive shoulder angle
+    if (smoothedShoulderAngleRef.current === null) {
+      smoothedShoulderAngleRef.current = cb.shoulderAngle || 0;
+    } else {
+      const saDelta = Math.abs((cb.shoulderAngle || 0) - smoothedShoulderAngleRef.current);
+      smoothedShoulderAngleRef.current += ((cb.shoulderAngle || 0) - smoothedShoulderAngleRef.current)
+        * getAdaptiveFactor(saDelta, 35.0, 0.08);
+    }
+
+    const rotZ = (propsRef.current.modelRot ? (propsRef.current.modelRot[2] ?? 0) : 0) + smoothedShoulderAngleRef.current;
     const adminQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(rotX, rotY, rotZ));
 
     groupRef.current.quaternion.slerp(adminQuat, lerpF);
-
     groupRef.current.scale.lerp(
       new THREE.Vector3(finalScale * aspect, finalScale, finalScale),
       lerpF
