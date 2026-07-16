@@ -1,6 +1,6 @@
 import React, { useRef, Suspense, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Environment, useGLTF, Html, useProgress } from '@react-three/drei';
+import { Environment, useGLTF, Html, useProgress, Center } from '@react-three/drei';
 import * as THREE from 'three';
 
 const FullFaceMesh = ({ landmarksRef, showFaceMesh, sharedState }) => {
@@ -50,11 +50,11 @@ const FullFaceMesh = ({ landmarksRef, showFaceMesh, sharedState }) => {
     if (triangles.length === 0 || !geometry) return null;
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', geometry.attributes.position);
-    
+
     // Perfectly seal the eye holes using a triangle fan from the iris center!
     const rightEyeContour = [33, 246, 161, 160, 159, 158, 157, 173, 133, 155, 154, 153, 145, 144, 163, 7];
     const leftEyeContour = [362, 398, 384, 385, 386, 387, 388, 466, 263, 249, 390, 373, 374, 380, 381, 382];
-    
+
     const eyeTris = [];
     // Right Eye (Iris Center: 468)
     for (let i = 0; i < rightEyeContour.length; i++) {
@@ -90,8 +90,18 @@ const FullFaceMesh = ({ landmarksRef, showFaceMesh, sharedState }) => {
       const lm = landmarks[i];
       if (i * 3 + 2 >= positions.length) break;
 
-      const targetX = -(lm.x - 0.5) * viewport.width;
-      const targetY = -(lm.y - 0.5) * viewport.height;
+      // Account for object-fit: cover scaling
+      const videoAspect = 640 / 480;
+      const containerAspect = viewport.width / viewport.height;
+      let scaleX = 1; let scaleY = 1;
+      if (containerAspect > videoAspect) {
+        scaleY = containerAspect / videoAspect;
+      } else {
+        scaleX = videoAspect / containerAspect;
+      }
+
+      const targetX = -(lm.x - 0.5) * (viewport.width * scaleX);
+      const targetY = -(lm.y - 0.5) * (viewport.height * scaleY);
       const targetZ = -lm.z * viewport.width * 1.5;
 
       // Initial snap if uninitialized
@@ -141,6 +151,421 @@ const FullFaceMesh = ({ landmarksRef, showFaceMesh, sharedState }) => {
           />
         </mesh>
       )}
+    </group>
+  );
+};
+
+const HandMesh = ({ landmarksRef, showMesh }) => {
+  const pointsRef = useRef();
+  const linesRef = useRef();
+
+  const { pointsGeo, linesGeo } = React.useMemo(() => {
+    const pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(21 * 3), 3));
+
+    const lGeo = new THREE.BufferGeometry();
+    lGeo.setAttribute('position', pGeo.attributes.position);
+
+    const indices = [];
+    const HAND_CONNECTIONS = [
+      // Only draw the fingers, starting from the palm (knuckles)
+      [1, 2], [2, 3], [3, 4], // Thumb
+      [5, 6], [6, 7], [7, 8], // Index
+      [9, 10], [10, 11], [11, 12], // Middle
+      [13, 14], [14, 15], [15, 16], // Ring
+      [17, 18], [18, 19], [19, 20] // Pinky
+    ];
+    for (const [start, end] of HAND_CONNECTIONS) {
+      indices.push(start, end);
+    }
+    lGeo.setIndex(new THREE.BufferAttribute(new Uint16Array(indices), 1));
+    return { pointsGeo: pGeo, linesGeo: lGeo };
+  }, []);
+
+  const glowTexture = React.useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+
+    // Create radial gradient for a soft glowing dot
+    const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    grad.addColorStop(0.2, 'rgba(255, 150, 255, 0.8)');
+    grad.addColorStop(0.5, 'rgba(200, 100, 255, 0.4)');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 64, 64);
+
+    return new THREE.CanvasTexture(canvas);
+  }, []);
+
+  useFrame((state) => {
+    const landmarks = landmarksRef.current;
+    if (!landmarks || landmarks.length === 0 || !showMesh) {
+      if (pointsRef.current) pointsRef.current.visible = false;
+      if (linesRef.current) linesRef.current.visible = false;
+      return;
+    }
+
+    if (pointsRef.current) pointsRef.current.visible = true;
+    if (linesRef.current) linesRef.current.visible = true;
+
+    const positions = pointsGeo.attributes.position.array;
+    const { viewport, camera } = state;
+    const camZ = camera.position.z;
+
+    // Account for object-fit: cover scaling
+    const videoAspect = 640 / 480;
+    const containerAspect = viewport.width / viewport.height;
+    let scaleX = 1; let scaleY = 1;
+    if (containerAspect > videoAspect) {
+      scaleY = containerAspect / videoAspect;
+    } else {
+      scaleX = videoAspect / containerAspect;
+    }
+
+    for (let i = 0; i < landmarks.length; i++) {
+      const lm = landmarks[i];
+      if (i * 3 + 2 >= positions.length) break;
+
+      const rawX = -(lm.x - 0.5) * (viewport.width * scaleX);
+      const rawY = -(lm.y - 0.5) * (viewport.height * scaleY);
+      // Use the exact same scale multiplier for Z to maintain isometric 3D proportions
+      const rawZ = -lm.z * (viewport.width * scaleX);
+
+      positions[i * 3] = rawX;
+      positions[i * 3 + 1] = rawY;
+      positions[i * 3 + 2] = rawZ;
+    }
+    pointsGeo.attributes.position.needsUpdate = true;
+  });
+
+  if (!showMesh) return null;
+
+  return (
+    <group>
+      <lineSegments ref={linesRef} geometry={linesGeo}>
+        <lineBasicMaterial
+          color="#ffffff"
+          transparent={true}
+          opacity={0.4}
+          depthTest={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </lineSegments>
+      <points ref={pointsRef} geometry={pointsGeo}>
+        <pointsMaterial
+          map={glowTexture}
+          color="#ffffff"
+          size={1.2}
+          transparent={true}
+          blending={THREE.AdditiveBlending}
+          depthTest={false}
+          depthWrite={false}
+        />
+      </points>
+    </group>
+  );
+};
+
+const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState, activeModel }) => {
+  const leftGroupRef = useRef();
+  const rightGroupRef = useRef();
+  const occluderRef = useRef();
+  
+  const gltfPath = activeModel?.glbPath;
+  const { scene } = useGLTF(gltfPath || '');
+
+  // Clone the scene so we can render two earrings (one for each ear)
+  const leftScene = React.useMemo(() => scene ? scene.clone() : null, [scene]);
+  const rightScene = React.useMemo(() => scene ? scene.clone() : null, [scene]);
+
+  useFrame((state) => {
+    const landmarks = landmarksRef.current;
+    if (!landmarks || landmarks.length === 0 || !leftGroupRef.current || !rightGroupRef.current) {
+      if (leftGroupRef.current) leftGroupRef.current.visible = false;
+      if (rightGroupRef.current) rightGroupRef.current.visible = false;
+      return;
+    }
+
+    if (leftGroupRef.current) leftGroupRef.current.visible = true;
+    if (rightGroupRef.current) rightGroupRef.current.visible = true;
+
+    const { viewport } = state;
+
+    // Account for object-fit: cover scaling
+    const videoAspect = 640 / 480;
+    const containerAspect = viewport.width / viewport.height;
+    let scaleX = 1; let scaleY = 1;
+    if (containerAspect > videoAspect) {
+      scaleY = containerAspect / videoAspect;
+    } else {
+      scaleX = videoAspect / containerAspect;
+    }
+
+    const getMapped = (index) => {
+      const lm = landmarks[index];
+      return new THREE.Vector3(
+        -(lm.x - 0.5) * (viewport.width * scaleX),
+        -(lm.y - 0.5) * (viewport.height * scaleY),
+        -lm.z * viewport.width * 1.5
+      );
+    };
+
+    // Use tragus/temple landmarks as ear anchors (234 left, 454 right)
+    // Note: MediaPipe FaceMesh 234 is the left ear, 454 is the right ear
+    const leftAnchor = getMapped(234);
+    const rightAnchor = getMapped(454);
+
+    // Center of the head (between the temples)
+    const centerPos = new THREE.Vector3().addVectors(leftAnchor, rightAnchor).multiplyScalar(0.5);
+
+    // Calculate physical face width
+    const rawDiffX = -(landmarks[454].x - landmarks[234].x) * (viewport.width * scaleX);
+    const rawDiffY = -(landmarks[454].y - landmarks[234].y) * (viewport.height * scaleY);
+    const rawDiffZ = -(landmarks[454].z - landmarks[234].z) * viewport.width;
+    const faceWidth = Math.sqrt(rawDiffX * rawDiffX + rawDiffY * rawDiffY + rawDiffZ * rawDiffZ);
+
+    // Head rotation estimation
+    const diffX = rightAnchor.x - leftAnchor.x;
+    const diffY = rightAnchor.y - leftAnchor.y;
+    const diffZ = rightAnchor.z - leftAnchor.z;
+
+    const roll = Math.atan2(diffY, diffX);
+    const yaw = Math.asin(diffZ / Math.sqrt(diffX * diffX + diffY * diffY + diffZ * diffZ));
+
+    const top = getMapped(10);
+    const bottom = getMapped(152);
+
+    const verticalDist = bottom.distanceTo(top);
+    const pitch = -Math.asin((bottom.z - top.z) / verticalDist);
+
+    const targetEuler = new THREE.Euler(pitch, yaw, roll, 'YXZ');
+    const targetQuat = new THREE.Quaternion().setFromEuler(targetEuler);
+
+    // Calculate synthetic earlobe positions
+    // The earlobe is located physically below the tragus.
+    // In our mirrored 3D space: leftAnchor is +X (right screen), rightAnchor is -X (left screen).
+    // To push OUTWARD, we ADD to leftAnchor's X, and SUBTRACT from rightAnchor's X.
+    const downwardOffset = -faceWidth * 0.15;
+    const outwardOffset = faceWidth * 0.05;
+
+    const leftEarlobeOffset = new THREE.Vector3(outwardOffset, downwardOffset, 0);
+    leftEarlobeOffset.applyQuaternion(targetQuat);
+    const leftEarlobe = new THREE.Vector3().addVectors(leftAnchor, leftEarlobeOffset);
+
+    const rightEarlobeOffset = new THREE.Vector3(-outwardOffset, downwardOffset, 0);
+    rightEarlobeOffset.applyQuaternion(targetQuat);
+    const rightEarlobe = new THREE.Vector3().addVectors(rightAnchor, rightEarlobeOffset);
+
+    const finalScale = faceWidth * 1.05 * (modelScale || 1);
+    
+    // The occluder needs to be slightly narrower than the face width
+    // so it doesn't accidentally swallow the earrings themselves!
+    const occluderScale = faceWidth * 0.85;
+
+    if (leftGroupRef.current.scale.x === 1) { // Uninitialized
+      leftGroupRef.current.position.copy(leftEarlobe);
+      leftGroupRef.current.quaternion.copy(targetQuat);
+      leftGroupRef.current.scale.set(finalScale, finalScale, finalScale);
+
+      rightGroupRef.current.position.copy(rightEarlobe);
+      rightGroupRef.current.quaternion.copy(targetQuat);
+      // Mirror the right earring anatomically by flipping X scale
+      rightGroupRef.current.scale.set(-finalScale, finalScale, finalScale);
+
+      if (occluderRef.current) {
+        occluderRef.current.position.copy(centerPos);
+        occluderRef.current.quaternion.copy(targetQuat);
+        occluderRef.current.scale.set(occluderScale, occluderScale, occluderScale);
+      }
+    } else {
+      const dist = leftGroupRef.current.position.distanceTo(leftEarlobe);
+      const posLerp = Math.min(1.0, 0.2 + (dist * 10.0));
+      const angle = leftGroupRef.current.quaternion.angleTo(targetQuat);
+      const rotLerp = Math.min(1.0, 0.2 + (angle * 10.0));
+      const masterLerp = Math.max(posLerp, rotLerp);
+
+      if (sharedState) sharedState.current.adaptiveLerp = masterLerp;
+
+      leftGroupRef.current.position.lerp(leftEarlobe, masterLerp);
+      leftGroupRef.current.quaternion.slerp(targetQuat, masterLerp);
+      leftGroupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), masterLerp);
+
+      rightGroupRef.current.position.lerp(rightEarlobe, masterLerp);
+      rightGroupRef.current.quaternion.slerp(targetQuat, masterLerp);
+      rightGroupRef.current.scale.lerp(new THREE.Vector3(-finalScale, finalScale, finalScale), masterLerp);
+
+      if (occluderRef.current) {
+        occluderRef.current.position.lerp(centerPos, masterLerp);
+        occluderRef.current.quaternion.slerp(targetQuat, masterLerp);
+        occluderRef.current.scale.lerp(new THREE.Vector3(occluderScale, occluderScale, occluderScale), masterLerp);
+      }
+    }
+  });
+
+  if (!leftScene || !rightScene) return null;
+
+  return (
+    <group>
+      {/* Invisible Head Occluder: hides earrings on the opposite side of the head when turning */}
+      <mesh ref={occluderRef} renderOrder={-1}>
+        {/* Sphere offset slightly backwards to match the skull shape without clipping the face */}
+        <sphereGeometry args={[0.5, 32, 32]} />
+        <meshBasicMaterial
+          colorWrite={false}
+          depthWrite={true}
+          polygonOffset={true}
+          polygonOffsetFactor={0.1}
+          polygonOffsetUnits={5}
+        />
+      </mesh>
+
+      <group ref={leftGroupRef}>
+        <primitive
+          object={leftScene}
+          rotation={modelRot || [0, 0, 0]}
+          position={modelPos || [0, 0, 0]}
+        />
+      </group>
+      <group ref={rightGroupRef}>
+        <primitive
+          object={rightScene}
+          rotation={modelRot || [0, 0, 0]}
+          // The negative X scale on the parent group automatically mirrors the translation!
+          position={modelPos || [0, 0, 0]}
+        />
+      </group>
+    </group>
+  );
+};
+
+const NosePinMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState, activeModel }) => {
+  const groupRef = useRef();
+  const occluderRef = useRef();
+  
+  const gltfPath = activeModel?.glbPath;
+  const { scene } = useGLTF(gltfPath || '');
+
+  useFrame((state) => {
+    const landmarks = landmarksRef.current;
+    if (!landmarks || landmarks.length === 0 || !groupRef.current) {
+      if (groupRef.current) groupRef.current.visible = false;
+      return;
+    }
+
+    if (groupRef.current) groupRef.current.visible = true;
+
+    const { viewport } = state;
+
+    // Account for object-fit: cover scaling
+    const videoAspect = 640 / 480;
+    const containerAspect = viewport.width / viewport.height;
+    let scaleX = 1; let scaleY = 1;
+    if (containerAspect > videoAspect) {
+      scaleY = containerAspect / videoAspect;
+    } else {
+      scaleX = videoAspect / containerAspect;
+    }
+
+    const getMapped = (index) => {
+      const lm = landmarks[index];
+      return new THREE.Vector3(
+        -(lm.x - 0.5) * (viewport.width * scaleX),
+        -(lm.y - 0.5) * (viewport.height * scaleY),
+        -lm.z * viewport.width * 1.5
+      );
+    };
+
+    // Use the left nostril (landmark 358) as the primary anchor for nose pins
+    // This is much closer to where a nose pin naturally sits than the nose tip (4).
+    const anchor = getMapped(358);
+    const noseCenter = getMapped(1);
+
+    // Calculate physical face width
+    const rawDiffX = -(landmarks[454].x - landmarks[234].x) * (viewport.width * scaleX);
+    const rawDiffY = -(landmarks[454].y - landmarks[234].y) * (viewport.height * scaleY);
+    const rawDiffZ = -(landmarks[454].z - landmarks[234].z) * viewport.width;
+    const faceWidth = Math.sqrt(rawDiffX * rawDiffX + rawDiffY * rawDiffY + rawDiffZ * rawDiffZ);
+
+    // Head rotation estimation
+    const leftAnchor = getMapped(234);
+    const rightAnchor = getMapped(454);
+    const diffX = rightAnchor.x - leftAnchor.x;
+    const diffY = rightAnchor.y - leftAnchor.y;
+    const diffZ = rightAnchor.z - leftAnchor.z;
+
+    const roll = Math.atan2(diffY, diffX);
+    const yaw = Math.asin(diffZ / Math.sqrt(diffX * diffX + diffY * diffY + diffZ * diffZ));
+
+    const top = getMapped(10);
+    const bottom = getMapped(152);
+
+    const verticalDist = bottom.distanceTo(top);
+    const pitch = -Math.asin((bottom.z - top.z) / verticalDist);
+
+    const targetEuler = new THREE.Euler(pitch, yaw, roll, 'YXZ');
+    const targetQuat = new THREE.Quaternion().setFromEuler(targetEuler);
+
+    const finalScale = faceWidth * 1.05 * (modelScale || 1);
+    
+    // The occluder needs to be roughly the size of the nose
+    const occluderScale = faceWidth * 0.25;
+
+    if (groupRef.current.scale.x === 1) { // Uninitialized
+      groupRef.current.position.copy(anchor);
+      groupRef.current.quaternion.copy(targetQuat);
+      groupRef.current.scale.set(finalScale, finalScale, finalScale);
+      
+      if (occluderRef.current) {
+        occluderRef.current.position.copy(noseCenter);
+        occluderRef.current.quaternion.copy(targetQuat);
+        occluderRef.current.scale.set(occluderScale, occluderScale, occluderScale);
+      }
+    } else {
+      const dist = groupRef.current.position.distanceTo(anchor);
+      const posLerp = Math.min(1.0, 0.2 + (dist * 10.0));
+      const angle = groupRef.current.quaternion.angleTo(targetQuat);
+      const rotLerp = Math.min(1.0, 0.2 + (angle * 10.0));
+      const masterLerp = Math.max(posLerp, rotLerp);
+
+      if (sharedState) sharedState.current.adaptiveLerp = masterLerp;
+
+      groupRef.current.position.lerp(anchor, masterLerp);
+      groupRef.current.quaternion.slerp(targetQuat, masterLerp);
+      groupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), masterLerp);
+      
+      if (occluderRef.current) {
+        occluderRef.current.position.lerp(noseCenter, masterLerp);
+        occluderRef.current.quaternion.slerp(targetQuat, masterLerp);
+        occluderRef.current.scale.lerp(new THREE.Vector3(occluderScale, occluderScale, occluderScale), masterLerp);
+      }
+    }
+  });
+
+  return (
+    <group>
+      {/* Invisible Nose Occluder: hides the stem of the nose pin that goes inside the nose */}
+      <mesh ref={occluderRef} renderOrder={-1}>
+        <sphereGeometry args={[0.5, 32, 32]} />
+        <meshBasicMaterial
+          colorWrite={false}
+          depthWrite={true}
+          polygonOffset={true}
+          polygonOffsetFactor={0.1}
+          polygonOffsetUnits={5}
+        />
+      </mesh>
+
+      <group ref={groupRef}>
+        <primitive
+          object={scene}
+          rotation={modelRot || [0, 0, 0]}
+          position={modelPos || [0, 0, 0]}
+        />
+      </group>
     </group>
   );
 };
@@ -224,10 +649,20 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
 
     const { viewport } = state;
 
+    // Account for object-fit: cover scaling
+    const videoAspect = 640 / 480;
+    const containerAspect = viewport.width / viewport.height;
+    let scaleX = 1; let scaleY = 1;
+    if (containerAspect > videoAspect) {
+      scaleY = containerAspect / videoAspect;
+    } else {
+      scaleX = videoAspect / containerAspect;
+    }
+
     // Use the nose bridge as the exact pivot point (landmark 168 is exactly between the eyes)
     const bridge = landmarks[168];
-    const anchorX = -(bridge.x - 0.5) * viewport.width;
-    const anchorY = -(bridge.y - 0.5) * viewport.height;
+    const anchorX = -(bridge.x - 0.5) * (viewport.width * scaleX);
+    const anchorY = -(bridge.y - 0.5) * (viewport.height * scaleY);
 
     // Scale Z to match viewport depth dynamically
     const anchorZ = -bridge.z * viewport.width * 1.5;
@@ -235,8 +670,8 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
     const getMapped = (index) => {
       const lm = landmarks[index];
       return {
-        x: -(lm.x - 0.5) * viewport.width,
-        y: -(lm.y - 0.5) * viewport.height,
+        x: -(lm.x - 0.5) * (viewport.width * scaleX),
+        y: -(lm.y - 0.5) * (viewport.height * scaleY),
         z: -lm.z * viewport.width * 1.5
       };
     };
@@ -246,8 +681,8 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
 
     // --- DYNAMIC SCALE (ROTATION INDEPENDENT) ---
     // Calculate face width using a true 1:1 Z-ratio so the scale doesn't artificially inflate when the head turns!
-    const rawDiffX = -(landmarks[454].x - landmarks[234].x) * viewport.width;
-    const rawDiffY = -(landmarks[454].y - landmarks[234].y) * viewport.height;
+    const rawDiffX = -(landmarks[454].x - landmarks[234].x) * (viewport.width * scaleX);
+    const rawDiffY = -(landmarks[454].y - landmarks[234].y) * (viewport.height * scaleY);
     const rawDiffZ = -(landmarks[454].z - landmarks[234].z) * viewport.width; // 1.0 ratio, no 1.5 multiplier!
 
     // Physical width of the user's face in the 3D scene (constant during rotation)
@@ -376,11 +811,11 @@ const Loader = () => {
   );
 };
 
-const FaceStatus = ({ landmarksRef }) => {
+const TrackingStatus = ({ landmarksRef, isHandTracking }) => {
   const [detected, setDetected] = useState(true);
 
   useFrame(() => {
-    // Check if face data exists in the current frame
+    // Check if data exists in the current frame
     const isDetected = landmarksRef.current && landmarksRef.current.length > 0;
     // Only trigger a React state update if the status actually changes!
     if (detected !== isDetected) {
@@ -397,13 +832,297 @@ const FaceStatus = ({ landmarksRef }) => {
         border: '2px solid #f87171', boxShadow: '0 0 20px rgba(220, 38, 38, 0.6)',
         whiteSpace: 'nowrap'
       }}>
-        ⚠️ Face Not Detected
+        ⚠️ {isHandTracking ? 'Hand' : 'Face'} Not Detected
       </div>
     </Html>
   );
 };
 
-const Scene3D = ({ landmarksRef, videoFrameRef, showFaceMesh, modelPos, modelRot, modelScale, activeModel }) => {
+const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, showMesh }) => {
+  const groupRef = useRef();
+
+  const gltfPath = activeModel?.glbPath;
+  const { scene } = useGLTF(gltfPath || '/models/watch/f2917202433f.glb');
+
+  useFrame((state) => {
+    const landmarks = landmarksRef.current;
+    if (!landmarks || landmarks.length === 0 || !groupRef.current) {
+      if (groupRef.current) groupRef.current.visible = false;
+      return;
+    }
+
+    if (groupRef.current) groupRef.current.visible = true;
+
+    const { viewport, camera } = state;
+    const camZ = camera.position.z;
+
+    // Account for object-fit: cover scaling
+    const videoAspect = 640 / 480;
+    const containerAspect = viewport.width / viewport.height;
+    let scaleX = 1; let scaleY = 1;
+    if (containerAspect > videoAspect) {
+      scaleY = containerAspect / videoAspect;
+    } else {
+      scaleX = videoAspect / containerAspect;
+    }
+
+    const getMapped = (index) => {
+      const lm = landmarks[index];
+      return new THREE.Vector3(
+        -(lm.x - 0.5) * (viewport.width * scaleX),
+        -(lm.y - 0.5) * (viewport.height * scaleY),
+        // Use the exact same scale multiplier for Z to maintain isometric 3D proportions
+        -lm.z * (viewport.width * scaleX)
+      );
+    };
+
+    const p0 = getMapped(0);
+    const p5 = getMapped(5);
+    const p9 = getMapped(9);
+    const p17 = getMapped(17);
+
+    // Define the absolute normal of the palm using the knuckles
+    const vPinky = new THREE.Vector3().subVectors(p17, p0).normalize();
+    const vIndex = new THREE.Vector3().subVectors(p5, p0).normalize();
+    const vUp = new THREE.Vector3().crossVectors(vPinky, vIndex).normalize();
+
+    // MediaPipe unmirrored mode: label 'Right' means physical Right hand.
+    const isPhysicalRight = landmarks.handedness?.label === 'Right';
+    if (isPhysicalRight) {
+      vUp.negate(); // Now vUp ALWAYS points out of the back of the hand (+Z)
+    }
+
+    // Get the raw forward vector (wrist to middle finger)
+    const vForwardRaw = new THREE.Vector3().subVectors(p9, p0).normalize();
+
+    // PALM PLANE PROJECTION: 
+    // Project the forward vector onto the palm plane so it stays perfectly flat 
+    // against the back of the hand even when fingers bend!
+    // Formula: V_proj = V - (V dot N) * N
+    const vForward = vForwardRaw.clone().sub(vUp.clone().multiplyScalar(vForwardRaw.dot(vUp))).normalize();
+
+    // Orthogonal right vector (points across the wrist)
+    const vRight = new THREE.Vector3().crossVectors(vUp, vForward).normalize();
+
+    const rotationMatrix = new THREE.Matrix4().makeBasis(vRight, vUp, vForward);
+    const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
+
+    // Scale based on wrist width (distance from index knuckle to pinky knuckle)
+    const wristWidth = p5.distanceTo(p17);
+    const finalScale = wristWidth * 0.8; // Physical scale for tracking (occluder)
+
+    // Position offset: Center exactly at the wrist (p0). 
+    // We do not push it down the forearm because MediaPipe only gives palm-based tracking. 
+    // Pushing it down the arm causes it to float in the air when the wrist bends!
+    const targetPos = p0.clone();
+
+    if (groupRef.current.scale.x === 1) {
+      groupRef.current.position.copy(targetPos);
+      groupRef.current.quaternion.copy(targetQuat);
+      groupRef.current.scale.set(finalScale, finalScale, finalScale);
+    } else {
+      // ADAPTIVE LERP: Solves both "lag" and "jitter"!
+      // Calculate how far the hand just moved
+      const dist = groupRef.current.position.distanceTo(targetPos);
+
+      // If moving fast (high distance), lerp is high (0.9) to catch up instantly without lag.
+      // If moving slow/still (low distance), lerp is low (0.2) to absorb camera jitter.
+      // Multiplier increased to 3.0 so even medium movements reach max speed instantly!
+      const posLerp = THREE.MathUtils.clamp(dist * 3.0, 0.2, 0.9);
+      const rotLerp = THREE.MathUtils.clamp(dist * 3.0, 0.2, 0.85);
+
+      // ADAPTIVE SCALE LERP:
+      const currentScale = groupRef.current.scale.x;
+      const scaleDiff = Math.abs(currentScale - finalScale);
+      const scaleLerp = THREE.MathUtils.clamp(scaleDiff * 5.0, 0.2, 0.9);
+
+      groupRef.current.position.lerp(targetPos, posLerp);
+      groupRef.current.quaternion.slerp(targetQuat, rotLerp);
+      groupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), scaleLerp);
+    }
+  });
+
+  // Mirror tuning parameters anatomically for the physical right hand
+  const isPhysicalRight = landmarksRef.current?.handedness?.label === 'Right';
+  const adjustedPos = modelPos ? [...modelPos] : [0, 0, 0];
+  const adjustedRot = modelRot ? [...modelRot] : [0, 0, 0];
+  if (isPhysicalRight) {
+    adjustedPos[0] = -adjustedPos[0]; // Flip X position
+    adjustedRot[1] = -adjustedRot[1]; // Flip Y rotation (Yaw)
+    adjustedRot[2] = -adjustedRot[2]; // Flip Z rotation (Roll)
+  }
+
+  return (
+    <group ref={groupRef}>
+      {/* Invisible Arm Occluder: hides the back of the watch strap so it doesn't render over the arm */}
+      {/* Squashed into an ellipse (scale Z = 0.6) to match the natural shape of a wrist */}
+      <mesh renderOrder={-1} rotation={[Math.PI / 2, 0, 0]} scale={[1, 1, 0.6]}>
+        <cylinderGeometry args={[0.65, 0.65, 10, 32]} />
+        <meshBasicMaterial
+          colorWrite={false}
+          depthWrite={true}
+          polygonOffset={true}
+          polygonOffsetFactor={0.1}
+          polygonOffsetUnits={5}
+        />
+      </mesh>
+
+      {/* Visible Wrist Point (Helper) to point out exactly where the wrist landmark is */}
+      {showMesh && (
+        <mesh>
+          <sphereGeometry args={[0.3, 16, 16]} />
+          <meshBasicMaterial
+            color="#ef4444"
+            transparent={true}
+            opacity={0.8}
+            depthTest={false}
+          />
+        </mesh>
+      )}
+
+      <group position={adjustedPos} rotation={adjustedRot} scale={[modelScale || 1, modelScale || 1, modelScale || 1]}>
+        <Center>
+          <primitive object={scene} />
+        </Center>
+      </group>
+    </group>
+  );
+};
+
+const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, showMesh }) => {
+  const { scene } = useGLTF(activeModel.glbPath);
+  const groupRef = useRef();
+
+  useFrame((state) => {
+    const landmarks = landmarksRef.current;
+    if (!landmarks || landmarks.length < 21 || !activeModel) {
+      if (groupRef.current) groupRef.current.visible = false;
+      return;
+    }
+
+    if (groupRef.current) groupRef.current.visible = true;
+
+    const { viewport } = state;
+    const videoAspect = 640 / 480;
+    const containerAspect = viewport.width / viewport.height;
+    let scaleX = 1; let scaleY = 1;
+    if (containerAspect > videoAspect) {
+      scaleY = containerAspect / videoAspect;
+    } else {
+      scaleX = videoAspect / containerAspect;
+    }
+
+    const getMapped = (index) => {
+      const lm = landmarks[index];
+      return new THREE.Vector3(
+        -(lm.x - 0.5) * (viewport.width * scaleX),
+        -(lm.y - 0.5) * (viewport.height * scaleY),
+        -lm.z * (viewport.width * scaleX)
+      );
+    };
+
+    const p0 = getMapped(0);
+    const p5 = getMapped(5);
+    const p13 = getMapped(13); // Ring finger base
+    const p14 = getMapped(14); // Ring finger first joint
+    const p17 = getMapped(17);
+
+    // Forward vector is exactly along the ring finger bone (from base to first joint)
+    const vForward = new THREE.Vector3().subVectors(p14, p13).normalize();
+
+    // Stable palm normal to anchor the rotation
+    const vPinky = new THREE.Vector3().subVectors(p17, p0).normalize();
+    const vIndex = new THREE.Vector3().subVectors(p5, p0).normalize();
+    const palmNormal = new THREE.Vector3().crossVectors(vPinky, vIndex).normalize();
+
+    // MediaPipe unmirrored mode: label 'Right' means physical Right hand.
+    const isPhysicalRight = landmarks.handedness?.label === 'Right';
+    if (isPhysicalRight) {
+      palmNormal.negate(); // Now palmNormal ALWAYS points out of the back of the hand (+Z)
+    }
+
+    // Right vector is perpendicular to palm normal and finger bone
+    const vRight = new THREE.Vector3().crossVectors(palmNormal, vForward).normalize();
+
+    // Up vector is perpendicular to forward and right
+    const vUp = new THREE.Vector3().crossVectors(vForward, vRight).normalize();
+
+    // Basis: 
+    // X -> vRight (across knuckles)
+    // Y -> vUp (out of palm) - Gem points here
+    // Z -> vForward (along the finger) - Hole points here
+    const rotationMatrix = new THREE.Matrix4().makeBasis(vRight, vUp, vForward);
+    const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
+
+    // Target position is halfway between the base and first joint of the ring finger
+    const targetPos = new THREE.Vector3().addVectors(p13, p14).multiplyScalar(0.5);
+
+    // Scale based on the width of the finger
+    // We use a small multiplier because ring models are typically quite large.
+    const segmentLength = p13.distanceTo(p14);
+    const finalScale = segmentLength * 0.2; // Physical scale for finger tracking (occluder)
+
+    if (groupRef.current.scale.x === 1) {
+      groupRef.current.position.copy(targetPos);
+      groupRef.current.quaternion.copy(targetQuat);
+      groupRef.current.scale.set(finalScale, finalScale, finalScale);
+    } else {
+      const dist = groupRef.current.position.distanceTo(targetPos);
+      const posLerp = THREE.MathUtils.clamp(dist * 3.0, 0.2, 0.9);
+      const rotLerp = THREE.MathUtils.clamp(dist * 3.0, 0.2, 0.85);
+
+      const currentScale = groupRef.current.scale.x;
+      const scaleDiff = Math.abs(currentScale - finalScale);
+      const scaleLerp = THREE.MathUtils.clamp(scaleDiff * 5.0, 0.2, 0.9);
+
+      groupRef.current.position.lerp(targetPos, posLerp);
+      groupRef.current.quaternion.slerp(targetQuat, rotLerp);
+      groupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), scaleLerp);
+    }
+  });
+
+  // Mirror tuning parameters anatomically for the physical right hand
+  const isPhysicalRight = landmarksRef.current?.handedness?.label === 'Right';
+  const adjustedPos = modelPos ? [...modelPos] : [0, 0, 0];
+  const adjustedRot = modelRot ? [...modelRot] : [0, 0, 0];
+  if (isPhysicalRight) {
+    adjustedPos[0] = -adjustedPos[0]; // Flip X position
+    adjustedRot[1] = -adjustedRot[1]; // Flip Y rotation (Yaw)
+    adjustedRot[2] = -adjustedRot[2]; // Flip Z rotation (Roll)
+  }
+
+  return (
+    <group ref={groupRef}>
+      {/* Invisible Finger Occluder: hides the back of the ring so it doesn't render over the finger */}
+      <mesh renderOrder={-1} rotation={[Math.PI / 2, 0, 0]} scale={[1, 1, 1]}>
+        {/* Radius 1.8 to closely fit the inside of the ring and hide the back half, Height 6 */}
+        <cylinderGeometry args={[0.9, 1, 6, 32]} />
+        <meshBasicMaterial
+          colorWrite={false}
+          depthWrite={true}
+          polygonOffset={true}
+          polygonOffsetFactor={0.1}
+          polygonOffsetUnits={5}
+        />
+      </mesh>
+
+      {showMesh && (
+        <mesh>
+          <sphereGeometry args={[0.15, 16, 16]} />
+          <meshBasicMaterial color="#fbbf24" transparent={true} opacity={0.8} depthTest={false} />
+        </mesh>
+      )}
+
+      <group position={adjustedPos} rotation={adjustedRot} scale={[modelScale || 1, modelScale || 1, modelScale || 1]}>
+        <Center>
+          <primitive object={scene} />
+        </Center>
+      </group>
+    </group>
+  );
+};
+
+const Scene3D = ({ landmarksRef, videoFrameRef, showFaceMesh, modelPos, modelRot, modelScale, activeModel, isHandTracking }) => {
   // Shared state ensures the face mask and the glasses always use the EXACT same tracking speed!
   const sharedState = useRef({ adaptiveLerp: 0.5 });
 
@@ -417,20 +1136,69 @@ const Scene3D = ({ landmarksRef, videoFrameRef, showFaceMesh, modelPos, modelRot
         <directionalLight position={[10, 10, 10]} intensity={1} />
         <Environment preset="city" />
 
-        <FaceStatus landmarksRef={landmarksRef} />
+        <TrackingStatus landmarksRef={landmarksRef} isHandTracking={isHandTracking} />
 
-        <FullFaceMesh landmarksRef={landmarksRef} showFaceMesh={showFaceMesh} sharedState={sharedState} />
+        {isHandTracking ? (
+          <>
+            <HandMesh landmarksRef={landmarksRef} showMesh={showFaceMesh} />
+            <Suspense fallback={<Loader />}>
+              {activeModel?.category === 'rings' ? (
+                <RingMesh
+                  landmarksRef={landmarksRef}
+                  modelPos={modelPos}
+                  modelRot={modelRot}
+                  modelScale={modelScale}
+                  activeModel={activeModel}
+                  showMesh={showFaceMesh}
+                />
+              ) : (
+                <WristMesh
+                  landmarksRef={landmarksRef}
+                  modelPos={modelPos}
+                  modelRot={modelRot}
+                  modelScale={modelScale}
+                  activeModel={activeModel}
+                  showMesh={showFaceMesh}
+                />
+              )}
+            </Suspense>
+          </>
+        ) : (
+          <>
+            <FullFaceMesh landmarksRef={landmarksRef} showFaceMesh={showFaceMesh} sharedState={sharedState} />
 
-        <Suspense fallback={<Loader />}>
-          <EyewearMesh
-            landmarksRef={landmarksRef}
-            modelPos={modelPos}
-            modelRot={modelRot}
-            modelScale={modelScale}
-            sharedState={sharedState}
-            activeModel={activeModel}
-          />
-        </Suspense>
+            <Suspense fallback={<Loader />}>
+              {activeModel?.category === 'earrings' ? (
+                <EarringMesh
+                  landmarksRef={landmarksRef}
+                  modelPos={modelPos}
+                  modelRot={modelRot}
+                  modelScale={modelScale}
+                  sharedState={sharedState}
+                  activeModel={activeModel}
+                />
+              ) : activeModel?.category === 'nosepin' ? (
+                <NosePinMesh
+                  landmarksRef={landmarksRef}
+                  modelPos={modelPos}
+                  modelRot={modelRot}
+                  modelScale={modelScale}
+                  sharedState={sharedState}
+                  activeModel={activeModel}
+                />
+              ) : (
+                <EyewearMesh
+                  landmarksRef={landmarksRef}
+                  modelPos={modelPos}
+                  modelRot={modelRot}
+                  modelScale={modelScale}
+                  sharedState={sharedState}
+                  activeModel={activeModel}
+                />
+              )}
+            </Suspense>
+          </>
+        )}
 
       </Canvas>
     </div>

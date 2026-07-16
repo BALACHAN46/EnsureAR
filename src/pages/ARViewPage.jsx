@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from '../router';
 import FaceTracker from '../FaceTracker';
+import HandTracker from '../HandTracker';
 import Scene3D from '../Scene3D';
 import { getModelConfig, saveModelConfig, configToPosition, configToRotation, configToScale } from '../utils/modelConfig';
 
@@ -60,6 +61,7 @@ export default function ARViewPage({ params }) {
   const handleSaveTuning = () => {
     if (!activeModel) return;
     saveModelConfig(activeModel.id, {
+      posX: modelPos[0],
       posY: modelPos[1],
       posZ: modelPos[2],
       rotX: modelRot[0],
@@ -73,6 +75,7 @@ export default function ARViewPage({ params }) {
   };
 
   const isAdmin = sessionStorage.getItem('sa_auth') === 'true';
+  const isHandTracking = category === 'watch' || category === 'bracelets' || category === 'rings';
 
   return (
     <div className="app-container">
@@ -113,6 +116,11 @@ export default function ARViewPage({ params }) {
           </div>
 
           <label className="ar-tuning-label">
+            <span>Pos X (Left/Right): <strong>{modelPos[0].toFixed(2)}</strong></span>
+            <input type="range" min="-5" max="5" step="0.01" value={modelPos[0]}
+              onChange={e => setModelPos([parseFloat(e.target.value), modelPos[1], modelPos[2]])} />
+          </label>
+          <label className="ar-tuning-label">
             <span>Pos Y (Up/Down): <strong>{modelPos[1].toFixed(2)}</strong></span>
             <input type="range" min="-5" max="5" step="0.01" value={modelPos[1]}
               onChange={e => setModelPos([modelPos[0], parseFloat(e.target.value), modelPos[2]])} />
@@ -145,7 +153,7 @@ export default function ARViewPage({ params }) {
 
           <label className="ar-tuning-label">
             <span>Scale (Size): <strong>{parseFloat(modelScale).toFixed(2)}x</strong></span>
-            <input type="range" min="0.1" max="5" step="0.01" value={modelScale}
+            <input type="range" min="-20" max="20" step="0.01" value={modelScale}
               onChange={e => setModelScale(parseFloat(e.target.value))} />
           </label>
 
@@ -166,10 +174,21 @@ export default function ARViewPage({ params }) {
       {/* AR Content */}
       <div className="tracking-container">
         <div className="ar-content">
-          <FaceTracker onLandmarks={(lm, img) => {
-            landmarksRef.current = lm;
-            videoFrameRef.current = img;
-          }} />
+          {isHandTracking ? (
+            <HandTracker onLandmarks={(lm, img, worldLm, handedness) => {
+              landmarksRef.current = lm;
+              if (landmarksRef.current && worldLm) {
+                landmarksRef.current.world = worldLm;
+                landmarksRef.current.handedness = handedness;
+              }
+              videoFrameRef.current = img;
+            }} />
+          ) : (
+            <FaceTracker onLandmarks={(lm, img) => {
+              landmarksRef.current = lm;
+              videoFrameRef.current = img;
+            }} />
+          )}
           <Scene3D
             landmarksRef={landmarksRef}
             videoFrameRef={videoFrameRef}
@@ -178,6 +197,7 @@ export default function ARViewPage({ params }) {
             modelRot={modelRot}
             modelScale={modelScale}
             activeModel={activeModel}
+            isHandTracking={isHandTracking}
           />
         </div>
       </div>

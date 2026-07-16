@@ -8,7 +8,8 @@ const CATEGORY_ICONS = {
   rings:     { emoji: '💍', color: '#f59e0b' },
   bracelets: { emoji: '⌚', color: '#10b981' },
   watch:     { emoji: '🕐', color: '#3b82f6' },
-  earrings:  { emoji: '✨', color: '#a855f7' },
+  earrings:  { emoji: '💎', color: '#8b5cf6' },
+  nosepin:   { emoji: '✨', color: '#14b8a6' },
 };
 
 export default function Sidebar({ categories, activeCategory, modelCounts, onCategorySelect, onLogout }) {
@@ -17,14 +18,9 @@ export default function Sidebar({ categories, activeCategory, modelCounts, onCat
   return (
     <aside className="admin-sidebar">
       <div className="sidebar-header">
-        <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
+        <div className="sidebar-logo" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+          <img src="/ENSUREAR.png" alt="EnsureAR" style={{ width: '160px', height: 'auto', objectFit: 'contain' }} />
           <div>
-            <div className="sidebar-brand">Mystic AR</div>
             <div className="sidebar-role">SuperAdmin</div>
           </div>
         </div>

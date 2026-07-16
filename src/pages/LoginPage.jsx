@@ -38,12 +38,7 @@ export default function LoginPage() {
 
       <div className="login-card">
         <div className="login-logo">
-          <div className="login-logo-icon">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <h1 className="login-brand">Mystic AR</h1>
+          <img src="/ENSUREAR.png" alt="EnsureAR" style={{ display: 'block', margin: '0 auto 1.5rem', height: '90px', objectFit: 'contain' }} />
           <p className="login-subtitle">SuperAdmin Portal</p>
         </div>
 
@@ -130,7 +125,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="login-footer">Secure Admin Access · Mystic AR v1.0</p>
+        <p className="login-footer">Secure Admin Access · EnsureAR v1.0</p>
       </div>
     </div>
   );

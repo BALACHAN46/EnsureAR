@@ -22,16 +22,27 @@ export function getModelConfig(modelId, defaults = {}) {
     return { ...defaults[modelId] };
   }
   // Hardcoded fallback
-  return { posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1 };
+  return { posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1 };
 }
 
 /**
- * Save tuning config for a model to localStorage.
+ * Save tuning config for a model to localStorage, and if in development, to model-defaults.json.
  * @param {string} modelId
  * @param {object} config - { posY, posZ, rotX, rotY, rotZ, scale }
  */
-export function saveModelConfig(modelId, config) {
+export async function saveModelConfig(modelId, config) {
   localStorage.setItem(`${STORAGE_PREFIX}${modelId}`, JSON.stringify(config));
+  
+  try {
+    // Attempt to save to the filesystem via our custom Vite plugin endpoint
+    await fetch('/api/save-tuning', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ modelId, config })
+    });
+  } catch (err) {
+    console.warn('Could not save to model-defaults.json. Make sure the Vite dev server is running.', err);
+  }
 }
 
 /**
@@ -51,10 +62,10 @@ export function hasCustomConfig(modelId) {
 }
 
 /**
- * Convert posY/posZ → [x, y, z] position array for Three.js
+ * Convert posX/posY/posZ → [x, y, z] position array for Three.js
  */
 export function configToPosition(config) {
-  return [0, config.posY ?? 0, config.posZ ?? 0];
+  return [config.posX ?? 0, config.posY ?? 0, config.posZ ?? 0];
 }
 
 /**

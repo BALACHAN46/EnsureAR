@@ -51,7 +51,7 @@ export default function ModelCard({ model }) {
           </svg>
           Edit Config
         </button>
-        {model.category === 'eyewear' && (
+        {['eyewear', 'watch', 'bracelets', 'rings', 'necklace', 'earrings', 'nosepin'].includes(model.category) && (
           <button
             id={`preview-model-${model.id}`}
             className="model-card-btn model-card-btn--preview"
