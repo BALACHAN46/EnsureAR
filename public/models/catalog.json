@@ -998,6 +998,276 @@
         0
       ],
       "necklaceType": "open"
+    },
+    {
+      "id": "new_1dpng",
+      "name": "1d.png",
+      "category": "necklace",
+      "modelPath": "/models/necklace/1d.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/1d.png",
+      "thumbnailPath": "/models/necklace/1d.png",
+      "uploadedAt": "2026-07-16T05:40:33.071Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "new_2dpng",
+      "name": "2d.png",
+      "category": "necklace",
+      "modelPath": "/models/necklace/2d.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/2d.png",
+      "thumbnailPath": "/models/necklace/2d.png",
+      "uploadedAt": "2026-07-16T05:40:33.071Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "new_3dpng",
+      "name": "3 d.png",
+      "category": "necklace",
+      "modelPath": "/models/necklace/3 d.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/3 d.png",
+      "thumbnailPath": "/models/necklace/3 d.png",
+      "uploadedAt": "2026-07-16T05:40:33.071Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "new_3png",
+      "name": "3.png",
+      "category": "necklace",
+      "modelPath": "/models/necklace/3.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/3.png",
+      "thumbnailPath": "/models/necklace/3.png",
+      "uploadedAt": "2026-07-16T05:40:33.071Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "new_4png",
+      "name": "4.png",
+      "category": "necklace",
+      "modelPath": "/models/necklace/4.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/4.png",
+      "thumbnailPath": "/models/necklace/4.png",
+      "uploadedAt": "2026-07-16T05:40:33.071Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "new_4dpng",
+      "name": "4d.png",
+      "category": "necklace",
+      "modelPath": "/models/necklace/4d.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/4d.png",
+      "thumbnailPath": "/models/necklace/4d.png",
+      "uploadedAt": "2026-07-16T05:40:33.071Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "new_5dpng",
+      "name": "5d.png",
+      "category": "necklace",
+      "modelPath": "/models/necklace/5d.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/5d.png",
+      "thumbnailPath": "/models/necklace/5d.png",
+      "uploadedAt": "2026-07-16T05:40:33.071Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "new_apng",
+      "name": "a.png",
+      "category": "necklace",
+      "modelPath": "/models/necklace/a.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/a.png",
+      "thumbnailPath": "/models/necklace/a.png",
+      "uploadedAt": "2026-07-16T05:40:33.071Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "new_chaing1gpng",
+      "name": "chaing1g.png",
+      "category": "necklace",
+      "modelPath": "/models/necklace/chaing1g.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/chaing1g.png",
+      "thumbnailPath": "/models/necklace/chaing1g.png",
+      "uploadedAt": "2026-07-16T05:40:33.071Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "new_GeneratedImageNovember032025156PM11png",
+      "name": "Generated Image November 03, 2025 - 1_56PM (1) (1).png",
+      "category": "necklace",
+      "modelPath": "/models/necklace/Generated Image November 03, 2025 - 1_56PM (1) (1).png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/Generated Image November 03, 2025 - 1_56PM (1) (1).png",
+      "thumbnailPath": "/models/necklace/Generated Image November 03, 2025 - 1_56PM (1) (1).png",
+      "uploadedAt": "2026-07-16T05:40:33.071Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
     }
   ]
 }
