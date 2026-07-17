@@ -4,6 +4,7 @@ import { Environment, useGLTF, Html, useProgress, Center } from '@react-three/dr
 import * as THREE from 'three';
 import NecklaceMesh from './components/ar/NecklaceMesh';
 import ModelErrorBoundary from './components/ar/ModelErrorBoundary';
+import { applyAndExtractMaterials } from './utils/materialHelper';
 
 // Categories that use the face-landmark eyewear AR
 const FACE_AR_CATEGORIES = ['eyewear'];
@@ -278,7 +279,7 @@ const HandMesh = ({ landmarksRef, showMesh }) => {
   );
 };
 
-const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState, activeModel }) => {
+const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState, activeModel, customMaterials }) => {
   const leftGroupRef = useRef();
   const rightGroupRef = useRef();
   const occluderRef = useRef();
@@ -286,9 +287,13 @@ const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
   const gltfPath = activeModel?.glbPath;
   const { scene } = useGLTF(gltfPath || '');
 
+  const { clonedScene } = React.useMemo(() => {
+    return applyAndExtractMaterials(scene, customMaterials);
+  }, [scene, customMaterials]);
+
   // Clone the scene so we can render two earrings (one for each ear)
-  const leftScene = React.useMemo(() => scene ? scene.clone() : null, [scene]);
-  const rightScene = React.useMemo(() => scene ? scene.clone() : null, [scene]);
+  const leftScene = React.useMemo(() => clonedScene ? clonedScene.clone() : null, [clonedScene]);
+  const rightScene = React.useMemo(() => clonedScene ? clonedScene.clone() : null, [clonedScene]);
 
   useFrame((state) => {
     const landmarks = landmarksRef.current;
@@ -450,12 +455,16 @@ const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
   );
 };
 
-const NosePinMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState, activeModel }) => {
+const NosePinMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState, activeModel, customMaterials }) => {
   const groupRef = useRef();
   const occluderRef = useRef();
 
   const gltfPath = activeModel?.glbPath;
   const { scene } = useGLTF(gltfPath || '');
+
+  const { clonedScene } = React.useMemo(() => {
+    return applyAndExtractMaterials(scene, customMaterials);
+  }, [scene, customMaterials]);
 
   useFrame((state) => {
     const landmarks = landmarksRef.current;
@@ -571,7 +580,7 @@ const NosePinMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
 
       <group ref={groupRef}>
         <primitive
-          object={scene}
+          object={clonedScene}
           rotation={modelRot || [0, 0, 0]}
           position={modelPos || [0, 0, 0]}
         />
@@ -580,7 +589,7 @@ const NosePinMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
   );
 };
 
-const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState, activeModel }) => {
+const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState, activeModel, customMaterials }) => {
   const groupRef = useRef();
 
   // Custom uniforms for dynamic temple fade-out
@@ -595,10 +604,14 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
   const gltfPath = activeModel?.glbPath || '/glasses.glb';
   const { scene } = useGLTF(gltfPath);
 
+  const { clonedScene } = React.useMemo(() => {
+    return applyAndExtractMaterials(scene, customMaterials);
+  }, [scene, customMaterials]);
+
   // Inject custom shader logic to beautifully fade out the temples!
   React.useEffect(() => {
-    if (scene) {
-      scene.traverse((child) => {
+    if (clonedScene) {
+      clonedScene.traverse((child) => {
         if (child.isMesh && child.material) {
           child.material = child.material.clone();
           child.material.transparent = true;
@@ -646,7 +659,7 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
         }
       });
     }
-  }, [scene]);
+  }, [clonedScene]);
 
   useFrame((state) => {
     const landmarks = landmarksRef.current;
@@ -765,12 +778,12 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
     uniformsRef.current.fadeEnd.value = finalScale * 0.55;
   });
 
-  if (!scene) return null;
+  if (!clonedScene) return null;
 
   return (
     <group ref={groupRef}>
       <primitive
-        object={scene}
+        object={clonedScene}
         rotation={modelRot || [-Math.PI / 2, 0, Math.PI]}
         position={modelPos || [0, 0.5, 1.0]}
       />
@@ -784,7 +797,7 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
 //   - posY  → up/down position in viewport units (negative = lower)
 //   - posZ  → depth only (layering)
 // -------------------------------------------------------------------
-const JewelryMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, category }) => {
+const JewelryMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, category, customMaterials }) => {
   const groupRef = useRef();
   const gltfPath = activeModel?.glbPath || activeModel?.modelPath;
   if (!gltfPath) return null;
@@ -797,12 +810,17 @@ const JewelryMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel
       modelRot={modelRot}
       modelScale={modelScale}
       gltfPath={gltfPath}
+      customMaterials={customMaterials}
     />
   );
 };
 
-const JewelryMeshInner = ({ groupRef, landmarksRef, modelPos, modelRot, modelScale, gltfPath }) => {
+const JewelryMeshInner = ({ groupRef, landmarksRef, modelPos, modelRot, modelScale, gltfPath, customMaterials }) => {
   const { scene } = useGLTF(gltfPath);
+
+  const { clonedScene } = React.useMemo(() => {
+    return applyAndExtractMaterials(scene, customMaterials);
+  }, [scene, customMaterials]);
 
   // Keep a ref to latest props so useFrame always reads current values (avoids stale closure)
   const propsRef = useRef({ modelPos, modelRot, modelScale });
@@ -838,11 +856,11 @@ const JewelryMeshInner = ({ groupRef, landmarksRef, modelPos, modelRot, modelSca
     groupRef.current.scale.set(finalScale, finalScale, finalScale);
   });
 
-  if (!scene) return null;
+  if (!clonedScene) return null;
 
   return (
     <group ref={groupRef}>
-      <primitive object={scene} />
+      <primitive object={clonedScene} />
     </group>
   );
 };
@@ -981,11 +999,15 @@ const TrackingStatus = ({ landmarksRef, isHandTracking, category }) => {
   );
 };
 
-const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, showMesh }) => {
+const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, showMesh, customMaterials }) => {
   const groupRef = useRef();
 
   const gltfPath = activeModel?.glbPath;
   const { scene } = useGLTF(gltfPath || '/models/watch/f2917202433f.glb');
+
+  const { clonedScene } = React.useMemo(() => {
+    return applyAndExtractMaterials(scene, customMaterials);
+  }, [scene, customMaterials]);
 
   useFrame((state) => {
     const landmarks = landmarksRef.current;
@@ -1095,7 +1117,7 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, 
     adjustedRot[2] = -adjustedRot[2]; // Flip Z rotation (Roll)
   }
 
-  if (!scene) return null;
+  if (!clonedScene) return null;
 
   return (
     <group ref={groupRef}>
@@ -1127,16 +1149,20 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, 
 
       <group position={adjustedPos} rotation={adjustedRot} scale={[modelScale || 1, modelScale || 1, modelScale || 1]}>
         <Center>
-          <primitive object={scene} />
+          <primitive object={clonedScene} />
         </Center>
       </group>
     </group>
   );
 };
 
-const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, showMesh }) => {
+const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, showMesh, customMaterials }) => {
   const { scene } = useGLTF(activeModel?.glbPath || '');
   const groupRef = useRef();
+
+  const { clonedScene } = React.useMemo(() => {
+    return applyAndExtractMaterials(scene, customMaterials);
+  }, [scene, customMaterials]);
 
   useFrame((state) => {
     const landmarks = landmarksRef.current;
@@ -1199,8 +1225,8 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, s
     const rotationMatrix = new THREE.Matrix4().makeBasis(vRight, vUp, vForward);
     const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
 
-    // Target position is halfway between the base and first joint of the ring finger
-    const targetPos = new THREE.Vector3().addVectors(p13, p14).multiplyScalar(0.5);
+    // Target position is near the base of the ring finger (knuckle) instead of halfway
+    const targetPos = new THREE.Vector3().lerpVectors(p13, p14, 0.15);
 
     // Scale based on the width of the finger
     // We use a small multiplier because ring models are typically quite large.
@@ -1212,13 +1238,12 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, s
       groupRef.current.quaternion.copy(targetQuat);
       groupRef.current.scale.set(finalScale, finalScale, finalScale);
     } else {
-      const dist = groupRef.current.position.distanceTo(targetPos);
-      const posLerp = THREE.MathUtils.clamp(dist * 3.0, 0.2, 0.9);
-      const rotLerp = THREE.MathUtils.clamp(dist * 3.0, 0.2, 0.85);
+      // Forcefully snap to the finger to prevent free-floating detaching
+      const posLerp = 0.7;
+      const rotLerp = 0.6;
 
       const currentScale = groupRef.current.scale.x;
-      const scaleDiff = Math.abs(currentScale - finalScale);
-      const scaleLerp = THREE.MathUtils.clamp(scaleDiff * 5.0, 0.2, 0.9);
+      const scaleLerp = 0.5;
 
       groupRef.current.position.lerp(targetPos, posLerp);
       groupRef.current.quaternion.slerp(targetQuat, rotLerp);
@@ -1231,19 +1256,20 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, s
   const adjustedPos = modelPos ? [...modelPos] : [0, 0, 0];
   const adjustedRot = modelRot ? [...modelRot] : [0, 0, 0];
   if (isPhysicalRight) {
-    adjustedPos[0] = -adjustedPos[0]; // Flip X position
+    // Note: We do NOT flip X position because the 3D model geometry isn't mirrored. 
+    // Any X offset used to center the ring's hole must remain the same for both hands.
     adjustedRot[1] = -adjustedRot[1]; // Flip Y rotation (Yaw)
     adjustedRot[2] = -adjustedRot[2]; // Flip Z rotation (Roll)
   }
 
-  if (!scene) return null;
+  if (!clonedScene) return null;
 
   return (
     <group ref={groupRef}>
       {/* Invisible Finger Occluder: hides the back of the ring so it doesn't render over the finger */}
       <mesh renderOrder={-1} rotation={[Math.PI / 2, 0, 0]} scale={[1, 1, 1]}>
-        {/* Radius 1.8 to closely fit the inside of the ring and hide the back half, Height 6 */}
-        <cylinderGeometry args={[0.9, 1, 6, 32]} />
+        {/* Precise cylinder to match finger volume (0.68 radius). Prevents sweeping cuts when the hand rotates. */}
+        <cylinderGeometry args={[0.99, 0.99, 6, 32]} />
         <meshBasicMaterial
           colorWrite={false}
           depthWrite={true}
@@ -1262,14 +1288,14 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, s
 
       <group position={adjustedPos} rotation={adjustedRot} scale={[modelScale || 1, modelScale || 1, modelScale || 1]}>
         <Center>
-          <primitive object={scene} />
+          <primitive object={clonedScene} />
         </Center>
       </group>
     </group>
   );
 };
 
-const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, modelPos, modelRot, modelScale, activeModel, isHandTracking, category }) => {
+const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, modelPos, modelRot, modelScale, activeModel, isHandTracking, category, customMaterials }) => {
   // Shared state ensures the face mask and the glasses always use the EXACT same tracking speed!
   const sharedState = useRef({ adaptiveLerp: 0.5 });
   const isEyewear = FACE_AR_CATEGORIES.includes(category);
@@ -1286,7 +1312,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
 
   return (
     <div className="canvas-container" style={{ position: 'relative' }}>
-      <Canvas orthographic camera={{ zoom: 150, position: [0, 0, 100] }}>
+      <Canvas gl={{ preserveDrawingBuffer: true, alpha: true, antialias: true }} orthographic camera={{ zoom: 150, position: [0, 0, 100] }}>
         <VideoBackground videoFrameRef={videoFrameRef} />
         <DynamicLighting videoFrameRef={videoFrameRef} />
         <Environment preset="city" />
@@ -1306,6 +1332,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                     modelScale={modelScale}
                     activeModel={activeModel}
                     showMesh={showFaceMesh}
+                    customMaterials={customMaterials}
                   />
                 ) : (
                   <WristMesh
@@ -1315,6 +1342,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                     modelScale={modelScale}
                     activeModel={activeModel}
                     showMesh={showFaceMesh}
+                    customMaterials={customMaterials}
                   />
                 ))}
               </Suspense>
@@ -1337,6 +1365,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                     modelScale={modelScale}
                     sharedState={sharedState}
                     activeModel={activeModel}
+                    customMaterials={customMaterials}
                   />
                 ) : category === 'nosepin' ? (
                   <NosePinMesh
@@ -1346,6 +1375,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                     modelScale={modelScale}
                     sharedState={sharedState}
                     activeModel={activeModel}
+                    customMaterials={customMaterials}
                   />
                 ) : category === 'eyewear' ? (
                   <EyewearMesh
@@ -1355,6 +1385,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                     modelScale={modelScale}
                     sharedState={sharedState}
                     activeModel={activeModel}
+                    customMaterials={customMaterials}
                   />
                 ) : category === 'necklace' ? (
                   <NecklaceMesh
@@ -1365,6 +1396,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                     modelScale={modelScale}
                     activeModel={activeModel}
                     showFaceMesh={showFaceMesh}
+                    customMaterials={customMaterials}
                   />
                 ) : null)}
               </Suspense>

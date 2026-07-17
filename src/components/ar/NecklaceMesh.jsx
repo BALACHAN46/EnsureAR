@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
+import { applyAndExtractMaterials } from '../../utils/materialHelper';
 
 const getAdaptiveFactor = (vel, scale, base = 0.08) => Math.min(1.0, base + Math.pow(vel * scale, 2));
 
@@ -231,7 +232,7 @@ export function computeCollarbone(faceLandmarks, poseLandmarks, viewport, offset
 
 
 // ── NecklaceMesh ─────────────────────────────────────────────────────
-const NecklaceMesh = ({ landmarksRef, poseLandmarksRef, modelPos, modelRot, modelScale, activeModel, showFaceMesh }) => {
+const NecklaceMesh = ({ landmarksRef, poseLandmarksRef, modelPos, modelRot, modelScale, activeModel, showFaceMesh, customMaterials }) => {
   const groupRef = useRef();
   const boxHeightRef = useRef(0);
   const boxWidthRef = useRef(1);
@@ -265,12 +266,17 @@ const NecklaceMesh = ({ landmarksRef, poseLandmarksRef, modelPos, modelRot, mode
       modelScale={modelScale}
       gltfPath={modelPath}
       showFaceMesh={showFaceMesh}
+      customMaterials={customMaterials}
     />
   );
 };
 
-const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos, modelRot, modelScale, gltfPath, showFaceMesh }) => {
+const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos, modelRot, modelScale, gltfPath, showFaceMesh, customMaterials }) => {
   const { scene } = useGLTF(gltfPath);
+
+  const { clonedScene } = React.useMemo(() => {
+    return applyAndExtractMaterials(scene, customMaterials);
+  }, [scene, customMaterials]);
 
   // Custom uniforms for dynamic depth-based fade-out (Blurring the back of the necklace)
   const uniformsRef = useRef({
@@ -288,8 +294,8 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
 
   // Inject custom shader logic to beautifully fade out the back of the chain!
   React.useEffect(() => {
-    if (scene) {
-      scene.traverse((child) => {
+    if (clonedScene) {
+      clonedScene.traverse((child) => {
         if (child.isMesh && child.material) {
           child.material = child.material.clone();
           child.material.transparent = true;
@@ -352,7 +358,7 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
         }
       });
     }
-  }, [scene]);
+  }, [clonedScene]);
 
   const baseModelScaleRef = useRef(1);
   const smoothedShoulderWidthRef = useRef(0);
@@ -384,21 +390,21 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
   // Auto-center the 3D model's pivot point to its true geometric center
   // This fixes models that were exported with off-center origins.
   React.useEffect(() => {
-    if (!scene) return;
-    const box = new THREE.Box3().setFromObject(scene);
+    if (!clonedScene) return;
+    const box = new THREE.Box3().setFromObject(clonedScene);
     const center = box.getCenter(new THREE.Vector3());
 
     // We lock the main pivot point to the TOP of the chain geometry
     // so it always 'hangs' from the neck. This prevents the clasps from dropping when scaled down.
-    scene.position.x = -center.x;
-    scene.position.y = -box.max.y;
-    scene.position.z = -center.z;
+    clonedScene.position.x = -center.x;
+    clonedScene.position.y = -box.max.y;
+    clonedScene.position.z = -center.z;
     // Calculate the absolute vertical size of the necklace so we know how long to make the tip fade
     boxHeightRef.current = box.max.y - box.min.y;
     // Calculate the absolute width so we can scale it to match the human mathematically
     const width = box.max.x - box.min.x;
     boxWidthRef.current = width > 0 ? width : 1; // Prevent division by zero
-  }, [scene]);
+  }, [clonedScene]);
 
   const propsRef = useRef({ modelPos, modelRot, modelScale });
   React.useEffect(() => {
@@ -570,13 +576,13 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
     uniformsRef.current.uFadeDistTip.value = (boxHeightRef.current || 0) * finalScale * 0.22; // Blur top 22%
   });
 
-  if (!scene) return null;
+  if (!clonedScene) return null;
 
   return (
     <group>
       {/* The visible necklace model */}
       <group ref={groupRef}>
-        <primitive object={scene} />
+        <primitive object={clonedScene} />
       </group>
     </group>
   );

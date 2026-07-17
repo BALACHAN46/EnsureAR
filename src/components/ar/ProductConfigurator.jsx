@@ -1,10 +1,11 @@
-import React, { Suspense, useMemo } from 'react';
-import { Canvas, useLoader } from '@react-three/fiber';
+import React, { Suspense, useMemo, useEffect, useState } from 'react';
+import { Canvas, useLoader, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment, Center, Bounds, useGLTF, useTexture, Html, useProgress } from '@react-three/drei';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 import * as THREE from 'three';
 import ModelErrorBoundary from './ModelErrorBoundary';
+import { applyAndExtractMaterials } from '../../utils/materialHelper';
 
 const Loader = () => {
   const { progress } = useProgress();
@@ -18,29 +19,59 @@ const Loader = () => {
   );
 };
 
-function GlbModel({ path }) {
+function GlbModel({ path, customMaterials, onMeshesLoaded }) {
   const { scene } = useGLTF(path);
-  const cloned = useMemo(() => (scene ? scene.clone() : null), [scene]);
-  if (!cloned) return null;
-  return <primitive object={cloned} />;
+  
+  const { clonedScene, availableMeshes } = useMemo(() => {
+    return applyAndExtractMaterials(scene, customMaterials);
+  }, [scene, customMaterials]);
+
+  useEffect(() => {
+    if (onMeshesLoaded && availableMeshes) {
+      onMeshesLoaded(availableMeshes);
+    }
+  }, [availableMeshes, onMeshesLoaded]);
+
+  if (!clonedScene) return null;
+  return <primitive object={clonedScene} />;
 }
 
-function ObjModelWithMtl({ path, mtlPath }) {
+function ObjModelWithMtl({ path, mtlPath, customMaterials, onMeshesLoaded }) {
   const materials = useLoader(MTLLoader, mtlPath);
   const obj = useLoader(OBJLoader, path, (loader) => {
     materials.preload();
     loader.setMaterials(materials);
   });
-  const cloned = useMemo(() => (obj ? obj.clone() : null), [obj]);
-  if (!cloned) return null;
-  return <primitive object={cloned} />;
+  
+  const { clonedScene, availableMeshes } = useMemo(() => {
+    return applyAndExtractMaterials(obj, customMaterials);
+  }, [obj, customMaterials]);
+
+  useEffect(() => {
+    if (onMeshesLoaded && availableMeshes) {
+      onMeshesLoaded(availableMeshes);
+    }
+  }, [availableMeshes, onMeshesLoaded]);
+
+  if (!clonedScene) return null;
+  return <primitive object={clonedScene} />;
 }
 
-function ObjModelPlain({ path }) {
+function ObjModelPlain({ path, customMaterials, onMeshesLoaded }) {
   const obj = useLoader(OBJLoader, path);
-  const cloned = useMemo(() => (obj ? obj.clone() : null), [obj]);
-  if (!cloned) return null;
-  return <primitive object={cloned} />;
+  
+  const { clonedScene, availableMeshes } = useMemo(() => {
+    return applyAndExtractMaterials(obj, customMaterials);
+  }, [obj, customMaterials]);
+
+  useEffect(() => {
+    if (onMeshesLoaded && availableMeshes) {
+      onMeshesLoaded(availableMeshes);
+    }
+  }, [availableMeshes, onMeshesLoaded]);
+
+  if (!clonedScene) return null;
+  return <primitive object={clonedScene} />;
 }
 
 function ImageModel({ path }) {
@@ -54,19 +85,60 @@ function ImageModel({ path }) {
   );
 }
 
-function ModelSwitch({ activeModel }) {
+function ModelSwitch({ activeModel, customMaterials, onMeshesLoaded }) {
   const path = activeModel?.glbPath || '';
   const ext = path.split('.').pop()?.toLowerCase();
 
   if (ext === 'obj') {
     return activeModel.mtlPath
-      ? <ObjModelWithMtl path={path} mtlPath={activeModel.mtlPath} />
-      : <ObjModelPlain path={path} />;
+      ? <ObjModelWithMtl path={path} mtlPath={activeModel.mtlPath} customMaterials={customMaterials} onMeshesLoaded={onMeshesLoaded} />
+      : <ObjModelPlain path={path} customMaterials={customMaterials} onMeshesLoaded={onMeshesLoaded} />;
   }
   if (['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
     return <ImageModel path={path} />;
   }
-  return <GlbModel path={path} />;
+  return <GlbModel path={path} customMaterials={customMaterials} onMeshesLoaded={onMeshesLoaded} />;
+}
+
+function CameraRig({ cameraView }) {
+  const { camera, controls } = useThree();
+  const [targetPos, setTargetPos] = useState(null);
+
+  useEffect(() => {
+    if (!cameraView || !controls) {
+      setTargetPos(null);
+      return;
+    }
+    
+    // Determine distance based on the CURRENT camera position (fitted by Bounds)
+    const d = camera.position.distanceTo(controls.target);
+    const newPos = new THREE.Vector3();
+    
+    switch (cameraView) {
+      case 'front': newPos.set(0, 0, d); break;
+      case 'back': newPos.set(0, 0, -d); break;
+      case 'left': newPos.set(-d, 0, 0); break;
+      case 'right': newPos.set(d, 0, 0); break;
+      case 'top': newPos.set(0, d, 0.1); break; // 0.1 to avoid gimbal lock
+      case 'reset': newPos.set(d * 0.7, d * 0.5, d * 0.7); break;
+      default: newPos.set(0, 0, d); break;
+    }
+    
+    // Add the target offset in case OrbitControls is looking away from origin
+    newPos.add(controls.target);
+    setTargetPos(newPos);
+  }, [cameraView, camera, controls]);
+
+  useFrame(() => {
+    if (targetPos && controls) {
+      if (camera.position.distanceTo(targetPos) > 0.05) {
+        camera.position.lerp(targetPos, 0.08);
+        controls.update();
+      }
+    }
+  });
+
+  return null;
 }
 
 /**
@@ -75,7 +147,7 @@ function ModelSwitch({ activeModel }) {
  * via drei's <Bounds>, since catalog models aren't normalized to a
  * common real-world size the way the AR try-on placement math expects.
  */
-export default function ProductConfigurator({ activeModel, autoRotate }) {
+export default function ProductConfigurator({ activeModel, autoRotate, customMaterials, onMeshesLoaded, cameraView }) {
   if (!activeModel) return null;
 
   return (
@@ -91,7 +163,11 @@ export default function ProductConfigurator({ activeModel, autoRotate }) {
           <Suspense fallback={<Loader />}>
             <Bounds key={activeModel.id} fit clip observe margin={1.4}>
               <Center>
-                <ModelSwitch activeModel={activeModel} />
+                <ModelSwitch 
+                  activeModel={activeModel} 
+                  customMaterials={customMaterials}
+                  onMeshesLoaded={onMeshesLoaded} 
+                />
               </Center>
             </Bounds>
           </Suspense>
@@ -107,6 +183,7 @@ export default function ProductConfigurator({ activeModel, autoRotate }) {
           enableDamping
           dampingFactor={0.08}
         />
+        <CameraRig cameraView={cameraView} />
       </Canvas>
     </div>
   );
