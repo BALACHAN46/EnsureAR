@@ -4,6 +4,7 @@ import Webcam from 'react-webcam';
 const HandTracker = ({ onLandmarks }) => {
   const webcamRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
+  const loadingFiredRef = useRef(false);
 
   useEffect(() => {
     let camera = null;
@@ -21,8 +22,9 @@ const HandTracker = ({ onLandmarks }) => {
     });
 
     hands.onResults((results) => {
-      if (isLoading) {
+      if (!loadingFiredRef.current) {
         setIsLoading(false);
+        loadingFiredRef.current = true;
       }
       
       const landmarks = results.multiHandLandmarks && results.multiHandLandmarks.length > 0 

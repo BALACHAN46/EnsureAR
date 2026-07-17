@@ -3,13 +3,14 @@ import { useRouter } from '../router';
 import Sidebar from '../components/admin/Sidebar';
 import ModelCard from '../components/admin/ModelCard';
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ params }) {
   const { navigate } = useRouter();
   const [catalog, setCatalog] = useState([]);
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Auth guard
   useEffect(() => {
@@ -26,7 +27,10 @@ export default function AdminDashboard() {
           setCatalog(data.models);
           const cats = [...new Set(data.models.map(m => m.category))];
           setCategories(cats);
-          setActiveCategory(cats[0] || null);
+          // Arriving from the Overview page's "browse by category" links
+          // preselects that category via the /admin/models/:category route.
+          const requested = params?.category;
+          setActiveCategory(cats.includes(requested) ? requested : (cats[0] || null));
         }
         setLoading(false);
       })
@@ -66,14 +70,25 @@ export default function AdminDashboard() {
         categories={categories}
         activeCategory={activeCategory}
         modelCounts={modelCounts}
-        onCategorySelect={(cat) => { setActiveCategory(cat); setSearchQuery(''); }}
+        onCategorySelect={(cat) => { setActiveCategory(cat); setSearchQuery(''); setSidebarOpen(false); }}
         onLogout={handleLogout}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
 
       <main className="admin-main">
         {/* Top Bar */}
         <header className="admin-topbar">
           <div className="admin-topbar-left">
+            <button
+              className="admin-mobile-toggle"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open menu"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/>
+              </svg>
+            </button>
             <h2 className="admin-page-title">
               {activeCategory
                 ? `${activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1)} Models`

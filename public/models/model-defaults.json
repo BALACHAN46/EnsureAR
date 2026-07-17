@@ -20,8 +20,9 @@
       "category": "rings"
     },
     "fd62c174d37c": {
+      "posX": 0.05,
       "posY": 0,
-      "posZ": 0,
+      "posZ": 0.6,
       "rotX": 0,
       "rotY": 0,
       "rotZ": 0,
@@ -29,8 +30,9 @@
       "category": "necklace"
     },
     "d9a1822e7a88": {
-      "posY": 0,
-      "posZ": 0,
+      "posX": 0.08,
+      "posY": -1.95,
+      "posZ": 3.33,
       "rotX": 0,
       "rotY": 0,
       "rotZ": 0,
@@ -47,12 +49,13 @@
       "category": "necklace"
     },
     "ca404a5ea0ea": {
-      "posY": 0,
-      "posZ": 0,
-      "rotX": 0,
+      "posX": 0.06,
+      "posY": 2.27,
+      "posZ": -1.68,
+      "rotX": -0.00159,
       "rotY": 0,
       "rotZ": 0,
-      "scale": 1,
+      "scale": 0.87,
       "category": "necklace"
     },
     "3c1d189ac571": {
@@ -390,6 +393,75 @@
       "rotZ": 0,
       "scale": -2.99,
       "category": "rings"
+    },
+    "new_1dpng": {
+      "posX": 0.08,
+      "posY": 0,
+      "posZ": 0.99,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "necklace"
+    },
+    "new_2dpng": {
+      "posX": 0.1,
+      "posY": 0.55,
+      "posZ": 0.91,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "necklace"
+    },
+    "new_3dpng": {
+      "posX": 0,
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1
+    },
+    "new_4png": {
+      "posX": 0.07,
+      "posY": -0.14,
+      "posZ": 2.1,
+      "rotX": 0,
+      "rotY": 0.00841,
+      "rotZ": 0.00841,
+      "scale": 1,
+      "category": "necklace"
+    },
+    "new_5dpng": {
+      "posX": 0.1,
+      "posY": 0.3,
+      "posZ": 2.21,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": -0.02159,
+      "scale": 1,
+      "category": "necklace"
+    },
+    "new_apng": {
+      "posX": 0.07,
+      "posY": 1.37,
+      "posZ": 0.76,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "category": "necklace"
+    },
+    "new_chaing1gpng": {
+      "posX": 0.04,
+      "posY": 1.04,
+      "posZ": 0.84,
+      "rotX": 0,
+      "rotY": 3.13841,
+      "rotZ": -0.00159,
+      "scale": 1,
+      "category": "necklace"
     }
   }
 }

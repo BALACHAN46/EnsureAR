@@ -4,6 +4,7 @@ import Webcam from 'react-webcam';
 const FaceTracker = ({ onLandmarks, onPoseLandmarks, category }) => {
   const webcamRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
+  const loadingFiredRef = useRef(false);
   const categoryRef = useRef(category);
 
   useEffect(() => {
@@ -29,8 +30,9 @@ const FaceTracker = ({ onLandmarks, onPoseLandmarks, category }) => {
     });
 
     faceMesh.onResults((results) => {
-      if (isLoading) {
+      if (!loadingFiredRef.current) {
         setIsLoading(false);
+        loadingFiredRef.current = true;
       }
       
       const landmarks = results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0 

@@ -570,6 +570,8 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
     uniformsRef.current.uFadeDistTip.value = (boxHeightRef.current || 0) * finalScale * 0.22; // Blur top 22%
   });
 
+  if (!scene) return null;
+
   return (
     <group>
       {/* The visible necklace model */}

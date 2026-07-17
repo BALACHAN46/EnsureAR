@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { RouterProvider, Route, useRouter } from './router';
 import LoginPage from './pages/LoginPage';
+import AdminOverview from './pages/AdminOverview';
 import AdminDashboard from './pages/AdminDashboard';
 import ModelEditPage from './pages/ModelEditPage';
 import ARViewPage from './pages/ARViewPage';
@@ -104,7 +105,9 @@ function AppRoutes() {
     <>
       <Route pattern="/" component={HomePage} />
       <Route pattern="/admin" component={LoginPage} />
-      <Route pattern="/admin/dashboard" component={AdminDashboard} />
+      <Route pattern="/admin/dashboard" component={AdminOverview} />
+      <Route pattern="/admin/models" component={AdminDashboard} />
+      <Route pattern="/admin/models/:category" component={AdminDashboard} />
       <Route pattern="/admin/model/:id/edit" component={ModelEditPage} />
       <Route pattern="/ar/:category/:modelId" component={ARViewPage} />
     </>

@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, useGLTF, Html, useProgress, Center } from '@react-three/drei';
 import * as THREE from 'three';
 import NecklaceMesh from './components/ar/NecklaceMesh';
+import ModelErrorBoundary from './components/ar/ModelErrorBoundary';
 
 // Categories that use the face-landmark eyewear AR
 const FACE_AR_CATEGORIES = ['eyewear'];
@@ -281,7 +282,7 @@ const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
   const leftGroupRef = useRef();
   const rightGroupRef = useRef();
   const occluderRef = useRef();
-  
+
   const gltfPath = activeModel?.glbPath;
   const { scene } = useGLTF(gltfPath || '');
 
@@ -368,7 +369,7 @@ const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
     const rightEarlobe = new THREE.Vector3().addVectors(rightAnchor, rightEarlobeOffset);
 
     const finalScale = faceWidth * 1.05 * (modelScale || 1);
-    
+
     // The occluder needs to be slightly narrower than the face width
     // so it doesn't accidentally swallow the earrings themselves!
     const occluderScale = faceWidth * 0.85;
@@ -452,7 +453,7 @@ const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
 const NosePinMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState, activeModel }) => {
   const groupRef = useRef();
   const occluderRef = useRef();
-  
+
   const gltfPath = activeModel?.glbPath;
   const { scene } = useGLTF(gltfPath || '');
 
@@ -517,7 +518,7 @@ const NosePinMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
     const targetQuat = new THREE.Quaternion().setFromEuler(targetEuler);
 
     const finalScale = faceWidth * 1.05 * (modelScale || 1);
-    
+
     // The occluder needs to be roughly the size of the nose
     const occluderScale = faceWidth * 0.25;
 
@@ -525,7 +526,7 @@ const NosePinMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
       groupRef.current.position.copy(anchor);
       groupRef.current.quaternion.copy(targetQuat);
       groupRef.current.scale.set(finalScale, finalScale, finalScale);
-      
+
       if (occluderRef.current) {
         occluderRef.current.position.copy(noseCenter);
         occluderRef.current.quaternion.copy(targetQuat);
@@ -543,7 +544,7 @@ const NosePinMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
       groupRef.current.position.lerp(anchor, masterLerp);
       groupRef.current.quaternion.slerp(targetQuat, masterLerp);
       groupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), masterLerp);
-      
+
       if (occluderRef.current) {
         occluderRef.current.position.lerp(noseCenter, masterLerp);
         occluderRef.current.quaternion.slerp(targetQuat, masterLerp);
@@ -551,6 +552,8 @@ const NosePinMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
       }
     }
   });
+
+  if (!scene) return null;
 
   return (
     <group>
@@ -762,6 +765,8 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
     uniformsRef.current.fadeEnd.value = finalScale * 0.55;
   });
 
+  if (!scene) return null;
+
   return (
     <group ref={groupRef}>
       <primitive
@@ -832,6 +837,8 @@ const JewelryMeshInner = ({ groupRef, landmarksRef, modelPos, modelRot, modelSca
     groupRef.current.rotation.set(rx, ry, rz);
     groupRef.current.scale.set(finalScale, finalScale, finalScale);
   });
+
+  if (!scene) return null;
 
   return (
     <group ref={groupRef}>
@@ -953,7 +960,7 @@ const TrackingStatus = ({ landmarksRef, isHandTracking, category }) => {
 
   useFrame(() => {
     if (!needsFace) return;
-    const isDetected = landmarksRef.current && landmarksRef.current.length > 0;
+    const isDetected = !!(landmarksRef.current && landmarksRef.current.length > 0);
     if (detected !== isDetected) {
       setDetected(isDetected);
     }
@@ -1088,6 +1095,8 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, 
     adjustedRot[2] = -adjustedRot[2]; // Flip Z rotation (Roll)
   }
 
+  if (!scene) return null;
+
   return (
     <group ref={groupRef}>
       {/* Invisible Arm Occluder: hides the back of the watch strap so it doesn't render over the arm */}
@@ -1126,7 +1135,7 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, 
 };
 
 const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, showMesh }) => {
-  const { scene } = useGLTF(activeModel.glbPath);
+  const { scene } = useGLTF(activeModel?.glbPath || '');
   const groupRef = useRef();
 
   useFrame((state) => {
@@ -1227,6 +1236,8 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, s
     adjustedRot[2] = -adjustedRot[2]; // Flip Z rotation (Roll)
   }
 
+  if (!scene) return null;
+
   return (
     <group ref={groupRef}>
       {/* Invisible Finger Occluder: hides the back of the ring so it doesn't render over the finger */}
@@ -1258,137 +1269,108 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, s
   );
 };
 
-const Scene3D = ({ landmarksRef,poseLandmarksRef, videoFrameRef, showFaceMesh, modelPos, modelRot, modelScale, activeModel, isHandTracking,category }) => {
+const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, modelPos, modelRot, modelScale, activeModel, isHandTracking, category }) => {
   // Shared state ensures the face mask and the glasses always use the EXACT same tracking speed!
   const sharedState = useRef({ adaptiveLerp: 0.5 });
-  const isEyewear  = FACE_AR_CATEGORIES.includes(category);
+  const isEyewear = FACE_AR_CATEGORIES.includes(category);
   const isNecklace = category === 'necklace';
-  const isRing     = RING_AR_CATEGORIES.includes(category);
+  const isRing = RING_AR_CATEGORIES.includes(category);
+
+  // The category route param and activeModel load on separate effects in the
+  // parent, so for a beat after switching categories, activeModel can still
+  // be the PREVIOUS category's model while `category` has already changed
+  // (e.g. a necklace's flat PNG briefly fed into a GLB/OBJ loader). Gating
+  // every mesh on this avoids ever handing a mismatched asset to the wrong
+  // loader, which is what crashes the whole Canvas.
+  const modelReady = !!activeModel && activeModel.category === category;
 
   return (
     <div className="canvas-container" style={{ position: 'relative' }}>
-
       <Canvas orthographic camera={{ zoom: 150, position: [0, 0, 100] }}>
         <VideoBackground videoFrameRef={videoFrameRef} />
-
         <DynamicLighting videoFrameRef={videoFrameRef} />
         <Environment preset="city" />
 
-        <TrackingStatus landmarksRef={landmarksRef} isHandTracking={isHandTracking} />
+        <TrackingStatus landmarksRef={landmarksRef} isHandTracking={isHandTracking} category={category} />
 
         {isHandTracking ? (
           <>
             <HandMesh landmarksRef={landmarksRef} showMesh={showFaceMesh} />
-            <Suspense fallback={<Loader />}>
-              {activeModel?.category === 'rings' ? (
-                <RingMesh
-                  landmarksRef={landmarksRef}
-                  modelPos={modelPos}
-                  modelRot={modelRot}
-                  modelScale={modelScale}
-                  activeModel={activeModel}
-                  showMesh={showFaceMesh}
-                />
-              ) : (
-                <WristMesh
-                  landmarksRef={landmarksRef}
-                  modelPos={modelPos}
-                  modelRot={modelRot}
-                  modelScale={modelScale}
-                  activeModel={activeModel}
-                  showMesh={showFaceMesh}
-                />
-              )}
-            </Suspense>
+            <ModelErrorBoundary resetKey={`${category}-${activeModel?.id}`}>
+              <Suspense fallback={<Loader />}>
+                {modelReady && (category === 'rings' ? (
+                  <RingMesh
+                    landmarksRef={landmarksRef}
+                    modelPos={modelPos}
+                    modelRot={modelRot}
+                    modelScale={modelScale}
+                    activeModel={activeModel}
+                    showMesh={showFaceMesh}
+                  />
+                ) : (
+                  <WristMesh
+                    landmarksRef={landmarksRef}
+                    modelPos={modelPos}
+                    modelRot={modelRot}
+                    modelScale={modelScale}
+                    activeModel={activeModel}
+                    showMesh={showFaceMesh}
+                  />
+                ))}
+              </Suspense>
+            </ModelErrorBoundary>
           </>
         ) : (
           <>
-            <FullFaceMesh landmarksRef={landmarksRef} showFaceMesh={showFaceMesh} sharedState={sharedState} />
+            {/* Face mesh depth occluder — needed for eyewear and necklace */}
+            {(isEyewear || isNecklace) && (
+              <FullFaceMesh landmarksRef={landmarksRef} showFaceMesh={isEyewear && showFaceMesh} sharedState={sharedState} />
+            )}
 
-            <Suspense fallback={<Loader />}>
-              {activeModel?.category === 'earrings' ? (
-                <EarringMesh
-                  landmarksRef={landmarksRef}
-                  modelPos={modelPos}
-                  modelRot={modelRot}
-                  modelScale={modelScale}
-                  sharedState={sharedState}
-                  activeModel={activeModel}
-                />
-              ) : activeModel?.category === 'nosepin' ? (
-                <NosePinMesh
-                  landmarksRef={landmarksRef}
-                  modelPos={modelPos}
-                  modelRot={modelRot}
-                  modelScale={modelScale}
-                  sharedState={sharedState}
-                  activeModel={activeModel}
-                />
-              ) : (
-                <EyewearMesh
-                  landmarksRef={landmarksRef}
-                  modelPos={modelPos}
-                  modelRot={modelRot}
-                  modelScale={modelScale}
-                  sharedState={sharedState}
-                  activeModel={activeModel}
-                />
-              )}
-            </Suspense>
+            <ModelErrorBoundary resetKey={`${category}-${activeModel?.id}`}>
+              <Suspense fallback={<Loader />}>
+                {modelReady && (category === 'earrings' ? (
+                  <EarringMesh
+                    landmarksRef={landmarksRef}
+                    modelPos={modelPos}
+                    modelRot={modelRot}
+                    modelScale={modelScale}
+                    sharedState={sharedState}
+                    activeModel={activeModel}
+                  />
+                ) : category === 'nosepin' ? (
+                  <NosePinMesh
+                    landmarksRef={landmarksRef}
+                    modelPos={modelPos}
+                    modelRot={modelRot}
+                    modelScale={modelScale}
+                    sharedState={sharedState}
+                    activeModel={activeModel}
+                  />
+                ) : category === 'eyewear' ? (
+                  <EyewearMesh
+                    landmarksRef={landmarksRef}
+                    modelPos={modelPos}
+                    modelRot={modelRot}
+                    modelScale={modelScale}
+                    sharedState={sharedState}
+                    activeModel={activeModel}
+                  />
+                ) : category === 'necklace' ? (
+                  <NecklaceMesh
+                    landmarksRef={landmarksRef}
+                    poseLandmarksRef={poseLandmarksRef}
+                    modelPos={modelPos}
+                    modelRot={modelRot}
+                    modelScale={modelScale}
+                    activeModel={activeModel}
+                    showFaceMesh={showFaceMesh}
+                  />
+                ) : null)}
+              </Suspense>
+            </ModelErrorBoundary>
           </>
         )}
-        <FaceStatus landmarksRef={landmarksRef} category={category} />
-
-        {/* Face mesh depth occluder — needed for eyewear (temple hiding) AND necklace
-            (so the chin/jaw correctly hides the necklace when the user looks down or a
-            pendant swings up near the neck). The colored overlay mesh is an eyewear-only
-            debug toggle, so it stays gated on isEyewear even though the occluder itself
-            now renders for both categories. */}
-        {(isEyewear || isNecklace) && (
-          <FullFaceMesh landmarksRef={landmarksRef} showFaceMesh={isEyewear && showFaceMesh} sharedState={sharedState} />
-        )}
-
-        <Suspense fallback={<Loader />}>
-          {/* Eyewear: full face-tracked mesh with temple fade */}
-          {isEyewear && (
-            <EyewearMesh
-              landmarksRef={landmarksRef}
-              modelPos={modelPos}
-              modelRot={modelRot}
-              modelScale={modelScale}
-              sharedState={sharedState}
-              activeModel={activeModel}
-            />
-          )}
-
-          {/* Necklace: dedicated component — collarbone anchor, no rotation */}
-          {isNecklace && activeModel && (
-            <NecklaceMesh
-              landmarksRef={landmarksRef}
-              poseLandmarksRef={poseLandmarksRef}
-              modelPos={modelPos}
-              modelRot={modelRot}
-              modelScale={modelScale}
-              activeModel={activeModel}
-              showFaceMesh={showFaceMesh}
-            />
-          )}
-
-
-
-          {/* Rings: fixed-position in frame */}
-          {isRing && activeModel && (
-            <JewelryMesh
-              landmarksRef={landmarksRef}
-              modelPos={modelPos}
-              modelRot={modelRot}
-              modelScale={modelScale}
-              activeModel={activeModel}
-              category={category}
-            />
-          )}
-        </Suspense>
-
       </Canvas>
     </div>
   );
