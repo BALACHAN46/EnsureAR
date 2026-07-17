@@ -10,12 +10,12 @@
       "category": "necklace"
     },
     "ea5ace30985b": {
-      "posX": 0.05,
-      "posY": 0,
-      "posZ": 0.2,
-      "rotX": 3.09841,
+      "posX": 0.08,
+      "posY": 1.67,
+      "posZ": -0.07,
+      "rotX": 1.51841,
       "rotY": 0,
-      "rotZ": 0,
+      "rotZ": -0.00159,
       "scale": 0.02,
       "category": "rings"
     },
@@ -84,7 +84,7 @@
       "rotX": 3.13841,
       "rotY": 0.00841,
       "rotZ": 0.00841,
-      "scale": 0.94,
+      "scale": 1,
       "category": "rings"
     },
     "57688ecd8143": {
@@ -346,12 +346,12 @@
     },
     "aee84ebe00f9": {
       "posX": 0.03,
-      "posY": -0.03,
+      "posY": 7.3,
       "posZ": 0.77,
       "rotX": 1.74841,
       "rotY": 0,
       "rotZ": 0,
-      "scale": -2.6,
+      "scale": 6.39,
       "category": "rings"
     },
     "ad26361592a0": {
@@ -361,7 +361,7 @@
       "rotX": -1.57159,
       "rotY": 0,
       "rotZ": 0,
-      "scale": -2.32,
+      "scale": 1,
       "category": "rings"
     },
     "b7b654e39e11": {
@@ -371,7 +371,7 @@
       "rotX": -1.57159,
       "rotY": 0,
       "rotZ": 0.00841,
-      "scale": -2.3,
+      "scale": 1,
       "category": "rings"
     },
     "18f10a31f897": {
@@ -381,7 +381,7 @@
       "rotX": -1.57159,
       "rotY": 0,
       "rotZ": 0,
-      "scale": -2.8,
+      "scale": 1,
       "category": "rings"
     },
     "892000548c12": {
@@ -391,7 +391,7 @@
       "rotX": -1.57159,
       "rotY": 0,
       "rotZ": 0,
-      "scale": -2.99,
+      "scale": 1,
       "category": "rings"
     },
     "new_1dpng": {

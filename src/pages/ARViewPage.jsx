@@ -564,17 +564,17 @@ export default function ARViewPage({ params }) {
 
           <label className="ar-tuning-label">
             <span>Pos X (Left/Right): <strong>{modelPos[0].toFixed(2)}</strong></span>
-            <input type="range" min="-5" max="5" step="0.01" value={modelPos[0]}
+            <input type="range" min="-20" max="20" step="0.01" value={modelPos[0]}
               onChange={e => setModelPos([parseFloat(e.target.value), modelPos[1], modelPos[2]])} />
           </label>
           <label className="ar-tuning-label">
             <span>Pos Y (Up/Down): <strong>{modelPos[1].toFixed(2)}</strong></span>
-            <input type="range" min="-10" max="10" step="0.01" value={modelPos[1]}
+            <input type="range" min="-20" max="20" step="0.01" value={modelPos[1]}
               onChange={e => setModelPos([modelPos[0], parseFloat(e.target.value), modelPos[2]])} />
           </label>
           <label className="ar-tuning-label">
             <span>Pos Z (Forward/Back): <strong>{modelPos[2].toFixed(2)}</strong></span>
-            <input type="range" min="-10" max="10" step="0.01" value={modelPos[2]}
+            <input type="range" min="-20" max="20" step="0.01" value={modelPos[2]}
               onChange={e => setModelPos([modelPos[0], modelPos[1], parseFloat(e.target.value)])} />
           </label>
 
