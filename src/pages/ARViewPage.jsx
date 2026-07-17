@@ -700,7 +700,7 @@ export default function ARViewPage({ params }) {
                     src={model.thumbnailPath} 
                     alt={model.name} 
                     style={{ 
-                      backgroundColor: (category === 'rings' && model.thumbnailPath.toLowerCase().endsWith('.png')) ? 'white' : 'transparent' 
+                      background: model.thumbnailPath.toLowerCase().endsWith('.png') ? 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.2) 100%)' : 'transparent' 
                     }}
                   />
                 ) : (
