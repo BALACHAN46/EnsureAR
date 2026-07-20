@@ -45,9 +45,9 @@
       "category": "necklace"
     },
     "new_2dpng": {
-      "posX": 0,
-      "posY": 0.64,
-      "posZ": 0.93,
+      "posX": 0.07,
+      "posY": 0.55,
+      "posZ": 0.91,
       "rotX": 0,
       "rotY": 0,
       "rotZ": 0,
@@ -56,9 +56,9 @@
       "category": "necklace"
     },
     "new_3dpng": {
-      "posX": 0,
-      "posY": 0.51,
-      "posZ": 0.48,
+      "posX": 0.07,
+      "posY": 0,
+      "posZ": 0,
       "rotX": 0,
       "rotY": 0,
       "rotZ": 0,
