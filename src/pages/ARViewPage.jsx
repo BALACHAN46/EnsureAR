@@ -40,6 +40,14 @@ export default function ARViewPage({ params }) {
   const [modelPos, setModelPos] = useState([0, 0, 0]);
   const [modelRot, setModelRot] = useState([0, 0, 0]);
   const [modelScale, setModelScale] = useState(1);
+  const [ringTuning, setRingTuning] = useState({
+    rightHandFrontOffset: -0.05,
+    rightHandBackOffset: 0.00,
+    leftHandFrontOffset: -0.06,
+    leftHandBackOffset: -0.06,
+    frontScale: 0.23,
+    backScale: 0.20
+  });
   const [showTuning, setShowTuning] = useState(false);
   const [saved, setSaved] = useState(false);
   const [viewMode, setViewMode] = useState('tryon'); // 'tryon' | 'configurator'
@@ -621,6 +629,49 @@ export default function ARViewPage({ params }) {
         </div>
       )}
 
+      {/* Ring Tuning Panel (Visible to everyone when viewing rings) */}
+      {viewMode === 'tryon' && category === 'rings' && (
+        <div className="ar-tuning-panel" style={{ top: railTop, right: isAdmin && showTuning ? '320px' : '1rem' }}>
+          <div className="ar-tuning-header">
+            <h4>Ring Fit Tuning</h4>
+          </div>
+
+          <label className="ar-tuning-label">
+            <span>Right Hand (Palm Offset): <strong>{ringTuning.rightHandFrontOffset.toFixed(2)}</strong></span>
+            <input type="range" min="-0.15" max="0.15" step="0.01" value={ringTuning.rightHandFrontOffset}
+              onChange={e => setRingTuning({...ringTuning, rightHandFrontOffset: parseFloat(e.target.value)})} />
+          </label>
+          <label className="ar-tuning-label">
+            <span>Right Hand (Back Offset): <strong>{ringTuning.rightHandBackOffset.toFixed(2)}</strong></span>
+            <input type="range" min="-0.15" max="0.15" step="0.01" value={ringTuning.rightHandBackOffset}
+              onChange={e => setRingTuning({...ringTuning, rightHandBackOffset: parseFloat(e.target.value)})} />
+          </label>
+          <label className="ar-tuning-label">
+            <span>Left Hand (Palm Offset): <strong>{ringTuning.leftHandFrontOffset.toFixed(2)}</strong></span>
+            <input type="range" min="-0.15" max="0.15" step="0.01" value={ringTuning.leftHandFrontOffset}
+              onChange={e => setRingTuning({...ringTuning, leftHandFrontOffset: parseFloat(e.target.value)})} />
+          </label>
+          <label className="ar-tuning-label">
+            <span>Left Hand (Back Offset): <strong>{ringTuning.leftHandBackOffset.toFixed(2)}</strong></span>
+            <input type="range" min="-0.15" max="0.15" step="0.01" value={ringTuning.leftHandBackOffset}
+              onChange={e => setRingTuning({...ringTuning, leftHandBackOffset: parseFloat(e.target.value)})} />
+          </label>
+
+          <div className="ar-tuning-divider" />
+
+          <label className="ar-tuning-label">
+            <span>Size (Palm side): <strong>{ringTuning.frontScale.toFixed(2)}</strong></span>
+            <input type="range" min="0.1" max="0.4" step="0.01" value={ringTuning.frontScale}
+              onChange={e => setRingTuning({...ringTuning, frontScale: parseFloat(e.target.value)})} />
+          </label>
+          <label className="ar-tuning-label">
+            <span>Size (Back side): <strong>{ringTuning.backScale.toFixed(2)}</strong></span>
+            <input type="range" min="0.1" max="0.4" step="0.01" value={ringTuning.backScale}
+              onChange={e => setRingTuning({...ringTuning, backScale: parseFloat(e.target.value)})} />
+          </label>
+        </div>
+      )}
+
       {/* ── Main viewport: live AR try-on ── */}
       <div className="tracking-container">
         <div className="ar-content">
@@ -663,6 +714,7 @@ export default function ARViewPage({ params }) {
             isHandTracking={isHandTracking}
             category={category}
             customMaterials={customMaterials}
+            ringTuning={ringTuning}
           />
         </div>
       </div>

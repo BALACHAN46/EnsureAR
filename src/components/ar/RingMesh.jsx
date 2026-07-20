@@ -15,7 +15,7 @@ import { applyAndExtractMaterials } from '../../utils/materialHelper';
  * - Precision Occlusion: An invisible cylinder precisely centered hides the back-band when viewing the palm, and hides the gem when viewing the back of the hand, without side-clipping.
  * ─────────────────────────────────────────────────────────────────────
  */
-const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, showMesh, customMaterials }) => {
+const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, showMesh, customMaterials, ringTuning }) => {
   const { scene } = useGLTF(activeModel?.glbPath || '');
   const groupRef = useRef();
   const occluderRef = useRef();
@@ -118,23 +118,11 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, s
     const isBackOfHandVisible = palmNormal.z < 0;
     const fingerLength = p13.distanceTo(p14);
 
-    // Since both hands have slightly different tendon tracking in MediaPipe, 
-    // we define independent tuning values for all 4 scenarios!
-    // Positive values move the ring Screen Right. Negative moves Screen Left.
-
-    // --- TWEAK THESE NUMBERS TO MOVE THE RING ---
-    // Increase the number (e.g. 0.05) to move towards the Face side.
-    // Decrease the number (e.g. -0.05) to move Opposite to the Face side.
-    
-    // --- RIGHT HAND OFFSETS ---
-    const rightHandFrontOffset = -0.05; // Moved opposite to the face (towards pinky) as requested!
-    const rightHandBackOffset = 0.00;  // Change to -0.04 to move opposite to face
-
-    // --- LEFT HAND OFFSETS ---
-    const leftHandFrontOffset = 0.00;  // Change to -0.04 to move opposite to face
-    const leftHandBackOffset = 0.00;   // Change to -0.04 to move opposite to face
-
-    // isPhysicalRightHand is now defined at the top of the function for Gimbal Lock logic
+    // Dynamic UI Tuning or fallbacks
+    const rightHandFrontOffset = ringTuning?.rightHandFrontOffset ?? -0.05;
+    const rightHandBackOffset = ringTuning?.rightHandBackOffset ?? 0.00;
+    const leftHandFrontOffset = ringTuning?.leftHandFrontOffset ?? -0.06;
+    const leftHandBackOffset = ringTuning?.leftHandBackOffset ?? -0.06;
 
     let currentOffset = 0;
     if (isPhysicalRightHand) {
@@ -151,11 +139,9 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, s
     targetQuat.multiply(flipQuat);
 
     // 3. Dynamic Biological Scale
-    // --- SCALE TUNING ---
-    // Increase to make the ring larger, decrease to make it smaller
-    const frontScale = 0.23; // Increased to fully cover the finger on the palm side!
-    const backScale = 0.20;  // Kept exactly the same so the gemstone side is NOT affected!
-    
+    const frontScale = ringTuning?.frontScale ?? 0.23;
+    const backScale = ringTuning?.backScale ?? 0.20;
+
     const baseScale = isBackOfHandVisible ? backScale : frontScale;
     const finalScale = fingerLength * baseScale;
 
@@ -165,9 +151,18 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, s
       groupRef.current.quaternion.copy(targetQuat);
       groupRef.current.scale.set(finalScale, finalScale, finalScale);
     } else {
-      groupRef.current.position.lerp(targetPos, 0.7);
-      groupRef.current.quaternion.slerp(targetQuat, 0.6);
-      groupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.5);
+      // DYNAMIC INTERPOLATION: The secret to NO jitter AND FAST movement.
+      // We calculate how much the hand moved relative to the finger size.
+      const dist = groupRef.current.position.distanceTo(targetPos);
+      const normalizedDist = dist / fingerLength;
+
+      // If movement is tiny (jitter), use low lerp (0.1) for smoothness. 
+      // If movement is large (fast hand movement), scale it up to 0.75 for instant speed.
+      const adaptiveLerp = Math.min(Math.max(0.1 + (normalizedDist * 1.5), 0.1), 0.75);
+
+      groupRef.current.position.lerp(targetPos, adaptiveLerp);
+      groupRef.current.quaternion.slerp(targetQuat, adaptiveLerp * 0.8);
+      groupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.3);
     }
 
     // 4. Professional Occlusion Masking

@@ -10,7 +10,7 @@
       "category": "necklace"
     },
     "ea5ace30985b": {
-      "posX": 0.08,
+      "posX": 0.28,
       "posY": 1.67,
       "posZ": -0.07,
       "rotX": 1.51841,
@@ -78,32 +78,13 @@
       "category": "earrings"
     },
     "fd27ab032085": {
-      "posX": 0,
-      "posY": 0.05,
-      "posZ": 0.5,
-      "rotX": 3.13841,
-      "rotY": 0.00841,
-      "rotZ": 0.00841,
-      "scale": 1,
-      "category": "rings"
-    },
-    "57688ecd8143": {
-      "posY": 0,
-      "posZ": 0,
-      "rotX": 1.5708,
-      "rotY": 1.5708,
-      "rotZ": 0,
-      "scale": 1,
-      "category": "rings"
-    },
-    "57688ecd8144": {
-      "posX": 0.18,
-      "posY": 0,
-      "posZ": 0.5,
-      "rotX": 3.13841,
-      "rotY": 0.00841,
-      "rotZ": 0.00841,
-      "scale": 1,
+      "posX": 0.27,
+      "posY": 1.93,
+      "posZ": -0.3,
+      "rotX": 1.47841,
+      "rotY": 0,
+      "rotZ": 0.01841,
+      "scale": 1.18,
       "category": "rings"
     },
     "b623455781f5": {
@@ -343,56 +324,6 @@
       "rotZ": 0.00841,
       "scale": -20,
       "category": "bracelets"
-    },
-    "aee84ebe00f9": {
-      "posX": 0.03,
-      "posY": 7.3,
-      "posZ": 0.77,
-      "rotX": 1.74841,
-      "rotY": 0,
-      "rotZ": 0,
-      "scale": 6.39,
-      "category": "rings"
-    },
-    "ad26361592a0": {
-      "posX": 0.21,
-      "posY": 0,
-      "posZ": 0.45,
-      "rotX": -1.57159,
-      "rotY": 0,
-      "rotZ": 0,
-      "scale": 1,
-      "category": "rings"
-    },
-    "b7b654e39e11": {
-      "posX": 0.05,
-      "posY": -0.05,
-      "posZ": 0.3,
-      "rotX": -1.57159,
-      "rotY": 0,
-      "rotZ": 0.00841,
-      "scale": 1,
-      "category": "rings"
-    },
-    "18f10a31f897": {
-      "posX": 0.1,
-      "posY": -0.2,
-      "posZ": 0.3,
-      "rotX": -1.57159,
-      "rotY": 0,
-      "rotZ": 0,
-      "scale": 1,
-      "category": "rings"
-    },
-    "892000548c12": {
-      "posX": 0,
-      "posY": 0,
-      "posZ": 0.35,
-      "rotX": -1.57159,
-      "rotY": 0,
-      "rotZ": 0,
-      "scale": 1,
-      "category": "rings"
     },
     "new_1dpng": {
       "posX": 0.08,

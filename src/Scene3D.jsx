@@ -1159,7 +1159,7 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, 
 
 
 
-const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, modelPos, modelRot, modelScale, activeModel, isHandTracking, category, customMaterials }) => {
+const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, modelPos, modelRot, modelScale, activeModel, isHandTracking, category, customMaterials, ringTuning }) => {
   // Shared state ensures the face mask and the glasses always use the EXACT same tracking speed!
   const sharedState = useRef({ adaptiveLerp: 0.5 });
   const isEyewear = FACE_AR_CATEGORIES.includes(category);
@@ -1197,6 +1197,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                     activeModel={activeModel}
                     showMesh={showFaceMesh}
                     customMaterials={customMaterials}
+                    ringTuning={ringTuning}
                   />
                 ) : (
                   <WristMesh
