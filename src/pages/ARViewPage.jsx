@@ -303,7 +303,7 @@ export default function ARViewPage({ params }) {
               </svg>
               Try On in AR
             </button>
-            
+
             <button className="configurator-close-btn" onClick={() => setViewMode('tryon')} title="Close Configurator">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -571,11 +571,11 @@ export default function ARViewPage({ params }) {
       </div>
 
       {/* Hint overlays for jewelry (Try On mode only) */}
-      {viewMode === 'tryon' && category === 'rings' && (
+      {/* {viewMode === 'tryon' && category === 'rings' && (
         <div className="ar-hint">
           💍 Show the back of your hand to try the ring — use Tuning to adjust position &amp; size
         </div>
-      )}
+      )} */}
 
       {/* Live Tuning Panel (Admin only, Try On mode only) */}
       {viewMode === 'tryon' && isAdmin && showTuning && (
@@ -659,22 +659,22 @@ export default function ARViewPage({ params }) {
           <label className="ar-tuning-label">
             <span>Right Hand (Palm Offset): <strong>{ringTuning.rightHandFrontOffset.toFixed(2)}</strong></span>
             <input type="range" min="-0.15" max="0.15" step="0.01" value={ringTuning.rightHandFrontOffset}
-              onChange={e => setRingTuning({...ringTuning, rightHandFrontOffset: parseFloat(e.target.value)})} />
+              onChange={e => setRingTuning({ ...ringTuning, rightHandFrontOffset: parseFloat(e.target.value) })} />
           </label>
           <label className="ar-tuning-label">
             <span>Right Hand (Back Offset): <strong>{ringTuning.rightHandBackOffset.toFixed(2)}</strong></span>
             <input type="range" min="-0.15" max="0.15" step="0.01" value={ringTuning.rightHandBackOffset}
-              onChange={e => setRingTuning({...ringTuning, rightHandBackOffset: parseFloat(e.target.value)})} />
+              onChange={e => setRingTuning({ ...ringTuning, rightHandBackOffset: parseFloat(e.target.value) })} />
           </label>
           <label className="ar-tuning-label">
             <span>Left Hand (Palm Offset): <strong>{ringTuning.leftHandFrontOffset.toFixed(2)}</strong></span>
             <input type="range" min="-0.15" max="0.15" step="0.01" value={ringTuning.leftHandFrontOffset}
-              onChange={e => setRingTuning({...ringTuning, leftHandFrontOffset: parseFloat(e.target.value)})} />
+              onChange={e => setRingTuning({ ...ringTuning, leftHandFrontOffset: parseFloat(e.target.value) })} />
           </label>
           <label className="ar-tuning-label">
             <span>Left Hand (Back Offset): <strong>{ringTuning.leftHandBackOffset.toFixed(2)}</strong></span>
             <input type="range" min="-0.15" max="0.15" step="0.01" value={ringTuning.leftHandBackOffset}
-              onChange={e => setRingTuning({...ringTuning, leftHandBackOffset: parseFloat(e.target.value)})} />
+              onChange={e => setRingTuning({ ...ringTuning, leftHandBackOffset: parseFloat(e.target.value) })} />
           </label>
 
           <div className="ar-tuning-divider" />
@@ -682,12 +682,12 @@ export default function ARViewPage({ params }) {
           <label className="ar-tuning-label">
             <span>Size (Palm side): <strong>{ringTuning.frontScale.toFixed(2)}</strong></span>
             <input type="range" min="0.1" max="0.4" step="0.01" value={ringTuning.frontScale}
-              onChange={e => setRingTuning({...ringTuning, frontScale: parseFloat(e.target.value)})} />
+              onChange={e => setRingTuning({ ...ringTuning, frontScale: parseFloat(e.target.value) })} />
           </label>
           <label className="ar-tuning-label">
             <span>Size (Back side): <strong>{ringTuning.backScale.toFixed(2)}</strong></span>
             <input type="range" min="0.1" max="0.4" step="0.01" value={ringTuning.backScale}
-              onChange={e => setRingTuning({...ringTuning, backScale: parseFloat(e.target.value)})} />
+              onChange={e => setRingTuning({ ...ringTuning, backScale: parseFloat(e.target.value) })} />
           </label>
         </div>
       )}
