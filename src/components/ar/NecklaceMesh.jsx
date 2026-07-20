@@ -52,7 +52,7 @@ const getSparkleTexture = () => {
   return cachedSparkleTexture;
 };
 
-const JewelrySparkles = ({ count = 25, isPlane = false, imagePath = null, modelScene = null }) => {
+export const JewelrySparkles = ({ count = 25, isPlane = false, imagePath = null, modelScene = null }) => {
   const texture = React.useMemo(() => getSparkleTexture(), []);
   const material = React.useMemo(() => new THREE.SpriteMaterial({
     map: texture,
@@ -421,7 +421,7 @@ export function computeCollarbone(faceLandmarks, poseLandmarks, viewport, offset
 
 
 // ── NecklaceMesh ─────────────────────────────────────────────────────
-const NecklaceMesh = ({ landmarksRef, poseLandmarksRef, modelPos, modelRot, modelScale, activeModel, showFaceMesh, customMaterials }) => {
+export default function NecklaceMesh({ landmarksRef, poseLandmarksRef, activeModel, modelPos, modelRot, modelScale, modelSparkles, customMaterials, showFaceMesh }) {
   const groupRef = useRef();
   const boxHeightRef = useRef(0);
   const boxWidthRef = useRef(1);
@@ -439,6 +439,7 @@ const NecklaceMesh = ({ landmarksRef, poseLandmarksRef, modelPos, modelRot, mode
         modelPos={modelPos}
         modelRot={modelRot}
         modelScale={modelScale}
+        modelSparkles={modelSparkles}
         imagePath={modelPath}
         showFaceMesh={showFaceMesh}
       />
@@ -453,6 +454,7 @@ const NecklaceMesh = ({ landmarksRef, poseLandmarksRef, modelPos, modelRot, mode
       modelPos={modelPos}
       modelRot={modelRot}
       modelScale={modelScale}
+      modelSparkles={modelSparkles}
       gltfPath={modelPath}
       showFaceMesh={showFaceMesh}
       customMaterials={customMaterials}
@@ -460,7 +462,7 @@ const NecklaceMesh = ({ landmarksRef, poseLandmarksRef, modelPos, modelRot, mode
   );
 };
 
-const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos, modelRot, modelScale, gltfPath, showFaceMesh, customMaterials }) => {
+const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos, modelRot, modelScale, modelSparkles, gltfPath, showFaceMesh, customMaterials }) => {
   const { scene } = useGLTF(gltfPath);
 
   const { clonedScene } = React.useMemo(() => {
@@ -772,13 +774,13 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
       {/* The visible necklace model */}
       <group ref={groupRef}>
         <primitive object={clonedScene} />
-        <JewelrySparkles count={25} isPlane={false} modelScene={clonedScene} />
+        {modelSparkles && <JewelrySparkles count={75} isPlane={false} modelScene={clonedScene} />}
       </group>
     </group>
   );
 };
 
-const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos, modelRot, modelScale, imagePath, showFaceMesh }) => {
+const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos, modelRot, modelScale, modelSparkles, imagePath, showFaceMesh }) => {
   const texture = useTexture(imagePath);
 
   React.useEffect(() => {
@@ -951,10 +953,10 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
           <planeGeometry args={[1, 1]} />
           <primitive object={material} attach="material" />
         </mesh>
-        <JewelrySparkles count={25} isPlane={true} imagePath={imagePath} />
+        {modelSparkles && <JewelrySparkles count={75} isPlane={true} imagePath={imagePath} />}
       </group>
     </group>
   );
 };
 
-export default NecklaceMesh;
+

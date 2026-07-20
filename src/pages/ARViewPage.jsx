@@ -40,6 +40,7 @@ export default function ARViewPage({ params }) {
   const [modelPos, setModelPos] = useState([0, 0, 0]);
   const [modelRot, setModelRot] = useState([0, 0, 0]);
   const [modelScale, setModelScale] = useState(1);
+  const [modelSparkles, setModelSparkles] = useState(false);
   const [showTuning, setShowTuning] = useState(false);
   const [saved, setSaved] = useState(false);
   const [viewMode, setViewMode] = useState('tryon'); // 'tryon' | 'configurator'
@@ -110,6 +111,7 @@ export default function ARViewPage({ params }) {
     setModelPos(configToPosition(cfg));
     setModelRot(configToRotation(cfg));
     setModelScale(configToScale(cfg));
+    setModelSparkles(!!cfg.enableSparkles);
   };
 
   const handleModelSelect = (model) => {
@@ -138,6 +140,7 @@ export default function ARViewPage({ params }) {
       rotY: modelRot[1],
       rotZ: modelRot[2],
       scale: modelScale,
+      enableSparkles: modelSparkles,
       category: activeModel.category,
     });
 
@@ -284,13 +287,20 @@ export default function ARViewPage({ params }) {
           />
         </div>
         <div className="configurator-sidebar">
-          <div className="configurator-sidebar-top">
+          <div className="configurator-sidebar-top" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
             <button className="configurator-tryon-btn" onClick={() => setViewMode('tryon')}>
               <svg viewBox="0 0 20 20" fill="currentColor">
                 <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                 <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
               </svg>
               Try On in AR
+            </button>
+            
+            <button className="configurator-close-btn" onClick={() => setViewMode('tryon')} title="Close Configurator">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
             </button>
           </div>
 
@@ -609,6 +619,11 @@ export default function ARViewPage({ params }) {
               onChange={e => setModelScale(parseFloat(e.target.value))} />
           </label>
 
+          <label className="ar-tuning-label" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.5rem' }}>
+            <span>✨ Sparkling Effect</span>
+            <input type="checkbox" checked={modelSparkles} onChange={e => setModelSparkles(e.target.checked)} style={{ width: '18px', height: '18px', accentColor: '#fbbf24', cursor: 'pointer' }} />
+          </label>
+
           <div className="ar-tuning-actions">
             <button className={`ar-tuning-save-btn ${saved ? 'saved' : ''}`} onClick={handleSaveTuning}>
               {saved ? `✔ ${typeof saved === 'string' ? saved : 'Saved!'}` : '💾 Save'}
@@ -665,6 +680,7 @@ export default function ARViewPage({ params }) {
             modelPos={modelPos}
             modelRot={modelRot}
             modelScale={modelScale}
+            modelSparkles={modelSparkles}
             activeModel={activeModel}
             isHandTracking={isHandTracking}
             category={category}
@@ -685,7 +701,9 @@ export default function ARViewPage({ params }) {
                 onClick={() => handleCategorySwitch(cat)}
                 title={meta.label}
               >
-                <span className="ar-category-tile-icon">{meta.emoji}</span>
+                <span className="ar-category-tile-icon">
+                  {meta.icon ? <img src={meta.icon} alt={meta.label} style={{ width: '20px', height: '20px', objectFit: 'contain' }} /> : meta.emoji}
+                </span>
                 <span className="ar-category-tile-label">{meta.label}</span>
               </button>
             );
@@ -720,9 +738,9 @@ export default function ARViewPage({ params }) {
               </div>
             ))}
           </div>
-          <div className="carousel-title">
+          {/* <div className="carousel-title">
             {activeModel?.name || 'Select a model'} · {category}
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

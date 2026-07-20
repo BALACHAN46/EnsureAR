@@ -150,7 +150,9 @@ export default function AdminOverview() {
                   style={{ '--cat-color': meta.color }}
                   onClick={() => navigate(`/admin/models/${cat}`)}
                 >
-                  <span className="overview-category-icon">{meta.emoji}</span>
+                  <span className="overview-category-icon">
+                    {meta.icon ? <img src={meta.icon} alt={meta.label} style={{ width: '28px', height: '28px', objectFit: 'contain' }} /> : meta.emoji}
+                  </span>
                   <span className="overview-category-name">{meta.label}</span>
                   <span className="overview-category-count">{modelCounts[cat]} models</span>
                 </button>

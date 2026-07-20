@@ -8,6 +8,7 @@
       "rotY": 0,
       "rotZ": 0,
       "scale": 1,
+      "enableSparkles": true,
       "category": "necklace"
     },
     "d9a1822e7a88": {
@@ -88,6 +89,7 @@
       "rotY": 0,
       "rotZ": 3.14159,
       "scale": 1,
+      "enableSparkles": false,
       "category": "eyewear"
     },
     "6186cc04383e": {
@@ -168,6 +170,7 @@
       "rotY": 0.00841,
       "rotZ": 3.13841,
       "scale": 1.38,
+      "enableSparkles": false,
       "category": "watch"
     },
     "f2917202433f": {
@@ -248,6 +251,7 @@
       "rotY": 0,
       "rotZ": 0,
       "scale": 0.7,
+      "enableSparkles": true,
       "category": "bracelets"
     },
     "b2": {
@@ -258,6 +262,7 @@
       "rotY": 0,
       "rotZ": 0,
       "scale": 0.7,
+      "enableSparkles": true,
       "category": "bracelets"
     },
     "b3": {
@@ -287,7 +292,7 @@
       "rotX": 1.57841,
       "rotY": 0.00841,
       "rotZ": 0.00841,
-      "scale": -1.45,
+      "scale": -1.5,
       "category": "bracelets"
     },
     "df5c44d2927d": {

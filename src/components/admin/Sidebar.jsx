@@ -52,8 +52,8 @@ export default function Sidebar({ activeNav, categories, activeCategory, modelCo
                 className={`sidebar-item ${isActive ? 'active' : ''}`}
                 onClick={() => onCategorySelect(cat)}
               >
-                <span className="sidebar-item-icon" style={{ background: `${meta.color}20`, color: meta.color }}>
-                  {meta.emoji}
+                <span className="sidebar-item-icon" style={{ background: `${meta.color}20`, color: meta.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {meta.icon ? <img src={meta.icon} alt={meta.label} style={{ width: '16px', height: '16px', objectFit: 'contain' }} /> : meta.emoji}
                 </span>
                 <span className="sidebar-item-label">
                   {meta.label}

@@ -177,6 +177,7 @@ img {
     background: rgba(15, 23, 42, 0.95);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(34, 211, 238, 0.3);
   }
+
   .home-nav-admin-btn:hover {
     transform: translateX(-50%) translateY(-2px);
   }
@@ -218,15 +219,31 @@ img {
 }
 
 @keyframes floatOrb {
-  0% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(5%, 10%) scale(1.1); }
-  100% { transform: translate(-5%, -5%) scale(0.9); }
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(5%, 10%) scale(1.1);
+  }
+
+  100% {
+    transform: translate(-5%, -5%) scale(0.9);
+  }
 }
 
 @keyframes floatOrb2 {
-  0% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-10%, -5%) scale(1.2); }
-  100% { transform: translate(5%, 10%) scale(0.8); }
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(-10%, -5%) scale(1.2);
+  }
+
+  100% {
+    transform: translate(5%, 10%) scale(0.8);
+  }
 }
 
 /* Hero Section */
@@ -263,7 +280,7 @@ img {
   letter-spacing: -0.02em;
   margin-bottom: 1.5rem;
   color: #ffffff;
-  text-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
   animation: fadeUp 0.8s ease-out;
 }
 
@@ -355,7 +372,7 @@ img {
   content: '';
   position: absolute;
   inset: 0;
-  background: var(--card-gradient, linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%));
+  background: var(--card-gradient, linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%));
   opacity: 0;
   transition: opacity 0.4s ease;
   z-index: 0;
@@ -375,7 +392,7 @@ img {
 .category-card:hover {
   transform: translateY(-8px) scale(1.02);
   border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 30px var(--card-shadow, rgba(0,0,0,0));
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 30px var(--card-shadow, rgba(0, 0, 0, 0));
 }
 
 .category-card:hover::before,
@@ -388,7 +405,7 @@ img {
   margin-bottom: 1.5rem;
   position: relative;
   z-index: 1;
-  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
   transition: transform 0.4s ease;
 }
 
@@ -419,8 +436,15 @@ img {
 }
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -935,7 +959,7 @@ img {
   gap: 0.5rem;
 }
 
-.sidebar-logo img{
+.sidebar-logo img {
   display: flex;
   align-items: center;
   gap: 0;
@@ -1414,10 +1438,21 @@ img {
   pointer-events: none;
 }
 
-.stat-card--cyan { --stat-glow: rgba(34, 211, 238, 0.22); }
-.stat-card--violet { --stat-glow: rgba(139, 92, 246, 0.2); }
-.stat-card--green { --stat-glow: rgba(16, 185, 129, 0.2); }
-.stat-card--slate { --stat-glow: rgba(148, 163, 184, 0.16); }
+.stat-card--cyan {
+  --stat-glow: rgba(34, 211, 238, 0.22);
+}
+
+.stat-card--violet {
+  --stat-glow: rgba(139, 92, 246, 0.2);
+}
+
+.stat-card--green {
+  --stat-glow: rgba(16, 185, 129, 0.2);
+}
+
+.stat-card--slate {
+  --stat-glow: rgba(148, 163, 184, 0.16);
+}
 
 .stat-card-icon {
   width: 34px;
@@ -1430,10 +1465,21 @@ img {
   background: var(--stat-glow, rgba(255, 255, 255, 0.08));
 }
 
-.stat-card--cyan .stat-card-icon { color: var(--sa-cyan); }
-.stat-card--violet .stat-card-icon { color: var(--sa-violet); }
-.stat-card--green .stat-card-icon { color: #6ee7b7; }
-.stat-card--slate .stat-card-icon { color: var(--text-2); }
+.stat-card--cyan .stat-card-icon {
+  color: var(--sa-cyan);
+}
+
+.stat-card--violet .stat-card-icon {
+  color: var(--sa-violet);
+}
+
+.stat-card--green .stat-card-icon {
+  color: #6ee7b7;
+}
+
+.stat-card--slate .stat-card-icon {
+  color: var(--text-2);
+}
 
 .stat-card-icon svg {
   width: 17px;
@@ -1877,7 +1923,8 @@ img {
 }
 
 /* Touch / coarse-pointer devices can't hover — keep the drawer open always */
-@media (hover: none), (pointer: coarse) {
+@media (hover: none),
+(pointer: coarse) {
   .model-card-details {
     max-height: 160px;
     opacity: 1;
@@ -2525,7 +2572,7 @@ img {
   pointer-events: none;
 }
 
-.ar-header > * {
+.ar-header>* {
   pointer-events: auto;
 }
 
@@ -2765,9 +2812,12 @@ img {
 .ar-content {
   position: absolute;
   top: 0;
-  left: 0;
+  left: 50%;
+  transform: translateX(-50%);
   width: 100vw;
-  height: 100vh;
+  height: 56.25vw;
+  min-height: 100vh;
+  min-width: 177.778vh;
 }
 
 .loading-overlay {
@@ -2798,7 +2848,9 @@ img {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .webcam-video {
@@ -3177,7 +3229,7 @@ img {
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(8px);
 }
 
@@ -3191,6 +3243,31 @@ img {
   width: 14px;
   height: 14px;
   color: #d8b4fe;
+}
+
+.configurator-close-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.configurator-close-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.configurator-close-btn svg {
+  width: 18px;
+  height: 18px;
 }
 
 .configurator-header-title {
@@ -3411,7 +3488,8 @@ img {
   color: #c4b5fd;
 }
 
-.configurator-camera-btn svg, .configurator-camera-btn > div {
+.configurator-camera-btn svg,
+.configurator-camera-btn>div {
   width: 20px;
   height: 20px;
 }
@@ -3419,4 +3497,27 @@ img {
 .configurator-camera-btn span {
   font-size: 0.8rem;
   font-weight: 500;
+}
+
+/* ─────────────────────────────────────────────────────────
+   MOBILE RESPONSIVENESS FOR 3D CONFIGURATOR
+───────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .configurator-split-layout {
+    flex-direction: column;
+  }
+  .configurator-main {
+    flex: 1;
+    min-height: 40vh;
+  }
+  .configurator-sidebar {
+    width: 100%;
+    flex: 1;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+  }
+  .configurator-swatch-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }

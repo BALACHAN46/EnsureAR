@@ -81,7 +81,7 @@ export default function ModelEditPage({ params }) {
 
   const [model, setModel] = useState(null);
   const [defaults, setDefaults] = useState({});
-  const [config, setConfig] = useState({ posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1 });
+  const [config, setConfig] = useState({ posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1, enableSparkles: false });
   const [originalDefaults, setOriginalDefaults] = useState(null);
   const [saved, setSaved] = useState(false);
   const [isCustomized, setIsCustomized] = useState(false);
@@ -285,6 +285,19 @@ export default function ModelEditPage({ params }) {
                 </React.Fragment>
               );
             })}
+          </div>
+
+          <div className="tuning-slider-row" style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="tuning-slider-label">
+              <span className="tuning-slider-dot" style={{ background: '#fbbf24' }} />
+              <span className="tuning-slider-name">✨ Sparkling Effect</span>
+            </div>
+            <input 
+              type="checkbox" 
+              checked={!!config.enableSparkles} 
+              onChange={e => setConfig(prev => ({ ...prev, enableSparkles: e.target.checked }))} 
+              style={{ width: '20px', height: '20px', accentColor: '#fbbf24', cursor: 'pointer' }}
+            />
           </div>
 
           <div className="tuning-actions">

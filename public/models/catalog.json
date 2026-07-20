@@ -216,8 +216,6 @@
       ],
       "necklaceType": "open"
     },
-
-
     {
       "id": "60f4edf99880",
       "name": "green glass",
@@ -434,7 +432,6 @@
       ],
       "necklaceType": "open"
     },
-
     {
       "id": "7787b85ace51",
       "name": "fds",
@@ -490,87 +487,6 @@
       "necklaceType": "open"
     },
     {
-      "id": "3558c75c2158",
-      "name": "watch 2",
-      "category": "watch",
-      "modelPath": "/models/watch/3558c75c2158.glb",
-      "mtlPath": "",
-      "texturePath": "",
-      "glbPath": "/models/watch/3558c75c2158.glb",
-      "thumbnailPath": "/models/watch/3558c75c2158.png",
-      "uploadedAt": "2026-07-11T13:01:58.5566807Z",
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "offset": [
-        0,
-        0,
-        0
-      ],
-      "rotationOffset": [
-        0,
-        0,
-        0
-      ],
-      "necklaceType": "open"
-    },
-    {
-      "id": "ed9a4fb27d75",
-      "name": "watch 6",
-      "category": "watch",
-      "modelPath": "/models/watch/ed9a4fb27d75.glb",
-      "mtlPath": "",
-      "texturePath": "/models/watch/Clock_default_BaseColor.png",
-      "glbPath": "/models/watch/ed9a4fb27d75.glb",
-      "thumbnailPath": "/models/watch/ed9a4fb27d75.png",
-      "uploadedAt": "2026-07-11T14:05:53.3618103Z",
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "offset": [
-        0,
-        0,
-        0
-      ],
-      "rotationOffset": [
-        0,
-        0,
-        0
-      ],
-      "necklaceType": "open"
-    },
-    {
-      "id": "w1",
-      "name": "watch 10",
-      "category": "watch",
-      "modelPath": "/models/watch/f74031ddf3c2.glb",
-      "mtlPath": "",
-      "texturePath": "",
-      "glbPath": "/models/watch/f74031ddf3c2.glb",
-      "thumbnailPath": "/models/watch/f74031ddf3c2.png",
-      "uploadedAt": "2026-07-11T14:05:53.3618103Z",
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "offset": [
-        0,
-        0,
-        0
-      ],
-      "rotationOffset": [
-        0,
-        0,
-        0
-      ],
-      "necklaceType": "open"
-    },
-    {
       "id": "5245b2cb364e",
       "name": "fdx",
       "category": "watch",
@@ -580,33 +496,6 @@
       "glbPath": "/models/watch/5245b2cb364e.glb",
       "thumbnailPath": "/models/watch/5245b2cb364e.png",
       "uploadedAt": "2026-07-17T06:12:47.335317Z",
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "offset": [
-        0,
-        0,
-        0
-      ],
-      "rotationOffset": [
-        0,
-        0,
-        0
-      ],
-      "necklaceType": "open"
-    },
-    {
-      "id": "97cf922c59dc",
-      "name": "fdf",
-      "category": "watch",
-      "modelPath": "/models/watch/97cf922c59dc.glb",
-      "mtlPath": "",
-      "texturePath": "",
-      "glbPath": "/models/watch/97cf922c59dc.glb",
-      "thumbnailPath": "/models/watch/97cf922c59dc.png",
-      "uploadedAt": "2026-07-17T06:04:08.462281Z",
       "scale": [
         1,
         1,
@@ -651,7 +540,6 @@
       ],
       "necklaceType": "open"
     },
-    
     {
       "id": "b1",
       "name": "bracelets 1",
@@ -715,33 +603,6 @@
       "texturePath": "",
       "glbPath": "/models/bracelets/bangles (1).glb",
       "thumbnailPath": "/models/bracelets/ee43a4857fb3.png",
-      "uploadedAt": "2026-07-11T14:05:53.3618103Z",
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "offset": [
-        0,
-        0,
-        0
-      ],
-      "rotationOffset": [
-        0,
-        0,
-        0
-      ],
-      "necklaceType": "open"
-    },
-    {
-      "id": "b4",
-      "name": "bracelets 4",
-      "category": "bracelets",
-      "modelPath": "/models/bracelets/goldbraceletb1.glb",
-      "mtlPath": "",
-      "texturePath": "",
-      "glbPath": "/models/bracelets/goldbraceletb1.glb",
-      "thumbnailPath": "/models/bracelets/30e6bb69d235.png",
       "uploadedAt": "2026-07-11T14:05:53.3618103Z",
       "scale": [
         1,

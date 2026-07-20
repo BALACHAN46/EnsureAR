@@ -34,11 +34,11 @@ const FaceTracker = ({ onLandmarks, onPoseLandmarks, category }) => {
         setIsLoading(false);
         loadingFiredRef.current = true;
       }
-      
-      const landmarks = results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0 
-        ? results.multiFaceLandmarks[0] 
+
+      const landmarks = results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0
+        ? results.multiFaceLandmarks[0]
         : null;
-        
+
       onLandmarks(landmarks, results.image);
     });
 
@@ -87,9 +87,10 @@ const FaceTracker = ({ onLandmarks, onPoseLandmarks, category }) => {
 
                 await Promise.all(promises);
               }
+
             },
-            width: 640,
-            height: 480
+            width: 1280,
+            height: 720
           });
           camera.start();
         }
@@ -118,8 +119,9 @@ const FaceTracker = ({ onLandmarks, onPoseLandmarks, category }) => {
         className="webcam-video"
         mirrored={true}
         videoConstraints={{
-          
-          facingMode: "user"
+          facingMode: "user",
+          width: 1280,
+          height: 720
         }}
       />
       {isLoading && (
