@@ -325,76 +325,6 @@
       "scale": -1.5,
       "category": "bracelets"
     },
-    "ea5ace30985b": {
-      "posX": 0.05,
-      "posY": 0,
-      "posZ": 0.2,
-      "rotX": 3.09841,
-      "rotY": 0,
-      "rotZ": 0,
-      "scale": 0.02,
-      "category": "rings"
-    },
-    "fd27ab032085": {
-      "posX": 0.27,
-      "posY": 1.93,
-      "posZ": -0.3,
-      "rotX": 1.47841,
-      "rotY": 0,
-      "rotZ": 0.01841,
-      "scale": 1.18,
-      "category": "rings"
-    },
-    "aee84ebe00f9": {
-      "posX": 0.03,
-      "posY": -0.03,
-      "posZ": 0.77,
-      "rotX": 1.74841,
-      "rotY": 0,
-      "rotZ": 0,
-      "scale": -2.6,
-      "category": "rings"
-    },
-    "ad26361592a0": {
-      "posX": 0.21,
-      "posY": 0,
-      "posZ": 0.45,
-      "rotX": -1.57159,
-      "rotY": 0,
-      "rotZ": 0,
-      "scale": -2.32,
-      "category": "rings"
-    },
-    "b7b654e39e11": {
-      "posX": 0.05,
-      "posY": -0.05,
-      "posZ": 0.3,
-      "rotX": -1.57159,
-      "rotY": 0,
-      "rotZ": 0.00841,
-      "scale": -2.3,
-      "category": "rings"
-    },
-    "18f10a31f897": {
-      "posX": 0.1,
-      "posY": -0.2,
-      "posZ": 0.3,
-      "rotX": -1.57159,
-      "rotY": 0,
-      "rotZ": 0,
-      "scale": -2.8,
-      "category": "rings"
-    },
-    "892000548c12": {
-      "posX": 0,
-      "posY": 0,
-      "posZ": 0.35,
-      "rotX": -1.57159,
-      "rotY": 0,
-      "rotZ": 0,
-      "scale": -2.99,
-      "category": "rings"
-    },
     "3c1d189abcd123": {
       "posX": 0,
       "posY": 0.08,
@@ -424,6 +354,26 @@
       "rotZ": 0,
       "scale": 1,
       "category": "nosepin"
+    },
+    "ea5ace30985b": {
+      "posX": 0.11,
+      "posY": 1.67,
+      "posZ": -0.07,
+      "rotX": 1.51841,
+      "rotY": 0,
+      "rotZ": -0.00159,
+      "scale": 0.02,
+      "category": "rings"
+    },
+    "fd27ab032085": {
+      "posX": 0.27,
+      "posY": 1.93,
+      "posZ": -0.3,
+      "rotX": 1.47841,
+      "rotY": 0,
+      "rotZ": 0.01841,
+      "scale": 1.18,
+      "category": "rings"
     }
   }
 }
