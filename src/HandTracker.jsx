@@ -70,8 +70,7 @@ const HandTracker = ({ onLandmarks }) => {
         className="webcam-video"
         mirrored={true}
         videoConstraints={{
-          width: 640,
-          height: 480,
+          
           facingMode: "user"
         }}
       />
@@ -86,3 +85,4 @@ const HandTracker = ({ onLandmarks }) => {
 };
 
 export default HandTracker;
+

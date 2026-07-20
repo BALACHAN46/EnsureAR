@@ -864,8 +864,6 @@
       ],
       "necklaceType": "open"
     },
-
-    
     {
       "id": "ea5ace30985b",
       "name": "Ring",
@@ -876,33 +874,6 @@
       "glbPath": "/models/rings/ea5ace30985b.glb",
       "thumbnailPath": "/models/rings/ea5ace30985b.jpg",
       "uploadedAt": "2026-06-24T12:48:50.5060282Z",
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "offset": [
-        0,
-        0,
-        0
-      ],
-      "rotationOffset": [
-        0,
-        0,
-        0
-      ],
-      "necklaceType": "open"
-    },
-    {
-      "id": "3c1d189abcd123",
-      "name": "Earring",
-      "category": "earrings",
-      "modelPath": "/models/earrings/3c1d189abcd123.glb",
-      "mtlPath": "",
-      "texturePath": "",
-      "glbPath": "/models/earrings/3c1d189abcd123.glb",
-      "thumbnailPath": "/models/necklace/3c1d189ac571.png",
-      "uploadedAt": "2026-06-30T05:42:41.3805306Z",
       "scale": [
         1,
         1,
@@ -1119,6 +1090,33 @@
       "glbPath": "/models/rings/892000548c12.glb",
       "thumbnailPath": "/models/rings/892000548c12.png",
       "uploadedAt": "2026-07-15T13:37:49.3009353Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "3c1d189abcd123",
+      "name": "Earring",
+      "category": "earrings",
+      "modelPath": "/models/earrings/3c1d189abcd123.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/earrings/3c1d189abcd123.glb",
+      "thumbnailPath": "/models/necklace/3c1d189ac571.png",
+      "uploadedAt": "2026-06-30T05:42:41.3805306Z",
       "scale": [
         1,
         1,

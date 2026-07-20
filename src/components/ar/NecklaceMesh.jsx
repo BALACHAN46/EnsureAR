@@ -6,6 +6,179 @@ import { applyAndExtractMaterials } from '../../utils/materialHelper';
 
 const getAdaptiveFactor = (vel, scale, base = 0.08) => Math.min(1.0, base + Math.pow(vel * scale, 2));
 
+let cachedSparkleTexture = null;
+const getSparkleTexture = () => {
+  if (cachedSparkleTexture) return cachedSparkleTexture;
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  
+  const cx = 64;
+  const cy = 64;
+
+  ctx.clearRect(0, 0, 128, 128);
+
+  let gradV = ctx.createLinearGradient(64, 0, 64, 128);
+  gradV.addColorStop(0, 'rgba(255,255,255,0)');
+  gradV.addColorStop(0.5, 'rgba(255,255,255,1)');
+  gradV.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = gradV;
+  ctx.beginPath();
+  ctx.moveTo(62, 0); ctx.lineTo(66, 0); ctx.lineTo(68, 64);
+  ctx.lineTo(66, 128); ctx.lineTo(62, 128); ctx.lineTo(60, 64);
+  ctx.fill();
+
+  let gradH = ctx.createLinearGradient(0, 64, 128, 64);
+  gradH.addColorStop(0, 'rgba(255,255,255,0)');
+  gradH.addColorStop(0.5, 'rgba(255,255,255,1)');
+  gradH.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = gradH;
+  ctx.beginPath();
+  ctx.moveTo(0, 62); ctx.lineTo(0, 66); ctx.lineTo(64, 68);
+  ctx.lineTo(128, 66); ctx.lineTo(128, 62); ctx.lineTo(64, 60);
+  ctx.fill();
+
+  let radGrad = ctx.createRadialGradient(64, 64, 0, 64, 64, 16);
+  radGrad.addColorStop(0, 'rgba(255,255,255,1)');
+  radGrad.addColorStop(0.3, 'rgba(255,255,255,0.8)');
+  radGrad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = radGrad;
+  ctx.beginPath();
+  ctx.arc(64, 64, 16, 0, Math.PI * 2);
+  ctx.fill();
+
+  cachedSparkleTexture = new THREE.CanvasTexture(canvas);
+  return cachedSparkleTexture;
+};
+
+const JewelrySparkles = ({ count = 25, isPlane = false, imagePath = null, modelScene = null }) => {
+  const texture = React.useMemo(() => getSparkleTexture(), []);
+  const material = React.useMemo(() => new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  }), [texture]);
+
+  const sparklesRef = useRef([]);
+  const [validPoints, setValidPoints] = React.useState(null);
+
+  React.useEffect(() => {
+    let active = true;
+    if (isPlane && imagePath) {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.src = imagePath;
+      img.onload = () => {
+        if (!active) return;
+        const canvas = document.createElement('canvas');
+        const W = 128; 
+        const H = 128;
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, W, H);
+        const data = ctx.getImageData(0, 0, W, H).data;
+        const points = [];
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            const alpha = data[(y * W + x) * 4 + 3];
+            if (alpha > 128) {
+              points.push({
+                x: (x / W) - 0.5,
+                y: 0.5 - (y / H),
+                z: 0.03
+              });
+            }
+          }
+        }
+        if (points.length > 0) setValidPoints(points);
+      };
+    } else if (!isPlane && modelScene) {
+       modelScene.updateMatrixWorld(true);
+       const rootInverse = new THREE.Matrix4().copy(modelScene.matrixWorld).invert();
+       const points = [];
+       modelScene.traverse((child) => {
+         if (child.isMesh && child.geometry && child.geometry.attributes.position) {
+           const pos = child.geometry.attributes.position;
+           for (let i = 0; i < pos.count; i += 7) {
+             const vec = new THREE.Vector3().fromBufferAttribute(pos, i);
+             vec.applyMatrix4(child.matrixWorld);
+             vec.applyMatrix4(rootInverse);
+             points.push({ x: vec.x, y: vec.y, z: vec.z + 0.01 });
+           }
+         }
+       });
+       if (points.length > 0) setValidPoints(points);
+    }
+    return () => { active = false; };
+  }, [isPlane, imagePath, modelScene]);
+
+  const sparklesData = React.useMemo(() => {
+    if (!validPoints) return [];
+    return Array.from({ length: count }).map(() => {
+      const pt = validPoints[Math.floor(Math.random() * validPoints.length)];
+      
+      // We still use width for scale reference if 3D, but for now we just use a small base scale
+      const is3D = !isPlane && modelScene;
+      // In 3D, models can be huge (e.g. 100 units wide). We need the scale to adapt to the bounding box if possible, or just stay small relative to the points.
+      // Actually, since groupRef scales the 3D model down, a large baseScale in 3D will be scaled down correctly!
+      // In 2D, the scale is 1.
+      // Let's use a dynamic scale based on the bounds of the points.
+      let width = 1;
+      if (is3D) {
+        let minX = Infinity, maxX = -Infinity;
+        validPoints.forEach(p => {
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+        });
+        width = Math.max(0.1, maxX - minX);
+      }
+      
+      const scatterX = (Math.random() - 0.5) * 0.02 * width;
+      const scatterY = (Math.random() - 0.5) * 0.02 * width;
+
+      return {
+        position: new THREE.Vector3(pt.x + scatterX, pt.y + scatterY, pt.z),
+        baseScale: (Math.random() * 0.03 + 0.02) * width * 1.5,
+        phase: Math.random() * Math.PI * 2,
+        speed: Math.random() * 0.003 + 0.002
+      };
+    });
+  }, [count, validPoints, isPlane, modelScene]);
+
+  useFrame(() => {
+    const now = performance.now();
+    sparklesRef.current.forEach((sprite, i) => {
+      if (sprite) {
+        const data = sparklesData[i];
+        const sine = Math.sin(now * data.speed + data.phase);
+        
+        sprite.material.opacity = sine * 0.5 + 0.5;
+        const currentScale = data.baseScale * (sine * 0.3 + 0.7);
+        sprite.scale.set(currentScale, currentScale, currentScale);
+        sprite.material.rotation = (now * data.speed * 0.2) % (Math.PI * 2);
+      }
+    });
+  });
+
+  if (!validPoints) return null;
+
+  return (
+    <group>
+      {sparklesData.map((data, i) => (
+        <sprite
+          key={i}
+          ref={(el) => (sparklesRef.current[i] = el)}
+          material={material}
+          position={data.position}
+        />
+      ))}
+    </group>
+  );
+};
+
 /**
  * NecklaceMesh — Collarbone-stable anchor (NO chin landmark used)
  * ─────────────────────────────────────────────────────────────────────
@@ -20,16 +193,32 @@ const getAdaptiveFactor = (vel, scale, base = 0.08) => Math.min(1.0, base + Math
  */
 
 // ── Convert normalized landmark to viewport coordinates ────────────────
+function getDynamicScaleXY(viewport) {
+  const videoNode = document.querySelector('.webcam-video');
+  const videoAspect = (videoNode && videoNode.videoHeight) ? (videoNode.videoWidth / videoNode.videoHeight) : (640 / 480);
+  const containerAspect = viewport.width / viewport.height;
+  let scaleX = 1; let scaleY = 1;
+  if (containerAspect > videoAspect) {
+    scaleY = containerAspect / videoAspect;
+  } else {
+    scaleX = videoAspect / containerAspect;
+  }
+  return { scaleX, scaleY };
+}
+
 function toVP(lm, viewport) {
+  const { scaleX, scaleY } = getDynamicScaleXY(viewport);
   return {
-    x: -(lm.x - 0.5) * viewport.width,
-    y: -(lm.y - 0.5) * viewport.height,
+    x: -(lm.x - 0.5) * (viewport.width * scaleX),
+    y: -(lm.y - 0.5) * (viewport.height * scaleY),
     z: -lm.z * viewport.width * 1.5,
   };
 }
 
 // ── Shared composite anchor computation ──────────────────────────────
 export function computeCollarbone(faceLandmarks, poseLandmarks, viewport, offsetY = 0, chestSmoothRef = null) {
+  const { scaleX, scaleY } = getDynamicScaleXY(viewport);
+
   // 1. IPD Scale Calibration (Interpupillary Distance)
   // With refineLandmarks: true, iris centers 468/473 are now available.
   // These give the TRUE interpupillary distance (biological constant ~63mm).
@@ -43,8 +232,8 @@ export function computeCollarbone(faceLandmarks, poseLandmarks, viewport, offset
   }
 
   // Calculate IPD in 3D viewport space (using the same projection as toVP)
-  const ipdX = -(rightIris.x - leftIris.x) * viewport.width;
-  const ipdY = -(rightIris.y - leftIris.y) * viewport.height;
+  const ipdX = -(rightIris.x - leftIris.x) * (viewport.width * scaleX);
+  const ipdY = -(rightIris.y - leftIris.y) * (viewport.height * scaleY);
   const ipdZ = -(rightIris.z - leftIris.z) * viewport.width;
   const IPD = Math.sqrt(ipdX * ipdX + ipdY * ipdY + ipdZ * ipdZ);
 
@@ -583,6 +772,7 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
       {/* The visible necklace model */}
       <group ref={groupRef}>
         <primitive object={clonedScene} />
+        <JewelrySparkles count={25} isPlane={false} modelScene={clonedScene} />
       </group>
     </group>
   );
@@ -761,6 +951,7 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
           <planeGeometry args={[1, 1]} />
           <primitive object={material} attach="material" />
         </mesh>
+        <JewelrySparkles count={25} isPlane={true} imagePath={imagePath} />
       </group>
     </group>
   );

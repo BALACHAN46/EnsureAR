@@ -100,7 +100,7 @@ const FullFaceMesh = ({ landmarksRef, showFaceMesh, sharedState }) => {
       if (i * 3 + 2 >= positions.length) break;
 
       // Account for object-fit: cover scaling
-      const videoAspect = 640 / 480;
+      const videoNode = document.querySelector('.webcam-video'); const videoAspect = (videoNode && videoNode.videoHeight) ? (videoNode.videoWidth / videoNode.videoHeight) : (640 / 480);
       const containerAspect = viewport.width / viewport.height;
       let scaleX = 1; let scaleY = 1;
       if (containerAspect > videoAspect) {
@@ -226,7 +226,7 @@ const HandMesh = ({ landmarksRef, showMesh }) => {
     const camZ = camera.position.z;
 
     // Account for object-fit: cover scaling
-    const videoAspect = 640 / 480;
+    const videoNode = document.querySelector('.webcam-video'); const videoAspect = (videoNode && videoNode.videoHeight) ? (videoNode.videoWidth / videoNode.videoHeight) : (640 / 480);
     const containerAspect = viewport.width / viewport.height;
     let scaleX = 1; let scaleY = 1;
     if (containerAspect > videoAspect) {
@@ -309,7 +309,7 @@ const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
     const { viewport } = state;
 
     // Account for object-fit: cover scaling
-    const videoAspect = 640 / 480;
+    const videoNode = document.querySelector('.webcam-video'); const videoAspect = (videoNode && videoNode.videoHeight) ? (videoNode.videoWidth / videoNode.videoHeight) : (640 / 480);
     const containerAspect = viewport.width / viewport.height;
     let scaleX = 1; let scaleY = 1;
     if (containerAspect > videoAspect) {
@@ -478,7 +478,7 @@ const NosePinMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
     const { viewport } = state;
 
     // Account for object-fit: cover scaling
-    const videoAspect = 640 / 480;
+    const videoNode = document.querySelector('.webcam-video'); const videoAspect = (videoNode && videoNode.videoHeight) ? (videoNode.videoWidth / videoNode.videoHeight) : (640 / 480);
     const containerAspect = viewport.width / viewport.height;
     let scaleX = 1; let scaleY = 1;
     if (containerAspect > videoAspect) {
@@ -673,7 +673,7 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
     const { viewport } = state;
 
     // Account for object-fit: cover scaling
-    const videoAspect = 640 / 480;
+    const videoNode = document.querySelector('.webcam-video'); const videoAspect = (videoNode && videoNode.videoHeight) ? (videoNode.videoWidth / videoNode.videoHeight) : (640 / 480);
     const containerAspect = viewport.width / viewport.height;
     let scaleX = 1; let scaleY = 1;
     if (containerAspect > videoAspect) {
@@ -746,13 +746,16 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, sharedState
     } else {
       // Adaptive Tracking Stabilization Engine!
       const targetPos = new THREE.Vector3(anchorX, anchorY, anchorZ);
+
       // Calculate translational speed
       const dist = groupRef.current.position.distanceTo(targetPos);
-      const posLerp = Math.min(1.0, 0.2 + (dist * 10.0));
+      // Quadratic curve: dead-still when distance is small (0.04 base), snaps when moving fast
+      const posLerp = Math.max(0.04, Math.min(1.0, Math.pow(dist * 12.0, 2)));
 
       // Calculate rotational speed (angle is in radians)
       const angle = groupRef.current.quaternion.angleTo(targetQuat);
-      const rotLerp = Math.min(1.0, 0.2 + (angle * 10.0));
+      // Quadratic curve for rotation: heavily filters micro-twitches, keeps large head turns fast
+      const rotLerp = Math.max(0.04, Math.min(1.0, Math.pow(angle * 8.0, 2)));
 
       // If either moving OR rotating fast, drop the filter to instantly snap!
       const masterLerp = Math.max(posLerp, rotLerp);
@@ -886,10 +889,26 @@ const VideoBackground = ({ videoFrameRef }) => {
     };
   }, [scene]);
 
-  useFrame(() => {
+  useFrame(({ viewport }) => {
     if (videoFrameRef.current && textureRef.current) {
-      textureRef.current.image = videoFrameRef.current;
-      textureRef.current.needsUpdate = true;
+      const tex = textureRef.current;
+      tex.image = videoFrameRef.current;
+      tex.needsUpdate = true;
+
+      // Apply object-fit: cover scaling to the background texture!
+      const videoNode = document.querySelector('.webcam-video');
+      const videoAspect = (videoNode && videoNode.videoHeight) ? (videoNode.videoWidth / videoNode.videoHeight) : (640 / 480);
+      const containerAspect = viewport.width / viewport.height;
+
+      let scaleX = 1; let scaleY = 1;
+      if (containerAspect > videoAspect) {
+        scaleY = containerAspect / videoAspect;
+      } else {
+        scaleX = videoAspect / containerAspect;
+      }
+
+      tex.repeat.set(-1 / scaleX, 1 / scaleY);
+      tex.offset.set((1 - (-1 / scaleX)) / 2, (1 - (1 / scaleY)) / 2);
     }
   });
 
@@ -1022,7 +1041,7 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, 
     const camZ = camera.position.z;
 
     // Account for object-fit: cover scaling
-    const videoAspect = 640 / 480;
+    const videoNode = document.querySelector('.webcam-video'); const videoAspect = (videoNode && videoNode.videoHeight) ? (videoNode.videoWidth / videoNode.videoHeight) : (640 / 480);
     const containerAspect = viewport.width / viewport.height;
     let scaleX = 1; let scaleY = 1;
     if (containerAspect > videoAspect) {
@@ -1047,18 +1066,17 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, 
     const p17 = getMapped(17);
 
     // Define the absolute normal of the palm using the knuckles
-    const vPinky = new THREE.Vector3().subVectors(p17, p0).normalize();
-    const vIndex = new THREE.Vector3().subVectors(p5, p0).normalize();
-    const vUp = new THREE.Vector3().crossVectors(vPinky, vIndex).normalize();
+    // Using vAcross (p17 - p5) and vForwardRaw (p9 - p0) creates a 90-degree cross product, 
+    // which is MUCH more stable than vPinky x vIndex when the hand is angled or making a fist!
+    const vAcross = new THREE.Vector3().subVectors(p17, p5).normalize();
+    const vForwardRaw = new THREE.Vector3().subVectors(p9, p0).normalize();
+    const vUp = new THREE.Vector3().crossVectors(vAcross, vForwardRaw).normalize();
 
     // MediaPipe unmirrored mode: label 'Right' means physical Right hand.
     const isPhysicalRight = landmarks.handedness?.label === 'Right';
     if (isPhysicalRight) {
       vUp.negate(); // Now vUp ALWAYS points out of the back of the hand (+Z)
     }
-
-    // Get the raw forward vector (wrist to middle finger)
-    const vForwardRaw = new THREE.Vector3().subVectors(p9, p0).normalize();
 
     // PALM PLANE PROJECTION: 
     // Project the forward vector onto the palm plane so it stays perfectly flat 
@@ -1072,9 +1090,24 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, 
     const rotationMatrix = new THREE.Matrix4().makeBasis(vRight, vUp, vForward);
     const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
 
-    // Scale based on wrist width (distance from index knuckle to pinky knuckle)
-    const wristWidth = p5.distanceTo(p17);
-    const finalScale = wristWidth * 0.8; // Physical scale for tracking (occluder)
+    // Scale based on 3D distance from wrist to middle knuckle.
+    // We use 3D distance (distanceTo) so the bracelet doesn't shrink (foreshorten) 
+    // when the user tilts their hand backwards or forwards!
+    const palmLength3D = p9.distanceTo(p0);
+
+    // Dynamic scale based on wrist rotation (user preference):
+    // Inverted logic based on real-world testing:
+    const viewFactor = THREE.MathUtils.clamp(vUp.z, -0.5, 0.5); // Clamped between -0.5 and 0.5
+    const normalizedView = viewFactor + 0.5; // Mapped to 0.0 - 1.0 range
+    // When normalizedView is 1.0, scale is 0.50. When 0.0, scale is 0.60.
+    const dynamicMultiplier = 0.60 - (0.10 * normalizedView);
+    let finalScale = palmLength3D * dynamicMultiplier;
+
+    // Adjust scale slightly smaller for the right hand as requested by user
+    const isActuallyRightHand = landmarks.handedness?.label === 'Left'; // Mirrored webcam
+    if (isActuallyRightHand) {
+      finalScale *= 0.95; // Reduce scale by 15% for right hand
+    }
 
     // Position offset: Center exactly at the wrist (p0). 
     // We do not push it down the forearm because MediaPipe only gives palm-based tracking. 
@@ -1126,8 +1159,10 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, 
       <mesh renderOrder={-1} rotation={[Math.PI / 2, 0, 0]} scale={[1, 1, 0.6]}>
         <cylinderGeometry args={[0.65, 0.65, 10, 32]} />
         <meshBasicMaterial
-          colorWrite={false}
-          depthWrite={true}
+          color={showMesh ? "#00ff00" : undefined}
+          transparent={showMesh}
+          opacity={showMesh ? 0.5 : 1}
+          colorWrite={showMesh}
           polygonOffset={true}
           polygonOffsetFactor={0.1}
           polygonOffsetUnits={5}
@@ -1148,9 +1183,7 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, 
       )}
 
       <group position={adjustedPos} rotation={adjustedRot} scale={[modelScale || 1, modelScale || 1, modelScale || 1]}>
-        <Center>
-          <primitive object={clonedScene} />
-        </Center>
+        <primitive object={clonedScene} />
       </group>
     </group>
   );
@@ -1174,7 +1207,7 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, s
     if (groupRef.current) groupRef.current.visible = true;
 
     const { viewport } = state;
-    const videoAspect = 640 / 480;
+    const videoNode = document.querySelector('.webcam-video'); const videoAspect = (videoNode && videoNode.videoHeight) ? (videoNode.videoWidth / videoNode.videoHeight) : (640 / 480);
     const containerAspect = viewport.width / viewport.height;
     let scaleX = 1; let scaleY = 1;
     if (containerAspect > videoAspect) {
@@ -1326,6 +1359,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
               <Suspense fallback={<Loader />}>
                 {modelReady && (category === 'rings' ? (
                   <RingMesh
+                    key={activeModel?.id}
                     landmarksRef={landmarksRef}
                     modelPos={modelPos}
                     modelRot={modelRot}
@@ -1336,6 +1370,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                   />
                 ) : (
                   <WristMesh
+                    key={activeModel?.id}
                     landmarksRef={landmarksRef}
                     modelPos={modelPos}
                     modelRot={modelRot}
@@ -1359,6 +1394,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
               <Suspense fallback={<Loader />}>
                 {modelReady && (category === 'earrings' ? (
                   <EarringMesh
+                    key={activeModel?.id}
                     landmarksRef={landmarksRef}
                     modelPos={modelPos}
                     modelRot={modelRot}
@@ -1369,6 +1405,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                   />
                 ) : category === 'nosepin' ? (
                   <NosePinMesh
+                    key={activeModel?.id}
                     landmarksRef={landmarksRef}
                     modelPos={modelPos}
                     modelRot={modelRot}
@@ -1379,6 +1416,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                   />
                 ) : category === 'eyewear' ? (
                   <EyewearMesh
+                    key={activeModel?.id}
                     landmarksRef={landmarksRef}
                     modelPos={modelPos}
                     modelRot={modelRot}
@@ -1389,6 +1427,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                   />
                 ) : category === 'necklace' ? (
                   <NecklaceMesh
+                    key={activeModel?.id}
                     landmarksRef={landmarksRef}
                     poseLandmarksRef={poseLandmarksRef}
                     modelPos={modelPos}
@@ -1409,3 +1448,4 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
 };
 
 export default Scene3D;
+

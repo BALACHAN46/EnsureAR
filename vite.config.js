@@ -22,6 +22,7 @@ const saveConfigPlugin = () => ({
             
             // Merge the new config for the specific model
             data.modelDefaults = data.modelDefaults || {};
+            const isUpdate = !!data.modelDefaults[newConfig.modelId];
             data.modelDefaults[newConfig.modelId] = newConfig.config;
             
             // Write back to file
@@ -29,7 +30,7 @@ const saveConfigPlugin = () => ({
             
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ success: true }));
+            res.end(JSON.stringify({ success: true, action: isUpdate ? 'update' : 'insert' }));
           } catch (error) {
             console.error('Error saving config:', error);
             res.statusCode = 500;

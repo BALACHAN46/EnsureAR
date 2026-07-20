@@ -118,8 +118,7 @@ const FaceTracker = ({ onLandmarks, onPoseLandmarks, category }) => {
         className="webcam-video"
         mirrored={true}
         videoConstraints={{
-          width: 640,
-          height: 480,
+          
           facingMode: "user"
         }}
       />
@@ -134,3 +133,4 @@ const FaceTracker = ({ onLandmarks, onPoseLandmarks, category }) => {
 };
 
 export default FaceTracker;
+

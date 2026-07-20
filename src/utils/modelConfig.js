@@ -35,13 +35,16 @@ export async function saveModelConfig(modelId, config) {
   
   try {
     // Attempt to save to the filesystem via our custom Vite plugin endpoint
-    await fetch('/api/save-tuning', {
+    const res = await fetch('/api/save-tuning', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ modelId, config })
     });
+    const json = await res.json();
+    return json;
   } catch (err) {
     console.warn('Could not save to model-defaults.json. Make sure the Vite dev server is running.', err);
+    return { success: false, error: err.message };
   }
 }
 

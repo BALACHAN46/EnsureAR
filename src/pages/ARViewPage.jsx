@@ -128,9 +128,9 @@ export default function ARViewPage({ params }) {
     if (firstOfCat) navigate(`/ar/${cat}/${firstOfCat.id}`);
   };
 
-  const handleSaveTuning = () => {
+  const handleSaveTuning = async () => {
     if (!activeModel) return;
-    saveModelConfig(activeModel.id, {
+    const res = await saveModelConfig(activeModel.id, {
       posX: modelPos[0],
       posY: modelPos[1],
       posZ: modelPos[2],
@@ -140,7 +140,12 @@ export default function ARViewPage({ params }) {
       scale: modelScale,
       category: activeModel.category,
     });
-    setSaved(true);
+
+    if (res && res.action === 'insert') {
+      setSaved('Inserted!');
+    } else {
+      setSaved('Updated!');
+    }
     setTimeout(() => setSaved(false), 2000);
   };
 
@@ -150,7 +155,7 @@ export default function ARViewPage({ params }) {
     setModelPos([0, 0, 0]);
     setModelRot([0, 0, 0]);
     setModelScale(1);
-    setSaved(true);
+    setSaved('Reset!');
     setTimeout(() => setSaved(false), 2000);
   };
 
@@ -189,7 +194,7 @@ export default function ARViewPage({ params }) {
     try {
       const video = document.querySelector('video');
       const webglCanvas = document.querySelector('canvas');
-      
+
       if (!video) {
         alert("Capture failed: Could not find video feed.");
         return;
@@ -209,21 +214,21 @@ export default function ARViewPage({ params }) {
       const isGlFlipped = window.getComputedStyle(webglCanvas).transform.includes('matrix(-1');
 
       if (isFlipped) {
-         ctx.translate(canvas.width, 0);
-         ctx.scale(-1, 1);
-         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-         ctx.setTransform(1, 0, 0, 1, 0, 0); 
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
       } else {
-         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       }
 
       if (isGlFlipped) {
-         ctx.translate(canvas.width, 0);
-         ctx.scale(-1, 1);
-         ctx.drawImage(webglCanvas, 0, 0, canvas.width, canvas.height);
-         ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(webglCanvas, 0, 0, canvas.width, canvas.height);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
       } else {
-         ctx.drawImage(webglCanvas, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(webglCanvas, 0, 0, canvas.width, canvas.height);
       }
 
       const dataUrl = canvas.toDataURL('image/png');
@@ -253,11 +258,11 @@ export default function ARViewPage({ params }) {
       setCustomMaterials(prev => {
         const newMats = { ...prev };
         secondaryMeshes.forEach(mesh => {
-          newMats[mesh.id] = { 
-            ...newMats[mesh.id], 
+          newMats[mesh.id] = {
+            ...newMats[mesh.id],
             color: colorObj.color,
             roughness: colorObj.roughness,
-            metalness: colorObj.metalness 
+            metalness: colorObj.metalness
           };
         });
         return newMats;
@@ -299,21 +304,21 @@ export default function ARViewPage({ params }) {
 
           <div className="configurator-badges">
             <span className="configurator-badge primary">
-              <svg style={{width: 12, height: 12}} viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM8 11V7a2 2 0 114 0v4a2 2 0 11-4 0z" /></svg>
+              <svg style={{ width: 12, height: 12 }} viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM8 11V7a2 2 0 114 0v4a2 2 0 11-4 0z" /></svg>
               <div className="badge-text">
                 <span className="badge-num">{primaryMeshes.length}</span>
                 <span className="badge-label">PRIMARY</span>
               </div>
             </span>
             <span className="configurator-badge secondary">
-              <svg style={{width: 12, height: 12}} viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L2 10l8 8 8-8-8-8z" /></svg>
+              <svg style={{ width: 12, height: 12 }} viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L2 10l8 8 8-8-8-8z" /></svg>
               <div className="badge-text">
                 <span className="badge-num">{secondaryMeshes.length}</span>
                 <span className="badge-label">SECONDARY</span>
               </div>
             </span>
             <span className="configurator-badge total">
-              <svg style={{width: 12, height: 12}} viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" /></svg>
+              <svg style={{ width: 12, height: 12 }} viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" /></svg>
               <div className="badge-text">
                 <span className="badge-num">{modelMeshes.length || 1}</span>
                 <span className="badge-label">TOTAL</span>
@@ -323,7 +328,7 @@ export default function ARViewPage({ params }) {
 
           <div className="configurator-status-row">
             <span className="configurator-status-saved">
-              <div style={{width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px rgba(16, 185, 129, 0.4)'}} />
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px rgba(16, 185, 129, 0.4)' }} />
               All changes saved
             </span>
             <span className="configurator-status-original" onClick={() => handleColorSelect(PREDEFINED_COLORS[0])}>
@@ -342,33 +347,33 @@ export default function ARViewPage({ params }) {
               const isOriginal = colorObj.id === 'original';
               const isActive = activeColorId === colorObj.id;
               return (
-                <div 
-                  key={colorObj.id} 
+                <div
+                  key={colorObj.id}
                   className={`configurator-swatch-item ${isActive ? 'active' : ''}`}
                   onClick={() => handleColorSelect(colorObj)}
                 >
-                  <div className={`configurator-swatch-circle ${isOriginal ? 'is-original' : ''}`} 
-                       style={{ '--swatch-color': colorObj.color }} />
+                  <div className={`configurator-swatch-circle ${isOriginal ? 'is-original' : ''}`}
+                    style={{ '--swatch-color': colorObj.color }} />
                   <div className="configurator-swatch-label">{colorObj.name}</div>
                 </div>
               );
             })}
-            
-            <div 
+
+            <div
               className={`configurator-swatch-item ${activeColorId === 'custom' ? 'active' : ''}`}
               onClick={() => primaryColorInputRef.current?.click()}
             >
-              <div 
-                className="configurator-swatch-circle" 
-                style={{ 
+              <div
+                className="configurator-swatch-circle"
+                style={{
                   background: activeColorId === 'custom' ? customPrimaryColor : 'conic-gradient(from 90deg, red, yellow, lime, aqua, blue, magenta, red)',
                   border: 'none',
                   boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.2)'
-                }} 
+                }}
               />
               <div className="configurator-swatch-label">Custom</div>
-              <input 
-                type="color" 
+              <input
+                type="color"
                 ref={primaryColorInputRef}
                 style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
                 value={customPrimaryColor}
@@ -383,10 +388,10 @@ export default function ARViewPage({ params }) {
 
           {secondaryMeshes.length > 0 && (
             <>
-              <div className="configurator-section-title" style={{marginTop: '1.5rem'}}>
+              <div className="configurator-section-title" style={{ marginTop: '1.5rem' }}>
                 <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L2 10l8 8 8-8-8-8z" /></svg>
                 Secondary Material
-                <span className="configurator-mesh-count" style={{background: 'rgba(34, 211, 238, 0.15)', color: '#22d3ee', borderColor: 'rgba(34, 211, 238, 0.3)'}}>{secondaryMeshes.length} meshes</span>
+                <span className="configurator-mesh-count" style={{ background: 'rgba(34, 211, 238, 0.15)', color: '#22d3ee', borderColor: 'rgba(34, 211, 238, 0.3)' }}>{secondaryMeshes.length} meshes</span>
               </div>
 
               <div className="configurator-swatch-grid">
@@ -394,33 +399,33 @@ export default function ARViewPage({ params }) {
                   const isOriginal = colorObj.id === 'original_jewel';
                   const isActive = activeSecondaryColorId === colorObj.id;
                   return (
-                    <div 
-                      key={colorObj.id} 
+                    <div
+                      key={colorObj.id}
                       className={`configurator-swatch-item ${isActive ? 'active' : ''}`}
                       onClick={() => handleSecondaryColorSelect(colorObj)}
                     >
-                      <div className={`configurator-swatch-circle ${isOriginal ? 'is-original' : ''}`} 
-                           style={{ '--swatch-color': colorObj.color }} />
+                      <div className={`configurator-swatch-circle ${isOriginal ? 'is-original' : ''}`}
+                        style={{ '--swatch-color': colorObj.color }} />
                       <div className="configurator-swatch-label">{colorObj.name}</div>
                     </div>
                   );
                 })}
-                
-                <div 
+
+                <div
                   className={`configurator-swatch-item ${activeSecondaryColorId === 'custom_jewel' ? 'active' : ''}`}
                   onClick={() => secondaryColorInputRef.current?.click()}
                 >
-                  <div 
-                    className="configurator-swatch-circle" 
-                    style={{ 
+                  <div
+                    className="configurator-swatch-circle"
+                    style={{
                       background: activeSecondaryColorId === 'custom_jewel' ? customSecondaryColor : 'conic-gradient(from 90deg, red, yellow, lime, aqua, blue, magenta, red)',
                       border: 'none',
                       boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.2)'
-                    }} 
+                    }}
                   />
                   <div className="configurator-swatch-label">Custom</div>
-                  <input 
-                    type="color" 
+                  <input
+                    type="color"
                     ref={secondaryColorInputRef}
                     style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
                     value={customSecondaryColor}
@@ -435,24 +440,24 @@ export default function ARViewPage({ params }) {
             </>
           )}
 
-          <div className="configurator-section-title" style={{marginTop: secondaryMeshes.length > 0 ? '1.5rem' : '0'}}>
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+          <div className="configurator-section-title" style={{ marginTop: secondaryMeshes.length > 0 ? '1.5rem' : '0' }}>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z" /></svg>
             Camera
           </div>
 
           <div className="configurator-camera-grid">
             {['front', 'back', 'left', 'right', 'top', 'reset'].map(cam => (
-              <button 
-                key={cam} 
+              <button
+                key={cam}
                 className={`configurator-camera-btn ${cameraView === cam ? 'active' : ''}`}
                 onClick={() => setCameraView(cam)}
               >
-                {cam === 'front' && <div style={{width: 16, height: 16, background: '#fff', borderRadius: 2}} />}
-                {cam === 'back' && <div style={{width: 16, height: 16, background: '#475569', borderRadius: 2}} />}
-                {cam === 'left' && <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 7l-5 5 5 5V7z"/></svg>}
-                {cam === 'right' && <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 17l5-5-5-5v10z"/></svg>}
-                {cam === 'top' && <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 14l5-5 5 5H7z"/></svg>}
-                {cam === 'reset' && <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>}
+                {cam === 'front' && <div style={{ width: 16, height: 16, background: '#fff', borderRadius: 2 }} />}
+                {cam === 'back' && <div style={{ width: 16, height: 16, background: '#475569', borderRadius: 2 }} />}
+                {cam === 'left' && <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 7l-5 5 5 5V7z" /></svg>}
+                {cam === 'right' && <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 17l5-5-5-5v10z" /></svg>}
+                {cam === 'top' && <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 14l5-5 5 5H7z" /></svg>}
+                {cam === 'reset' && <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" /></svg>}
                 <span>{cam.charAt(0).toUpperCase() + cam.slice(1)}</span>
               </button>
             ))}
@@ -508,8 +513,8 @@ export default function ARViewPage({ params }) {
                 onClick={handleCapture}
                 title="Take Photo"
               >
-                <svg style={{width: 16, height: 16}} viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
-                <span style={{fontSize: '0.75rem', fontWeight: 600}}>Capture</span>
+                <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z" /></svg>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Capture</span>
               </button>
             )}
             {viewMode === 'tryon' && hasCustomizations && (
@@ -523,11 +528,11 @@ export default function ARViewPage({ params }) {
                 }}
                 title="Reset to Original Model"
               >
-                <svg style={{width: 16, height: 16}} viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-                <span style={{fontSize: '0.75rem', fontWeight: 600}}>Reset Design</span>
+                <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" /></svg>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Reset Design</span>
               </button>
             )}
-            {viewMode === 'tryon' && category === 'eyewear' && (
+            {viewMode === 'tryon' && isAdmin && (
               <button
                 className={`ar-ctrl-btn ${showFaceMesh ? 'ar-ctrl-btn--active' : ''}`}
                 onClick={() => setShowFaceMesh(p => !p)}
@@ -606,7 +611,7 @@ export default function ARViewPage({ params }) {
 
           <div className="ar-tuning-actions">
             <button className={`ar-tuning-save-btn ${saved ? 'saved' : ''}`} onClick={handleSaveTuning}>
-              {saved ? '✅ Saved!' : '💾 Save'}
+              {saved ? `✔ ${typeof saved === 'string' ? saved : 'Saved!'}` : '💾 Save'}
             </button>
             <button className="ar-tuning-save-btn" style={{ background: '#ef4444', borderColor: '#ef4444' }} onClick={handleResetTuning}>
               🔄 Reset
@@ -635,12 +640,13 @@ export default function ARViewPage({ params }) {
             }} />
           ) : (
             category != "necklace" ? (
-              <FaceTracker onLandmarks={(lm, img) => {
+              <FaceTracker key="face" onLandmarks={(lm, img) => {
                 landmarksRef.current = lm;
                 videoFrameRef.current = img;
               }} />
             ) : (
               <FaceTracker
+                key="necklace"
                 category={category}
                 onLandmarks={(lm, img) => {
                   landmarksRef.current = lm;
@@ -666,7 +672,7 @@ export default function ARViewPage({ params }) {
           />
         </div>
       </div>
-      {/* ── Left dock: column 1 = categories, column 2 = models in that category ── */}
+      {/* ── Left dock: Categories ── */}
       <div className="ar-side-dock" style={{ top: railTop }}>
         <div className="ar-category-col">
           {orderedCategories.map(cat => {
@@ -685,9 +691,12 @@ export default function ARViewPage({ params }) {
             );
           })}
         </div>
+      </div>
 
-        <div className="ar-model-col">
-          <div className="carousel-track">
+      {/* ── Bottom dock: Models ── */}
+      <div className="ar-bottom-dock">
+        <div className="ar-model-bar">
+          <div className="carousel-track horizontal">
             {activeCategoryModels.map(model => (
               <div
                 key={model.id}
@@ -696,11 +705,11 @@ export default function ARViewPage({ params }) {
                 title={model.name}
               >
                 {model.thumbnailPath ? (
-                  <img 
-                    src={model.thumbnailPath} 
-                    alt={model.name} 
-                    style={{ 
-                      background: model.thumbnailPath.toLowerCase().endsWith('.png') ? 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.2) 100%)' : 'transparent' 
+                  <img
+                    src={model.thumbnailPath}
+                    alt={model.name}
+                    style={{
+                      background: model.thumbnailPath.toLowerCase().endsWith('.png') ? 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.2) 100%)' : 'transparent'
                     }}
                   />
                 ) : (
