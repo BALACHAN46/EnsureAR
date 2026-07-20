@@ -3,6 +3,8 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, useGLTF, Html, useProgress, Center } from '@react-three/drei';
 import * as THREE from 'three';
 import NecklaceMesh, { JewelrySparkles } from './components/ar/NecklaceMesh';
+import RingMesh from './components/ar/RingMesh';
+
 import ModelErrorBoundary from './components/ar/ModelErrorBoundary';
 import { applyAndExtractMaterials } from './utils/materialHelper';
 
@@ -1194,147 +1196,144 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles
   );
 };
 
-const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles, activeModel, showMesh, customMaterials }) => {
-  const { scene } = useGLTF(activeModel?.glbPath || '');
-  const groupRef = useRef();
+// const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles, activeModel, showMesh, customMaterials }) => {
+//   const { scene } = useGLTF(activeModel?.glbPath || '');
+//   const groupRef = useRef();
 
-  const { clonedScene } = React.useMemo(() => {
-    return applyAndExtractMaterials(scene, customMaterials);
-  }, [scene, customMaterials]);
 
-  useFrame((state) => {
-    const landmarks = landmarksRef.current;
-    if (!landmarks || landmarks.length < 21 || !activeModel) {
-      if (groupRef.current) groupRef.current.visible = false;
-      return;
-    }
+//   useFrame((state) => {
+//     const landmarks = landmarksRef.current;
+//     if (!landmarks || landmarks.length < 21 || !activeModel) {
+//       if (groupRef.current) groupRef.current.visible = false;
+//       return;
+//     }
 
-    if (groupRef.current) groupRef.current.visible = true;
+//     if (groupRef.current) groupRef.current.visible = true;
 
-    const { viewport } = state;
-    const videoNode = document.querySelector('.webcam-video'); const videoAspect = (videoNode && videoNode.videoHeight) ? (videoNode.videoWidth / videoNode.videoHeight) : (640 / 480);
-    const containerAspect = viewport.width / viewport.height;
-    let scaleX = 1; let scaleY = 1;
-    if (containerAspect > videoAspect) {
-      scaleY = containerAspect / videoAspect;
-    } else {
-      scaleX = videoAspect / containerAspect;
-    }
+//     const { viewport } = state;
+//     const videoNode = document.querySelector('.webcam-video'); const videoAspect = (videoNode && videoNode.videoHeight) ? (videoNode.videoWidth / videoNode.videoHeight) : (640 / 480);
+//     const containerAspect = viewport.width / viewport.height;
+//     let scaleX = 1; let scaleY = 1;
+//     if (containerAspect > videoAspect) {
+//       scaleY = containerAspect / videoAspect;
+//     } else {
+//       scaleX = videoAspect / containerAspect;
+//     }
 
-    const getMapped = (index) => {
-      const lm = landmarks[index];
-      return new THREE.Vector3(
-        -(lm.x - 0.5) * (viewport.width * scaleX),
-        -(lm.y - 0.5) * (viewport.height * scaleY),
-        -lm.z * (viewport.width * scaleX)
-      );
-    };
+//     const getMapped = (index) => {
+//       const lm = landmarks[index];
+//       return new THREE.Vector3(
+//         -(lm.x - 0.5) * (viewport.width * scaleX),
+//         -(lm.y - 0.5) * (viewport.height * scaleY),
+//         -lm.z * (viewport.width * scaleX)
+//       );
+//     };
 
-    const p0 = getMapped(0);
-    const p5 = getMapped(5);
-    const p13 = getMapped(13); // Ring finger base
-    const p14 = getMapped(14); // Ring finger first joint
-    const p17 = getMapped(17);
+//     const p0 = getMapped(0);
+//     const p5 = getMapped(5);
+//     const p13 = getMapped(13); // Ring finger base
+//     const p14 = getMapped(14); // Ring finger first joint
+//     const p17 = getMapped(17);
 
-    // Forward vector is exactly along the ring finger bone (from base to first joint)
-    const vForward = new THREE.Vector3().subVectors(p14, p13).normalize();
+//     // Forward vector is exactly along the ring finger bone (from base to first joint)
+//     const vForward = new THREE.Vector3().subVectors(p14, p13).normalize();
 
-    // Stable palm normal to anchor the rotation
-    const vPinky = new THREE.Vector3().subVectors(p17, p0).normalize();
-    const vIndex = new THREE.Vector3().subVectors(p5, p0).normalize();
-    const palmNormal = new THREE.Vector3().crossVectors(vPinky, vIndex).normalize();
+//     // Stable palm normal to anchor the rotation
+//     const vPinky = new THREE.Vector3().subVectors(p17, p0).normalize();
+//     const vIndex = new THREE.Vector3().subVectors(p5, p0).normalize();
+//     const palmNormal = new THREE.Vector3().crossVectors(vPinky, vIndex).normalize();
 
-    // MediaPipe unmirrored mode: label 'Right' means physical Right hand.
-    const isPhysicalRight = landmarks.handedness?.label === 'Right';
-    if (isPhysicalRight) {
-      palmNormal.negate(); // Now palmNormal ALWAYS points out of the back of the hand (+Z)
-    }
+//     // MediaPipe unmirrored mode: label 'Right' means physical Right hand.
+//     const isPhysicalRight = landmarks.handedness?.label === 'Right';
+//     if (isPhysicalRight) {
+//       palmNormal.negate(); // Now palmNormal ALWAYS points out of the back of the hand (+Z)
+//     }
 
-    // Right vector is perpendicular to palm normal and finger bone
-    const vRight = new THREE.Vector3().crossVectors(palmNormal, vForward).normalize();
+//     // Right vector is perpendicular to palm normal and finger bone
+//     const vRight = new THREE.Vector3().crossVectors(palmNormal, vForward).normalize();
 
-    // Up vector is perpendicular to forward and right
-    const vUp = new THREE.Vector3().crossVectors(vForward, vRight).normalize();
+//     // Up vector is perpendicular to forward and right
+//     const vUp = new THREE.Vector3().crossVectors(vForward, vRight).normalize();
 
-    // Basis: 
-    // X -> vRight (across knuckles)
-    // Y -> vUp (out of palm) - Gem points here
-    // Z -> vForward (along the finger) - Hole points here
-    const rotationMatrix = new THREE.Matrix4().makeBasis(vRight, vUp, vForward);
-    const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
+//     // Basis: 
+//     // X -> vRight (across knuckles)
+//     // Y -> vUp (out of palm) - Gem points here
+//     // Z -> vForward (along the finger) - Hole points here
+//     const rotationMatrix = new THREE.Matrix4().makeBasis(vRight, vUp, vForward);
+//     const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
 
-    // Target position is near the base of the ring finger (knuckle) instead of halfway
-    const targetPos = new THREE.Vector3().lerpVectors(p13, p14, 0.15);
+//     // Target position is near the base of the ring finger (knuckle) instead of halfway
+//     const targetPos = new THREE.Vector3().lerpVectors(p13, p14, 0.15);
 
-    // Scale based on the width of the finger
-    // We use a small multiplier because ring models are typically quite large.
-    const segmentLength = p13.distanceTo(p14);
-    const finalScale = segmentLength * 0.2; // Physical scale for finger tracking (occluder)
+//     // Scale based on the width of the finger
+//     // We use a small multiplier because ring models are typically quite large.
+//     const segmentLength = p13.distanceTo(p14);
+//     const finalScale = segmentLength * 0.2; // Physical scale for finger tracking (occluder)
 
-    if (groupRef.current.scale.x === 1) {
-      groupRef.current.position.copy(targetPos);
-      groupRef.current.quaternion.copy(targetQuat);
-      groupRef.current.scale.set(finalScale, finalScale, finalScale);
-    } else {
-      // Forcefully snap to the finger to prevent free-floating detaching
-      const posLerp = 0.7;
-      const rotLerp = 0.6;
+//     if (groupRef.current.scale.x === 1) {
+//       groupRef.current.position.copy(targetPos);
+//       groupRef.current.quaternion.copy(targetQuat);
+//       groupRef.current.scale.set(finalScale, finalScale, finalScale);
+//     } else {
+//       // Forcefully snap to the finger to prevent free-floating detaching
+//       const posLerp = 0.7;
+//       const rotLerp = 0.6;
 
-      const currentScale = groupRef.current.scale.x;
-      const scaleLerp = 0.5;
+//       const currentScale = groupRef.current.scale.x;
+//       const scaleLerp = 0.5;
 
-      groupRef.current.position.lerp(targetPos, posLerp);
-      groupRef.current.quaternion.slerp(targetQuat, rotLerp);
-      groupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), scaleLerp);
-    }
-  });
+//       groupRef.current.position.lerp(targetPos, posLerp);
+//       groupRef.current.quaternion.slerp(targetQuat, rotLerp);
+//       groupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), scaleLerp);
+//     }
+//   });
 
-  // Mirror tuning parameters anatomically for the physical right hand
-  const isPhysicalRight = landmarksRef.current?.handedness?.label === 'Right';
-  const adjustedPos = modelPos ? [...modelPos] : [0, 0, 0];
-  const adjustedRot = modelRot ? [...modelRot] : [0, 0, 0];
-  if (isPhysicalRight) {
-    // Note: We do NOT flip X position because the 3D model geometry isn't mirrored. 
-    // Any X offset used to center the ring's hole must remain the same for both hands.
-    adjustedRot[1] = -adjustedRot[1]; // Flip Y rotation (Yaw)
-    adjustedRot[2] = -adjustedRot[2]; // Flip Z rotation (Roll)
-  }
+//   // Mirror tuning parameters anatomically for the physical right hand
+//   const isPhysicalRight = landmarksRef.current?.handedness?.label === 'Right';
+//   const adjustedPos = modelPos ? [...modelPos] : [0, 0, 0];
+//   const adjustedRot = modelRot ? [...modelRot] : [0, 0, 0];
+//   if (isPhysicalRight) {
+//     // Note: We do NOT flip X position because the 3D model geometry isn't mirrored. 
+//     // Any X offset used to center the ring's hole must remain the same for both hands.
+//     adjustedRot[1] = -adjustedRot[1]; // Flip Y rotation (Yaw)
+//     adjustedRot[2] = -adjustedRot[2]; // Flip Z rotation (Roll)
+//   }
 
-  if (!clonedScene) return null;
+//   if (!clonedScene) return null;
 
-  return (
-    <group ref={groupRef}>
-      {/* Invisible Finger Occluder: hides the back of the ring so it doesn't render over the finger */}
-      <mesh renderOrder={-1} rotation={[Math.PI / 2, 0, 0]} scale={[1, 1, 1]}>
-        {/* Precise cylinder to match finger volume (0.68 radius). Prevents sweeping cuts when the hand rotates. */}
-        <cylinderGeometry args={[0.99, 0.99, 6, 32]} />
-        <meshBasicMaterial
-          colorWrite={false}
-          depthWrite={true}
-          polygonOffset={true}
-          polygonOffsetFactor={0.1}
-          polygonOffsetUnits={5}
-        />
-      </mesh>
+//   return (
+//     <group ref={groupRef}>
+//       {/* Invisible Finger Occluder: hides the back of the ring so it doesn't render over the finger */}
+//       <mesh renderOrder={-1} rotation={[Math.PI / 2, 0, 0]} scale={[1, 1, 1]}>
+//         {/* Precise cylinder to match finger volume (0.68 radius). Prevents sweeping cuts when the hand rotates. */}
+//         <cylinderGeometry args={[0.99, 0.99, 6, 32]} />
+//         <meshBasicMaterial
+//           colorWrite={false}
+//           depthWrite={true}
+//           polygonOffset={true}
+//           polygonOffsetFactor={0.1}
+//           polygonOffsetUnits={5}
+//         />
+//       </mesh>
 
-      {showMesh && (
-        <mesh>
-          <sphereGeometry args={[0.15, 16, 16]} />
-          <meshBasicMaterial color="#fbbf24" transparent={true} opacity={0.8} depthTest={false} />
-        </mesh>
-      )}
+//       {showMesh && (
+//         <mesh>
+//           <sphereGeometry args={[0.15, 16, 16]} />
+//           <meshBasicMaterial color="#fbbf24" transparent={true} opacity={0.8} depthTest={false} />
+//         </mesh>
+//       )}
 
-      <group position={adjustedPos} rotation={adjustedRot} scale={[modelScale || 1, modelScale || 1, modelScale || 1]}>
-        <Center>
-          <primitive object={clonedScene} />
-          {modelSparkles && <JewelrySparkles count={50} isPlane={false} modelScene={clonedScene} />}
-        </Center>
-      </group>
-    </group>
-  );
-};
+//       <group position={adjustedPos} rotation={adjustedRot} scale={[modelScale || 1, modelScale || 1, modelScale || 1]}>
+//         <Center>
+//           <primitive object={clonedScene} />
+//           {modelSparkles && <JewelrySparkles count={50} isPlane={false} modelScene={clonedScene} />}
+//         </Center>
+//       </group>
+//     </group>
+//   );
+// };
 
-const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, modelPos, modelRot, modelScale, modelSparkles, activeModel, isHandTracking, category, customMaterials }) => {
+const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, modelPos, modelRot, modelScale, modelSparkles, activeModel, isHandTracking, category, customMaterials,ringTuning }) => {
   // Shared state ensures the face mask and the glasses always use the EXACT same tracking speed!
   const sharedState = useRef({ adaptiveLerp: 0.5 });
   const isEyewear = FACE_AR_CATEGORIES.includes(category);
@@ -1374,6 +1373,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                     activeModel={activeModel}
                     showMesh={showFaceMesh}
                     customMaterials={customMaterials}
+                    ringTuning={ringTuning}
                   />
                 ) : (
                   <WristMesh
