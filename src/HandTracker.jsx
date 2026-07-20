@@ -26,11 +26,11 @@ const HandTracker = ({ onLandmarks }) => {
         setIsLoading(false);
         loadingFiredRef.current = true;
       }
-      
-      const landmarks = results.multiHandLandmarks && results.multiHandLandmarks.length > 0 
-        ? results.multiHandLandmarks[0] 
+
+      const landmarks = results.multiHandLandmarks && results.multiHandLandmarks.length > 0
+        ? results.multiHandLandmarks[0]
         : null;
-      
+
       const worldLandmarks = results.multiHandWorldLandmarks && results.multiHandWorldLandmarks.length > 0
         ? results.multiHandWorldLandmarks[0]
         : null;
@@ -38,7 +38,7 @@ const HandTracker = ({ onLandmarks }) => {
       const handedness = results.multiHandedness && results.multiHandedness.length > 0
         ? results.multiHandedness[0]
         : null;
-        
+
       onLandmarks(landmarks, results.image, worldLandmarks, handedness);
     });
 

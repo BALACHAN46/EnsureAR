@@ -34,11 +34,11 @@ const FaceTracker = ({ onLandmarks, onPoseLandmarks, category }) => {
         setIsLoading(false);
         loadingFiredRef.current = true;
       }
-      
-      const landmarks = results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0 
-        ? results.multiFaceLandmarks[0] 
+
+      const landmarks = results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0
+        ? results.multiFaceLandmarks[0]
         : null;
-        
+
       onLandmarks(landmarks, results.image);
     });
 
