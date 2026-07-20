@@ -19,6 +19,7 @@
       "rotY": 0,
       "rotZ": 0,
       "scale": 1,
+      "enableSparkles": true,
       "category": "necklace"
     },
     "ca404a5ea0ea": {
@@ -29,6 +30,7 @@
       "rotY": 0,
       "rotZ": 0,
       "scale": 0.87,
+      "enableSparkles": true,
       "category": "necklace"
     },
     "new_1dpng": {
@@ -39,6 +41,7 @@
       "rotY": 0,
       "rotZ": 0,
       "scale": 1,
+      "enableSparkles": true,
       "category": "necklace"
     },
     "new_2dpng": {
@@ -49,6 +52,7 @@
       "rotY": 0,
       "rotZ": 0,
       "scale": 1,
+      "enableSparkles": true,
       "category": "necklace"
     },
     "new_3dpng": {
@@ -59,6 +63,7 @@
       "rotY": 0,
       "rotZ": 0,
       "scale": 1,
+      "enableSparkles": true,
       "category": "necklace"
     },
     "new_4png": {
@@ -69,6 +74,7 @@
       "rotY": 0.00841,
       "rotZ": 0.00841,
       "scale": 1,
+      "enableSparkles": true,
       "category": "necklace"
     },
     "new_apng": {
@@ -79,6 +85,7 @@
       "rotY": 0,
       "rotZ": 0,
       "scale": 1,
+      "enableSparkles": true,
       "category": "necklace"
     },
     "60f4edf99880": {
@@ -273,6 +280,7 @@
       "rotY": 0,
       "rotZ": 0,
       "scale": 4.45,
+      "enableSparkles": true,
       "category": "bracelets"
     },
     "b4": {
@@ -293,6 +301,7 @@
       "rotY": 0.00841,
       "rotZ": 0.00841,
       "scale": -1.5,
+      "enableSparkles": true,
       "category": "bracelets"
     },
     "df5c44d2927d": {
@@ -303,6 +312,7 @@
       "rotY": 0,
       "rotZ": 0.00841,
       "scale": -1.5,
+      "enableSparkles": true,
       "category": "bracelets"
     },
     "1836357aad32": {
@@ -313,6 +323,7 @@
       "rotY": 0,
       "rotZ": 0,
       "scale": -1.4,
+      "enableSparkles": true,
       "category": "bracelets"
     },
     "3e6d2597c71e": {
@@ -323,6 +334,7 @@
       "rotY": 0,
       "rotZ": 0,
       "scale": -1.5,
+      "enableSparkles": true,
       "category": "bracelets"
     },
     "3c1d189abcd123": {
@@ -354,26 +366,6 @@
       "rotZ": 0,
       "scale": 1,
       "category": "nosepin"
-    },
-    "ea5ace30985b": {
-      "posX": 0.11,
-      "posY": 1.67,
-      "posZ": -0.07,
-      "rotX": 1.51841,
-      "rotY": 0,
-      "rotZ": -0.00159,
-      "scale": 0.02,
-      "category": "rings"
-    },
-    "fd27ab032085": {
-      "posX": 0.27,
-      "posY": 1.93,
-      "posZ": -0.3,
-      "rotX": 1.47841,
-      "rotY": 0,
-      "rotZ": 0.01841,
-      "scale": 1.18,
-      "category": "rings"
     }
   }
 }

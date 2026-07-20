@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF, Center } from '@react-three/drei';
 import * as THREE from 'three';
 import { applyAndExtractMaterials } from '../../utils/materialHelper';
+import { JewelrySparkles } from './NecklaceMesh';
 
 /**
  * RingMesh — Anatomically Accurate Ring AR Tracking
@@ -15,7 +16,7 @@ import { applyAndExtractMaterials } from '../../utils/materialHelper';
  * - Precision Occlusion: An invisible cylinder precisely centered hides the back-band when viewing the palm, and hides the gem when viewing the back of the hand, without side-clipping.
  * ─────────────────────────────────────────────────────────────────────
  */
-const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, showMesh, customMaterials, ringTuning }) => {
+const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles, activeModel, showMesh, customMaterials, ringTuning }) => {
   const { scene } = useGLTF(activeModel?.glbPath || '');
   const groupRef = useRef();
   const occluderRef = useRef();
@@ -221,6 +222,7 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, s
         <group scale={[modelScale || 1, modelScale || 1, modelScale || 1]}>
           <Center>
             <primitive object={clonedScene} />
+            {modelSparkles && <JewelrySparkles count={50} isPlane={false} modelScene={clonedScene} />}
           </Center>
         </group>
 

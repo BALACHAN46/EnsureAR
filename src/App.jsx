@@ -29,7 +29,7 @@ function HomePage() {
   const CATEGORY_META = {
     eyewear:   { emoji: '👓', icon: '/eyeware.png', gradient: 'linear-gradient(135deg, #0ea5e9, #3b82f6)', label: 'Eyewear', shadow: 'rgba(14, 165, 233, 0.5)' },
     necklace:  { emoji: '📿', icon: '/necklaces.png', gradient: 'linear-gradient(135deg, #ec4899, #f43f5e)', label: 'Necklaces', shadow: 'rgba(236, 72, 153, 0.5)' },
-    rings:     { emoji: '💍', gradient: 'linear-gradient(135deg, #f59e0b, #f97316)', label: 'Rings', shadow: 'rgba(245, 158, 11, 0.5)' },
+    rings:     { emoji: '💍', icon: '/rings.png', gradient: 'linear-gradient(135deg, #f59e0b, #f97316)', label: 'Rings', shadow: 'rgba(245, 158, 11, 0.5)' },
     bracelets: { emoji: '🔗', icon: '/bracelets.png', gradient: 'linear-gradient(135deg, #10b981, #06b6d4)', label: 'Bracelets', shadow: 'rgba(16, 185, 129, 0.5)' },
     watch:     { emoji: '⌚', icon: '/watch.png', gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6)', label: 'Watches', shadow: 'rgba(99, 102, 241, 0.5)' },
     earrings:  { emoji: '✨', gradient: 'linear-gradient(135deg, #a855f7, #ec4899)', label: 'Earrings', shadow: 'rgba(168, 85, 247, 0.5)' },
