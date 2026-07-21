@@ -705,7 +705,10 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
     const baseScale = targetPhysicalWidth / boxWidthRef.current;
     const finalScale = baseScale * (ms || 1) * depthScale;
 
-    const chinCapY = cb.chinY != null ? cb.chinY - faceWidth * 0.08 : Infinity;
+    // Shift the chin cap upward by the user's manual offset so the slider can move
+    // the model above the default chin ceiling. offsetY < 0 = user is dragging up.
+    const userLiftY = offsetY < 0 ? (faceWidth * Math.abs(offsetY) * 0.1) : 0;
+    const chinCapY = cb.chinY != null ? cb.chinY - faceWidth * 0.08 + userLiftY : Infinity;
     const anchoredY = Math.min(anchor.y, chinCapY);
 
     const targetPos = new THREE.Vector3(
@@ -946,7 +949,10 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
     // camera. Unlike the 3D chain, this plane is centered on its anchor (not top-pivoted),
     // so its top edge sits half its rendered height above the anchor — that offset has to
     // come out of the cap too, or a big/close necklace would still poke out over the chin.
-    const chinCapY = cb.chinY != null ? cb.chinY - stableFaceWidthRef.current * 0.08 - finalScale / 2 : Infinity;
+    // Shift the chin cap upward by the user's manual offset so the slider can move
+    // the model above the default chin ceiling. offsetY < 0 = user is dragging up.
+    const userLiftY2D = offsetY < 0 ? (stableFaceWidthRef.current * Math.abs(offsetY) * 0.1) : 0;
+    const chinCapY = cb.chinY != null ? cb.chinY - stableFaceWidthRef.current * 0.08 - finalScale / 2 + userLiftY2D : Infinity;
     const anchoredY = Math.min(anchor.y, chinCapY);
 
     const targetPos = new THREE.Vector3(
