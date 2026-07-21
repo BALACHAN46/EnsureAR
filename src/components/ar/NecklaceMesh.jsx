@@ -298,9 +298,9 @@ export function computeCollarbone(faceLandmarks, poseLandmarks, viewport, offset
   // Convert jaw angle midpoint to viewport for anchor positioning
   const jawAngleMidVP = toVP(jawAngleMid, viewport);
 
-  // Anchor is below jaw angles by ~0.70 * faceWidth (collarbone area)
+  // Anchor is below jaw angles by ~0.45 * faceWidth (closer to chin, reduced gap)
   const faceAnchorX = jawAngleMidVP.x;
-  const faceAnchorY = jawAngleMidVP.y - (faceWidth * 0.70);
+  const faceAnchorY = jawAngleMidVP.y - (faceWidth * 0.45);
   const faceAnchorZ = jawAngleMidVP.z;
 
   let anchorX = faceAnchorX;
