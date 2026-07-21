@@ -45,9 +45,9 @@
       "category": "necklace"
     },
     "new_2dpng": {
-      "posX": 0.07,
-      "posY": 0.55,
-      "posZ": 0.91,
+      "posX": 0.02,
+      "posY": 0.64,
+      "posZ": 0.93,
       "rotX": 0,
       "rotY": 0,
       "rotZ": 0,
@@ -56,9 +56,9 @@
       "category": "necklace"
     },
     "new_3dpng": {
-      "posX": 0.07,
-      "posY": 0,
-      "posZ": 0,
+      "posX": 0,
+      "posY": 0.51,
+      "posZ": 0.48,
       "rotX": 0,
       "rotY": 0,
       "rotZ": 0,
@@ -90,9 +90,9 @@
     },
     "60f4edf99880": {
       "posX": 0,
-      "posY": 0.01,
-      "posZ": -0.45,
-      "rotX": 0,
+      "posY": 0.02,
+      "posZ": -0.44,
+      "rotX": -0.10159,
       "rotY": 0,
       "rotZ": 3.14159,
       "scale": 1,
@@ -101,12 +101,13 @@
     },
     "6186cc04383e": {
       "posX": 0,
-      "posY": 0.05,
-      "posZ": -0.45,
+      "posY": 0.06,
+      "posZ": -0.49,
       "rotX": 0,
       "rotY": 0,
       "rotZ": 3.14159,
-      "scale": 1.1,
+      "scale": 1.08,
+      "enableSparkles": false,
       "category": "eyewear"
     },
     "911a064c83c7": {
@@ -131,12 +132,13 @@
     },
     "cd36e67a69ae": {
       "posX": 0,
-      "posY": 0.05,
-      "posZ": -0.45,
+      "posY": 0.08,
+      "posZ": -0.41,
       "rotX": 0.00841,
       "rotY": 0,
       "rotZ": 3.13841,
       "scale": 1,
+      "enableSparkles": false,
       "category": "eyewear"
     },
     "ef65b9c48d8b": {
@@ -147,6 +149,7 @@
       "rotY": 0,
       "rotZ": 3.13841,
       "scale": 1,
+      "enableSparkles": false,
       "category": "eyewear"
     },
     "6dd6a6141f38": {
@@ -167,6 +170,7 @@
       "rotY": 0,
       "rotZ": 3.13841,
       "scale": 1,
+      "enableSparkles": false,
       "category": "eyewear"
     },
     "7787b85ace51": {
@@ -366,6 +370,50 @@
       "rotZ": 0,
       "scale": 1,
       "category": "nosepin"
+    },
+    "51W1D1NGPAA00": {
+      "posX": 0.04,
+      "posY": 1.98,
+      "posZ": -2.59,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1.05,
+      "enableSparkles": true,
+      "category": "necklace"
+    },
+    "gold_necklace1": {
+      "posX": 0.02,
+      "posY": 1.34,
+      "posZ": -0.27,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1.08,
+      "enableSparkles": true,
+      "category": "necklace"
+    },
+    "gold_necklace2": {
+      "posX": 0.04,
+      "posY": -0.15,
+      "posZ": 1.82,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": -0.01159,
+      "scale": 1.08,
+      "enableSparkles": true,
+      "category": "necklace"
+    },
+    "gold_necklase3": {
+      "posX": 0.07,
+      "posY": 0.61,
+      "posZ": -0.27,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1.08,
+      "enableSparkles": true,
+      "category": "necklace"
     }
   }
 }

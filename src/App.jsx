@@ -59,7 +59,7 @@ function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="home-hero">
+      {/* <section className="home-hero">
         <div className="home-hero-badge">
           <svg style={{width: 14, height: 14}} viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -87,7 +87,7 @@ function HomePage() {
             Interactive Configurator
           </span>
         </div>
-      </section>
+      </section> */}
 
       <div className="home-section-label">Explore Catalog</div>
       
@@ -108,7 +108,7 @@ function HomePage() {
                 }}
               >
                 <div className="category-icon">
-                  {meta.icon ? <img src={meta.icon} alt={meta.label} style={{ width: '28px', height: '28px', objectFit: 'contain' }} /> : meta.emoji}
+                  {meta.icon ? <img src={meta.icon} alt={meta.label} style={{ width: '80px', height: '80px', objectFit: 'contain' }} /> : meta.emoji}
                 </div>
                 <h3>{meta.label}</h3>
                 <p className="category-count">

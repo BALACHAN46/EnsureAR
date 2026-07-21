@@ -577,6 +577,11 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
   // factor ramps to ~1.0 for anything but the tiniest motion, so noisy input was passing
   // through almost unfiltered. This EMA removes that jitter before it ever becomes a target.
   const smoothedAnchorRef = useRef(null);
+  // First-frame snap guard: On the very first frame that has valid landmarks, the necklace
+  // must be placed directly at the target collarbone position (not lerped from the Three.js
+  // default origin at (0,0,0)). If we show it at origin first, it appears over the face for
+  // 1 frame, making the model's head temporarily invisible — which is what the user reported.
+  const hasInitializedRef = useRef(false);
 
   // Auto-center the 3D model's pivot point to its true geometric center
   // This fixes models that were exported with off-center origins.
@@ -609,9 +614,16 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
     const poseLandmarks = poseLandmarksRef?.current;
     if (!landmarks || landmarks.length === 0) {
       groupRef.current.visible = false;
+      // Reset the init flag so the next time landmarks arrive we snap again
+      // (covers the case where the user goes out of frame and comes back)
+      hasInitializedRef.current = false;
       return;
     }
-    groupRef.current.visible = true;
+    // Keep hidden until we have snapped to the correct position on the first frame.
+    // This prevents the 1-frame flash at Three.js origin (0,0,0) that sits over the face.
+    if (!hasInitializedRef.current) {
+      groupRef.current.visible = false;
+    }
 
     const { viewport } = state;
     const { modelPos: mp, modelScale: ms } = propsRef.current;
@@ -727,19 +739,29 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
     const finalRotZ = rotZ + smoothedRot.shoulderAngle;
     const targetQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(finalRotX, finalRotY, finalRotZ));
 
-    // Adaptive lerp on top: quadratic curve for ultimate stillness at rest
-    const dist = groupRef.current.position.distanceTo(targetPos);
-    const posLerp = getAdaptiveFactor(dist, 15.0, 0.20);
-    groupRef.current.position.lerp(targetPos, posLerp);
+    // On the very first valid frame: snap directly to the computed target so we never
+    // render at Three.js default (0,0,0) — which sits in the face area and hides the head.
+    if (!hasInitializedRef.current) {
+      groupRef.current.position.copy(targetPos);
+      groupRef.current.quaternion.copy(targetQuat);
+      groupRef.current.scale.set(finalScale, finalScale, finalScale);
+      groupRef.current.visible = true;
+      hasInitializedRef.current = true;
+    } else {
+      // Adaptive lerp on top: quadratic curve for ultimate stillness at rest
+      const dist = groupRef.current.position.distanceTo(targetPos);
+      const posLerp = getAdaptiveFactor(dist, 15.0, 0.20);
+      groupRef.current.position.lerp(targetPos, posLerp);
 
-    const angle = groupRef.current.quaternion.angleTo(targetQuat);
-    const rotLerp = getAdaptiveFactor(angle, 15.0, 0.20);
-    groupRef.current.quaternion.slerp(targetQuat, rotLerp);
+      const angle = groupRef.current.quaternion.angleTo(targetQuat);
+      const rotLerp = getAdaptiveFactor(angle, 15.0, 0.20);
+      groupRef.current.quaternion.slerp(targetQuat, rotLerp);
 
-    groupRef.current.scale.lerp(
-      new THREE.Vector3(finalScale, finalScale, finalScale),
-      posLerp
-    );
+      groupRef.current.scale.lerp(
+        new THREE.Vector3(finalScale, finalScale, finalScale),
+        posLerp
+      );
+    }
 
     // Update dynamic fade boundaries!
     // 1. Lock the fade center to the TRUE physical collarbone (ignoring user offsets)
@@ -796,6 +818,12 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
   // mirrors the tip-blur the 3D GLTF necklace gets from its shader (see NecklaceMeshInner).
   const material = React.useMemo(() => {
     const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide });
+    // The scene's renderer applies filmic tone-mapping (for the lit/PBR jewelry and video
+    // background), but that curve compresses bright saturated hues — gold especially —
+    // toward pale/washed-out. This is a flat, unlit 2D overlay, not a physically-lit
+    // surface, so it should render the source PNG's colors as-authored instead of being
+    // run through the same tone curve as the rest of the scene.
+    mat.toneMapped = false;
     mat.onBeforeCompile = (shader) => {
       // Start fading halfway up (0.53) and fully disappear by 0.93, 
       // ensuring the top tips are fully invisible to look like they go behind the neck
@@ -853,6 +881,9 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
   const smoothedShoulderAngleRef = useRef(null);
   // Smooths yaw specifically for the width-correction multiplier below.
   const smoothedYawForScaleRef = useRef(0);
+  // First-frame snap guard: same rationale as NecklaceMeshInner — prevents the 2D plane
+  // from appearing at Three.js origin (0,0,0) for one frame, which sits over the face.
+  const hasInitializedRef = useRef(false);
 
   useFrame((state) => {
     if (!groupRef.current) return;
@@ -861,9 +892,14 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
     const poseLandmarks = poseLandmarksRef?.current;
     if (!landmarks || landmarks.length === 0) {
       groupRef.current.visible = false;
+      // Reset so next landmark arrival triggers a fresh snap
+      hasInitializedRef.current = false;
       return;
     }
-    groupRef.current.visible = true;
+    // Keep hidden until the first correct-position snap has been applied
+    if (!hasInitializedRef.current) {
+      groupRef.current.visible = false;
+    }
 
     const { viewport } = state;
     const { modelPos: mp, modelScale: ms } = propsRef.current;
@@ -919,11 +955,6 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
       anchor.z
     );
 
-    // ADAPTIVE LERP — quadratic curve for ultimate stillness at rest
-    const dist = groupRef.current.position.distanceTo(targetPos);
-    const lerpF = getAdaptiveFactor(dist, 15.0, 0.20);
-    groupRef.current.position.lerp(targetPos, lerpF);
-
     const rotX = propsRef.current.modelRot ? (propsRef.current.modelRot[0] ?? 0) : 0;
     const rotY = propsRef.current.modelRot ? (propsRef.current.modelRot[1] ?? 0) : 0;
 
@@ -939,11 +970,25 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
     const rotZ = (propsRef.current.modelRot ? (propsRef.current.modelRot[2] ?? 0) : 0) + smoothedShoulderAngleRef.current;
     const adminQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(rotX, rotY, rotZ));
 
-    groupRef.current.quaternion.slerp(adminQuat, lerpF);
-    groupRef.current.scale.lerp(
-      new THREE.Vector3(finalScale * aspect, finalScale, finalScale),
-      lerpF
-    );
+    // On the very first valid frame: snap directly to target (no lerp from origin)
+    if (!hasInitializedRef.current) {
+      groupRef.current.position.copy(targetPos);
+      groupRef.current.quaternion.copy(adminQuat);
+      groupRef.current.scale.set(finalScale * aspect, finalScale, finalScale);
+      groupRef.current.visible = true;
+      hasInitializedRef.current = true;
+    } else {
+      // ADAPTIVE LERP — quadratic curve for ultimate stillness at rest
+      const dist = groupRef.current.position.distanceTo(targetPos);
+      const lerpF = getAdaptiveFactor(dist, 15.0, 0.20);
+      groupRef.current.position.lerp(targetPos, lerpF);
+
+      groupRef.current.quaternion.slerp(adminQuat, lerpF);
+      groupRef.current.scale.lerp(
+        new THREE.Vector3(finalScale * aspect, finalScale, finalScale),
+        lerpF
+      );
+    }
   });
 
   return (

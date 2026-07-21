@@ -379,33 +379,6 @@
       "necklaceType": "open"
     },
     {
-      "id": "6dd6a6141f38",
-      "name": "rres",
-      "category": "eyewear",
-      "modelPath": "/models/eyewear/6dd6a6141f38.glb",
-      "mtlPath": "",
-      "texturePath": "",
-      "glbPath": "/models/eyewear/6dd6a6141f38.glb",
-      "thumbnailPath": "/models/eyewear/6dd6a6141f38.png",
-      "uploadedAt": "2026-07-17T05:54:08.655691Z",
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "offset": [
-        0,
-        0,
-        0
-      ],
-      "rotationOffset": [
-        0,
-        0,
-        0
-      ],
-      "necklaceType": "open"
-    },
-    {
       "id": "c4ee0e5c386e",
       "name": "sdsds",
       "category": "eyewear",
@@ -433,33 +406,6 @@
       "necklaceType": "open"
     },
     {
-      "id": "7787b85ace51",
-      "name": "fds",
-      "category": "watch",
-      "modelPath": "/models/watch/7787b85ace51.glb",
-      "mtlPath": "",
-      "texturePath": "",
-      "glbPath": "/models/watch/7787b85ace51.glb",
-      "thumbnailPath": "/models/watch/7787b85ace51.png",
-      "uploadedAt": "2026-07-11T08:22:10.6456106Z",
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "offset": [
-        0,
-        0,
-        0
-      ],
-      "rotationOffset": [
-        0,
-        0,
-        0
-      ],
-      "necklaceType": "open"
-    },
-    {
       "id": "f2917202433f",
       "name": "watch 1",
       "category": "watch",
@@ -469,33 +415,6 @@
       "glbPath": "/models/watch/f2917202433f.glb",
       "thumbnailPath": "/models/watch/f2917202433f.png",
       "uploadedAt": "2026-07-11T12:57:19.1548567Z",
-      "scale": [
-        1,
-        1,
-        1
-      ],
-      "offset": [
-        0,
-        0,
-        0
-      ],
-      "rotationOffset": [
-        0,
-        0,
-        0
-      ],
-      "necklaceType": "open"
-    },
-    {
-      "id": "5245b2cb364e",
-      "name": "fdx",
-      "category": "watch",
-      "modelPath": "/models/watch/5245b2cb364e.glb",
-      "mtlPath": "",
-      "texturePath": "",
-      "glbPath": "/models/watch/5245b2cb364e.glb",
-      "thumbnailPath": "/models/watch/5245b2cb364e.png",
-      "uploadedAt": "2026-07-17T06:12:47.335317Z",
       "scale": [
         1,
         1,
@@ -716,6 +635,87 @@
         1,
         1,
         1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "51W1D1NGPAA00",
+      "name": "Gold Choker Necklace",
+      "category": "necklace",
+      "modelPath": "/models/necklace/51W1D1NGPAA00.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/51W1D1NGPAA00.png",
+      "thumbnailPath": "/models/necklace/51W1D1NGPAA00.png",
+      "uploadedAt": "2026-07-21T00:00:00.0000000Z",
+      "scale": [
+        1.5,
+        1.8,
+        1.5
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "gold_necklace1",
+      "name": "Gold Necklace 1",
+      "category": "necklace",
+      "modelPath": "/models/necklace/gold_necklace1.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/gold_necklace1.png",
+      "thumbnailPath": "/models/necklace/gold_necklace1.png",
+      "uploadedAt": "2026-07-21T00:00:00.0000000Z",
+      "scale": [
+        1.5,
+        1.8,
+        1.5
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "gold_necklace2",
+      "name": "Gold Necklace 2",
+      "category": "necklace",
+      "modelPath": "/models/necklace/gold_necklace2.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/gold_necklace2.png",
+      "thumbnailPath": "/models/necklace/gold_necklace2.png",
+      "uploadedAt": "2026-07-21T00:00:00.0000000Z",
+      "scale": [
+        1.5,
+        1.8,
+        1.5
       ],
       "offset": [
         0,
