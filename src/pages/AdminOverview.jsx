@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useRouter } from '../router';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/admin/Sidebar';
 import ModelCard from '../components/admin/ModelCard';
 import { hasCustomConfig } from '../utils/modelConfig';
@@ -8,7 +8,7 @@ import { getCategoryMeta, orderCategories } from '../constants/categoryMeta';
 const RECENT_COUNT = 8;
 
 export default function AdminOverview() {
-  const { navigate } = useRouter();
+  const navigate = useNavigate();
   const [catalog, setCatalog] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);

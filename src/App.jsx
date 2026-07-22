@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RouterProvider, Route, useRouter } from './router';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import AdminOverview from './pages/AdminOverview';
 import AdminDashboard from './pages/AdminDashboard';
@@ -9,7 +9,7 @@ import './index.css';
 
 // Public Home Page
 function HomePage() {
-  const { navigate } = useRouter();
+  const navigate = useNavigate();
   const [catalog, setCatalog] = useState([]);
   const [categories, setCategories] = useState([]);
 
@@ -58,37 +58,6 @@ function HomePage() {
         </button>
       </nav>
 
-      {/* Hero Section */}
-      {/* <section className="home-hero">
-        <div className="home-hero-badge">
-          <svg style={{width: 14, height: 14}} viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-          </svg>
-          Next-Gen Try-On Engine v2.0
-        </div>
-        <h1>
-          Experience the Future of<br/>
-          <span>Augmented Reality</span>
-        </h1>
-        <p>
-          Instantly try on stunning jewelry and high-end eyewear in real-time, right from your browser. No app required.
-        </p>
-        <div className="home-hero-features">
-          <span className="home-hero-feature">
-            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" /></svg>
-            High-Fidelity Tracking
-          </span>
-          <span className="home-hero-feature">
-            <svg viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.381z" clipRule="evenodd" /></svg>
-            Real-Time Rendering
-          </span>
-          <span className="home-hero-feature">
-            <svg viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clipRule="evenodd" /></svg>
-            Interactive Configurator
-          </span>
-        </div>
-      </section> */}
-
       <div className="home-section-label">Explore Catalog</div>
       
       <div className="category-grid">
@@ -126,25 +95,24 @@ function HomePage() {
 
 // Root App with Router
 function AppRoutes() {
-  const { currentPath } = useRouter();
-
   return (
-    <>
-      <Route pattern="/" component={HomePage} />
-      <Route pattern="/admin" component={LoginPage} />
-      <Route pattern="/admin/dashboard" component={AdminOverview} />
-      <Route pattern="/admin/models" component={AdminDashboard} />
-      <Route pattern="/admin/models/:category" component={AdminDashboard} />
-      <Route pattern="/admin/model/:id/edit" component={ModelEditPage} />
-      <Route pattern="/ar/:category/:modelId" component={ARViewPage} />
-    </>
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/admin" element={<LoginPage />} />
+      <Route path="/admin/dashboard" element={<AdminOverview />} />
+      <Route path="/admin/models" element={<AdminDashboard />} />
+      <Route path="/admin/models/:category" element={<AdminDashboard />} />
+      <Route path="/admin/model/:id/edit" element={<ModelEditPage />} />
+      <Route path="/ar/:category/:modelId" element={<ARViewPage />} />
+    </Routes>
   );
 }
 
 export default function App() {
   return (
-    <RouterProvider>
+    <BrowserRouter>
       <AppRoutes />
-    </RouterProvider>
+    </BrowserRouter>
   );
 }
+

@@ -683,6 +683,19 @@ img {
   box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
+/* ── Browser Autofill Override ── */
+.input-wrapper input:-webkit-autofill,
+.input-wrapper input:-webkit-autofill:hover,
+.input-wrapper input:-webkit-autofill:focus,
+.input-wrapper input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #0f1a2e inset !important;
+  box-shadow: 0 0 0 1000px #0f1a2e inset !important;
+  -webkit-text-fill-color: #e2e8f0 !important;
+  caret-color: #e2e8f0;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 .input-toggle {
   position: absolute;
   right: 12px;

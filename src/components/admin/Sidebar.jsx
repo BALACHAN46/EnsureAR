@@ -1,9 +1,9 @@
 import React from 'react';
-import { useRouter } from '../../router';
+import { useNavigate } from 'react-router-dom';
 import { getCategoryMeta } from '../../constants/categoryMeta';
 
 export default function Sidebar({ activeNav, categories, activeCategory, modelCounts, onCategorySelect, onLogout, isOpen, onClose }) {
-  const { navigate } = useRouter();
+  const navigate = useNavigate();
 
   return (
     <>

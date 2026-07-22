@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useRouter } from '../router';
+import { useNavigate } from 'react-router-dom';
 
 const SUPERADMIN_USER = 'superadmin';
 const SUPERADMIN_PASS = 'Welcome@123';
 
 export default function LoginPage() {
-  const { navigate } = useRouter();
+  const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');

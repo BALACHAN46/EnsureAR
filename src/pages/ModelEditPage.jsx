@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from '../router';
+import { useNavigate, useParams } from 'react-router-dom';
 import { getModelConfig, saveModelConfig, resetModelConfig, hasCustomConfig } from '../utils/modelConfig';
 
 const SLIDER_CONFIG = [
@@ -75,9 +75,10 @@ const SLIDER_CONFIG = [
   },
 ];
 
-export default function ModelEditPage({ params }) {
-  const { navigate } = useRouter();
-  const modelId = params?.id;
+export default function ModelEditPage() {
+  const navigate = useNavigate();
+  const routeParams = useParams();
+  const modelId = routeParams?.id;
 
   const [model, setModel] = useState(null);
   const [defaults, setDefaults] = useState({});

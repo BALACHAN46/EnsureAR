@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useRouter } from '../router';
+import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '../components/admin/Sidebar';
 import ModelCard from '../components/admin/ModelCard';
 
-export default function AdminDashboard({ params }) {
-  const { navigate } = useRouter();
+export default function AdminDashboard() {
+  const navigate = useNavigate();
+  const routeParams = useParams();
   const [catalog, setCatalog] = useState([]);
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
@@ -29,7 +30,7 @@ export default function AdminDashboard({ params }) {
           setCategories(cats);
           // Arriving from the Overview page's "browse by category" links
           // preselects that category via the /admin/models/:category route.
-          const requested = params?.category;
+          const requested = routeParams?.category;
           setActiveCategory(cats.includes(requested) ? requested : (cats[0] || null));
         }
         setLoading(false);

@@ -1,9 +1,9 @@
 import React from 'react';
-import { useRouter } from '../../router';
+import { useNavigate } from 'react-router-dom';
 import { hasCustomConfig } from '../../utils/modelConfig';
 
 export default function ModelCard({ model }) {
-  const { navigate } = useRouter();
+  const navigate = useNavigate();
   const isCustomized = hasCustomConfig(model.id);
 
   const handleEdit = () => navigate(`/admin/model/${model.id}/edit`);
