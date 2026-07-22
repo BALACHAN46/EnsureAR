@@ -353,14 +353,14 @@
       "category": "earrings"
     },
     "fd27ab032085": {
-      "posX": 0.08,
-      "posY": 1.7,
-      "posZ": -0.15,
-      "rotX": 1.57,
+      "posX": 0.27,
+      "posY": 1.93,
+      "posZ": -0.3,
+      "rotX": 1.47841,
       "rotY": 0,
-      "rotZ": 0,
-      "scale": 0.94,
-      "enableSparkles": true,
+      "rotZ": 0.01841,
+      "scale": 1.18,
+      "enableSparkles": false,
       "category": "rings"
     },
     "dummy_nosepin": {
