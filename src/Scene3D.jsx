@@ -1025,6 +1025,7 @@ const TrackingStatus = ({ landmarksRef, isHandTracking, category }) => {
 
 const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles, activeModel, showMesh, customMaterials }) => {
   const groupRef = useRef();
+  const innerGroupRef = useRef();
 
   const gltfPath = activeModel?.glbPath;
   const { scene } = useGLTF(gltfPath || '/models/watch/f2917202433f.glb');

@@ -352,6 +352,17 @@
       "enableSparkles": false,
       "category": "earrings"
     },
+    "fd27ab032085": {
+      "posX": 0.08,
+      "posY": 1.7,
+      "posZ": -0.15,
+      "rotX": 1.57,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 0.94,
+      "enableSparkles": true,
+      "category": "rings"
+    },
     "dummy_nosepin": {
       "posX": 0,
       "posY": 0,
