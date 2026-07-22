@@ -79,6 +79,30 @@ export function configToRotation(config) {
 }
 
 /**
+ * Convert leftPosX/leftPosY/leftPosZ → [x, y, z] for left hand
+ * Defaults to the right hand config if left is not defined
+ */
+export function configToLeftPosition(config) {
+  return [
+    config.leftPosX ?? config.posX ?? 0,
+    config.leftPosY ?? config.posY ?? 0,
+    config.leftPosZ ?? config.posZ ?? 0
+  ];
+}
+
+/**
+ * Convert leftRotX/leftRotY/leftRotZ → [x, y, z] for left hand
+ * Defaults to the right hand config if left is not defined
+ */
+export function configToLeftRotation(config) {
+  return [
+    config.leftRotX ?? config.rotX ?? 0,
+    config.leftRotY ?? config.rotY ?? 0,
+    config.leftRotZ ?? config.rotZ ?? 0
+  ];
+}
+
+/**
  * Get the uniform scale value for Three.js
  */
 export function configToScale(config) {

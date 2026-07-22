@@ -4,7 +4,7 @@ import FaceTracker from '../FaceTracker';
 import HandTracker from '../HandTracker';
 import Scene3D from '../Scene3D';
 import ProductConfigurator from '../components/ar/ProductConfigurator';
-import { getModelConfig, saveModelConfig, resetModelConfig, configToPosition, configToRotation, configToScale } from '../utils/modelConfig';
+import { getModelConfig, saveModelConfig, resetModelConfig, configToPosition, configToRotation, configToScale, configToLeftPosition, configToLeftRotation } from '../utils/modelConfig';
 import { getCategoryMeta, orderCategories } from '../constants/categoryMeta';
 
 const PREDEFINED_COLORS = [
@@ -42,6 +42,9 @@ export default function ARViewPage() {
   const [showFaceMesh, setShowFaceMesh] = useState(false);
   const [modelPos, setModelPos] = useState([0, 0, 0]);
   const [modelRot, setModelRot] = useState([0, 0, 0]);
+  const [leftModelPos, setLeftModelPos] = useState([0, 0, 0]);
+  const [leftModelRot, setLeftModelRot] = useState([0, 0, 0]);
+  const [tuningHand, setTuningHand] = useState('right');
   const [modelScale, setModelScale] = useState(1);
   const [modelSparkles, setModelSparkles] = useState(false);
   const [ringTuning, setRingTuning] = useState({
@@ -50,7 +53,8 @@ export default function ARViewPage() {
     leftHandFrontOffset: -0.06,
     leftHandBackOffset: -0.06,
     frontScale: 0.23,
-    backScale: 0.20
+    backScale: 0.20,
+    selectedFinger: 2, // 0=index, 1=middle, 2=ring, 3=pinky
   });
   const [showTuning, setShowTuning] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -118,6 +122,8 @@ export default function ARViewPage() {
     const cfg = getModelConfig(id, defs);
     setModelPos(configToPosition(cfg));
     setModelRot(configToRotation(cfg));
+    setLeftModelPos(configToLeftPosition(cfg));
+    setLeftModelRot(configToLeftRotation(cfg));
     setModelScale(configToScale(cfg));
     setModelSparkles(!!cfg.enableSparkles);
   };
@@ -147,6 +153,12 @@ export default function ARViewPage() {
       rotX: modelRot[0],
       rotY: modelRot[1],
       rotZ: modelRot[2],
+      leftPosX: leftModelPos[0],
+      leftPosY: leftModelPos[1],
+      leftPosZ: leftModelPos[2],
+      leftRotX: leftModelRot[0],
+      leftRotY: leftModelRot[1],
+      leftRotZ: leftModelRot[2],
       scale: modelScale,
       enableSparkles: modelSparkles,
       category: activeModel.category,
@@ -165,6 +177,8 @@ export default function ARViewPage() {
     resetModelConfig(activeModel.id);
     setModelPos([0, 0, 0]);
     setModelRot([0, 0, 0]);
+    setLeftModelPos([0, 0, 0]);
+    setLeftModelRot([0, 0, 0]);
     setModelScale(1);
     setSaved('Reset!');
     setTimeout(() => setSaved(false), 2000);
@@ -585,38 +599,71 @@ export default function ARViewPage() {
             <button className="ar-tuning-close" onClick={() => setShowTuning(false)}>✕</button>
           </div>
 
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', background: 'rgba(0,0,0,0.2)', padding: '4px', borderRadius: '8px' }}>
+            <button
+              style={{ flex: 1, padding: '4px 8px', borderRadius: '6px', background: tuningHand === 'right' ? '#3b82f6' : 'transparent', color: tuningHand === 'right' ? '#fff' : '#94a3b8', border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
+              onClick={() => setTuningHand('right')}
+            >
+              Right Hand
+            </button>
+            <button
+              style={{ flex: 1, padding: '4px 8px', borderRadius: '6px', background: tuningHand === 'left' ? '#3b82f6' : 'transparent', color: tuningHand === 'left' ? '#fff' : '#94a3b8', border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
+              onClick={() => setTuningHand('left')}
+            >
+              Left Hand
+            </button>
+          </div>
+
           <label className="ar-tuning-label">
-            <span>Pos X (Left/Right): <strong>{modelPos[0].toFixed(2)}</strong></span>
-            <input type="range" min="-20" max="20" step="0.01" value={modelPos[0]}
-              onChange={e => setModelPos([parseFloat(e.target.value), modelPos[1], modelPos[2]])} />
+            <span>Pos X (Left/Right): <strong>{(tuningHand === 'right' ? modelPos[0] : leftModelPos[0]).toFixed(2)}</strong></span>
+            <input type="range" min="-20" max="20" step="0.01" value={tuningHand === 'right' ? modelPos[0] : leftModelPos[0]}
+              onChange={e => {
+                const val = parseFloat(e.target.value);
+                tuningHand === 'right' ? setModelPos([val, modelPos[1], modelPos[2]]) : setLeftModelPos([val, leftModelPos[1], leftModelPos[2]]);
+              }} />
           </label>
           <label className="ar-tuning-label">
-            <span>Pos Y (Up/Down): <strong>{modelPos[1].toFixed(2)}</strong></span>
-            <input type="range" min="-20" max="20" step="0.01" value={modelPos[1]}
-              onChange={e => setModelPos([modelPos[0], parseFloat(e.target.value), modelPos[2]])} />
+            <span>Pos Y (Up/Down): <strong>{(tuningHand === 'right' ? modelPos[1] : leftModelPos[1]).toFixed(2)}</strong></span>
+            <input type="range" min="-20" max="20" step="0.01" value={tuningHand === 'right' ? modelPos[1] : leftModelPos[1]}
+              onChange={e => {
+                const val = parseFloat(e.target.value);
+                tuningHand === 'right' ? setModelPos([modelPos[0], val, modelPos[2]]) : setLeftModelPos([leftModelPos[0], val, leftModelPos[2]]);
+              }} />
           </label>
           <label className="ar-tuning-label">
-            <span>Pos Z (Forward/Back): <strong>{modelPos[2].toFixed(2)}</strong></span>
-            <input type="range" min="-20" max="20" step="0.01" value={modelPos[2]}
-              onChange={e => setModelPos([modelPos[0], modelPos[1], parseFloat(e.target.value)])} />
+            <span>Pos Z (Forward/Back): <strong>{(tuningHand === 'right' ? modelPos[2] : leftModelPos[2]).toFixed(2)}</strong></span>
+            <input type="range" min="-20" max="20" step="0.01" value={tuningHand === 'right' ? modelPos[2] : leftModelPos[2]}
+              onChange={e => {
+                const val = parseFloat(e.target.value);
+                tuningHand === 'right' ? setModelPos([modelPos[0], modelPos[1], val]) : setLeftModelPos([leftModelPos[0], leftModelPos[1], val]);
+              }} />
           </label>
 
           <div className="ar-tuning-divider" />
 
           <label className="ar-tuning-label">
-            <span>Rot X (Pitch/Tilt): <strong>{(modelRot[0] * (180 / Math.PI)).toFixed(0)}°</strong></span>
-            <input type="range" min="-3.14159" max="3.14159" step="0.01" value={modelRot[0]}
-              onChange={e => setModelRot([parseFloat(e.target.value), modelRot[1], modelRot[2]])} />
+            <span>Rot X (Pitch/Tilt): <strong>{((tuningHand === 'right' ? modelRot[0] : leftModelRot[0]) * (180 / Math.PI)).toFixed(0)}°</strong></span>
+            <input type="range" min="-3.14159" max="3.14159" step="0.01" value={tuningHand === 'right' ? modelRot[0] : leftModelRot[0]}
+              onChange={e => {
+                const val = parseFloat(e.target.value);
+                tuningHand === 'right' ? setModelRot([val, modelRot[1], modelRot[2]]) : setLeftModelRot([val, leftModelRot[1], leftModelRot[2]]);
+              }} />
           </label>
           <label className="ar-tuning-label">
-            <span>Rot Y (Yaw/Turn): <strong>{(modelRot[1] * (180 / Math.PI)).toFixed(0)}°</strong></span>
-            <input type="range" min="-3.14159" max="3.14159" step="0.01" value={modelRot[1]}
-              onChange={e => setModelRot([modelRot[0], parseFloat(e.target.value), modelRot[2]])} />
+            <span>Rot Y (Yaw/Turn): <strong>{((tuningHand === 'right' ? modelRot[1] : leftModelRot[1]) * (180 / Math.PI)).toFixed(0)}°</strong></span>
+            <input type="range" min="-3.14159" max="3.14159" step="0.01" value={tuningHand === 'right' ? modelRot[1] : leftModelRot[1]}
+              onChange={e => {
+                const val = parseFloat(e.target.value);
+                tuningHand === 'right' ? setModelRot([modelRot[0], val, modelRot[2]]) : setLeftModelRot([leftModelRot[0], val, leftModelRot[2]]);
+              }} />
           </label>
           <label className="ar-tuning-label">
-            <span>Rot Z (Roll/Upside Down): <strong>{(modelRot[2] * (180 / Math.PI)).toFixed(0)}°</strong></span>
-            <input type="range" min="-3.14159" max="3.14159" step="0.01" value={modelRot[2]}
-              onChange={e => setModelRot([modelRot[0], modelRot[1], parseFloat(e.target.value)])} />
+            <span>Rot Z (Roll/Upside Down): <strong>{((tuningHand === 'right' ? modelRot[2] : leftModelRot[2]) * (180 / Math.PI)).toFixed(0)}°</strong></span>
+            <input type="range" min="-3.14159" max="3.14159" step="0.01" value={tuningHand === 'right' ? modelRot[2] : leftModelRot[2]}
+              onChange={e => {
+                const val = parseFloat(e.target.value);
+                tuningHand === 'right' ? setModelRot([modelRot[0], modelRot[1], val]) : setLeftModelRot([leftModelRot[0], leftModelRot[1], val]);
+              }} />
           </label>
 
           <div className="ar-tuning-divider" />
@@ -730,6 +777,8 @@ export default function ARViewPage() {
             showFaceMesh={showFaceMesh}
             modelPos={modelPos}
             modelRot={modelRot}
+            leftModelPos={leftModelPos}
+            leftModelRot={leftModelRot}
             modelScale={modelScale}
             modelSparkles={modelSparkles}
             activeModel={activeModel}
@@ -765,6 +814,8 @@ export default function ARViewPage() {
 
       {/* ── Bottom dock: Models ── */}
       <div className="ar-bottom-dock">
+
+
         <div className="ar-model-bar">
           <div className="carousel-track horizontal">
             {activeCategoryModels.map(model => (
@@ -790,9 +841,6 @@ export default function ARViewPage() {
               </div>
             ))}
           </div>
-          {/* <div className="carousel-title">
-            {activeModel?.name || 'Select a model'} · {category}
-          </div> */}
         </div>
       </div>
     </div>

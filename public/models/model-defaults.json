@@ -439,12 +439,18 @@
       "category": "rings"
     },
     "narya_gandalfs_ring": {
-      "posX": 0.11,
+      "posX": 0.12,
       "posY": 1.7,
       "posZ": -0.15,
       "rotX": 1.33841,
       "rotY": 0.49841,
       "rotZ": 0.45841,
+      "leftPosX": 0.3,
+      "leftPosY": 1.7,
+      "leftPosZ": -0.15,
+      "leftRotX": 1.56841,
+      "leftRotY": -0.50159,
+      "leftRotZ": -0.33159,
       "scale": 20,
       "enableSparkles": true,
       "category": "rings"
@@ -456,6 +462,12 @@
       "rotX": 0.83841,
       "rotY": 0.16841,
       "rotZ": 0.06841,
+      "leftPosX": 0.25,
+      "leftPosY": 1.67,
+      "leftPosZ": -0.15,
+      "leftRotX": 1.04841,
+      "leftRotY": -0.14159,
+      "leftRotZ": 0.00841,
       "scale": 0.33,
       "enableSparkles": true,
       "category": "rings"
@@ -467,7 +479,13 @@
       "rotX": 0.78841,
       "rotY": 0.06841,
       "rotZ": -0.02159,
-      "scale": 14.67,
+      "leftPosX": 0.15,
+      "leftPosY": 1.67,
+      "leftPosZ": -0.3,
+      "leftRotX": -0.91159,
+      "leftRotY": -0.05159,
+      "leftRotZ": 3.13841,
+      "scale": 13.93,
       "enableSparkles": true,
       "category": "rings"
     }

@@ -5,6 +5,16 @@ import * as THREE from 'three';
 import { applyAndExtractMaterials } from '../../utils/materialHelper';
 import { JewelrySparkles } from './NecklaceMesh';
 
+// MediaPipe hand landmark indices for each finger
+// Each entry: [MCP (base knuckle), PIP (first joint)]
+const FINGER_LANDMARKS = {
+  index:  [5,  6],
+  middle: [9,  10],
+  ring:   [13, 14],
+  pinky:  [17, 18],
+};
+const FINGER_KEYS = ['index', 'middle', 'ring', 'pinky'];
+
 /**
  * RingMesh — Anatomically Accurate Ring AR Tracking
  * ─────────────────────────────────────────────────────────────────────
@@ -16,7 +26,7 @@ import { JewelrySparkles } from './NecklaceMesh';
  * - Precision Occlusion: An invisible cylinder precisely centered hides the back-band when viewing the palm, and hides the gem when viewing the back of the hand, without side-clipping.
  * ─────────────────────────────────────────────────────────────────────
  */
-const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles, activeModel, showMesh, customMaterials, ringTuning }) => {
+const RingMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelSparkles, activeModel, showMesh, customMaterials, ringTuning }) => {
   const { scene } = useGLTF(activeModel?.glbPath || '');
   const groupRef = useRef();
   const innerGroupRef = useRef();
@@ -71,9 +81,13 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles,
 
     const p0 = getMapped(0);   // Wrist
     const p5 = getMapped(5);   // Index base
-    const p13 = getMapped(13); // Ring MCP (Base)
-    const p14 = getMapped(14); // Ring PIP (Middle Knuckle)
     const p17 = getMapped(17); // Pinky base
+
+    // Pick the correct MCP/PIP based on which finger the user selected
+    const fingerKey = FINGER_KEYS[ringTuning?.selectedFinger ?? 2]; // default: ring finger
+    const [mcpIdx, pipIdx] = FINGER_LANDMARKS[fingerKey];
+    const p13 = getMapped(mcpIdx); // Selected finger MCP (Base knuckle)
+    const p14 = getMapped(pipIdx); // Selected finger PIP (First joint)
 
     // Target position: Sit slightly above the base knuckle for a natural look
     const targetPos = new THREE.Vector3().lerpVectors(p13, p14, 0.25);
@@ -138,6 +152,7 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles,
 
     // Most GLB rings place the gemstone at +Z.
     // Flipping 180 on Y ensures the gemstone properly sits on the back of the hand (instead of the palm).
+    // Both physical left and right hands need the same +Y flip in this mirrored-display coordinate space.
     const flipQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
     targetQuat.multiply(flipQuat);
 
@@ -170,19 +185,23 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles,
 
     // Dynamic inner group offset & handedness rotation (computed every frame inside useFrame)
     if (innerGroupRef.current) {
-      const posX = -(modelPos?.[0] ?? 0);
-      const posY = modelPos?.[1] ?? 0;
-      const posZ = -(modelPos?.[2] ?? 0);
-      innerGroupRef.current.position.set(posX, posY, posZ);
-
-      const rotX = modelRot?.[0] ?? 0;
-      let rotY = modelRot?.[1] ?? 0;
-      let rotZ = modelRot?.[2] ?? 0;
-
+      let posX, posY, posZ, rotX, rotY, rotZ;
       if (isPhysicalRightHand) {
-        rotY = -rotY;
-        rotZ = -rotZ;
+        posX = -(modelPos?.[0] ?? 0);
+        posY = modelPos?.[1] ?? 0;
+        posZ = -(modelPos?.[2] ?? 0);
+        rotX = modelRot?.[0] ?? 0;
+        rotY = -(modelRot?.[1] ?? 0);
+        rotZ = -(modelRot?.[2] ?? 0);
+      } else {
+        posX = -(leftModelPos?.[0] ?? modelPos?.[0] ?? 0);
+        posY = leftModelPos?.[1] ?? modelPos?.[1] ?? 0;
+        posZ = -(leftModelPos?.[2] ?? modelPos?.[2] ?? 0);
+        rotX = leftModelRot?.[0] ?? modelRot?.[0] ?? 0;
+        rotY = leftModelRot?.[1] ?? modelRot?.[1] ?? 0;
+        rotZ = leftModelRot?.[2] ?? modelRot?.[2] ?? 0;
       }
+      innerGroupRef.current.position.set(posX, posY, posZ);
       innerGroupRef.current.rotation.set(rotX, rotY, rotZ);
     }
 
