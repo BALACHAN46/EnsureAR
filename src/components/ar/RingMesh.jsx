@@ -48,7 +48,8 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles,
 
     // 1. Robust Viewport Mapping (Handles scaling correctly regardless of camera resolution vs window resolution)
     const { viewport } = state;
-    const videoAspect = 640 / 480;
+    const videoNode = document.querySelector('.webcam-video');
+    const videoAspect = (videoNode && videoNode.videoHeight) ? (videoNode.videoWidth / videoNode.videoHeight) : (16 / 9);
     const containerAspect = viewport.width / viewport.height;
     let scaleX = 1; let scaleY = 1;
     if (containerAspect > videoAspect) {

@@ -728,6 +728,60 @@
         0
       ],
       "necklaceType": "open"
+    },
+    {
+      "id": "ea5ace30985b",
+      "name": "Ring",
+      "category": "rings",
+      "modelPath": "/models/rings/ea5ace30985b.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/rings/ea5ace30985b.glb",
+      "thumbnailPath": "/models/rings/ea5ace30985b.jpg",
+      "uploadedAt": "2026-06-24T12:48:50.5060282Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "fd27ab032085",
+      "name": "ringd",
+      "category": "rings",
+      "modelPath": "/models/rings/fd27ab032085.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/rings/fd27ab032085.glb",
+      "thumbnailPath": "/models/rings/fd27ab032085.jpg",
+      "uploadedAt": "2026-07-06T06:18:15.899185Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
     }
   ]
 }

@@ -414,6 +414,17 @@
       "scale": 1.08,
       "enableSparkles": true,
       "category": "necklace"
+    },
+    "ea5ace30985b": {
+      "posX": 0.26,
+      "posY": 1.7,
+      "posZ": -0.15,
+      "rotX": 1.47841,
+      "rotY": 0.00841,
+      "rotZ": -0.02159,
+      "scale": 0.02,
+      "enableSparkles": true,
+      "category": "rings"
     }
   }
 }
