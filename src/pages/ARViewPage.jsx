@@ -649,9 +649,9 @@ export default function ARViewPage() {
         </div>
       )}
 
-      {/* Ring Tuning Panel (Visible to everyone when viewing rings) */}
-      {viewMode === 'tryon' && category === 'rings' && (
-        <div className="ar-tuning-panel" style={{ top: railTop, right: isAdmin && showTuning ? '320px' : '1rem' }}>
+      {/* Ring Tuning Panel (Admin only, Try On mode only) */}
+      {viewMode === 'tryon' && isAdmin && showTuning && category === 'rings' && (
+        <div className="ar-tuning-panel" style={{ top: railTop, right: '340px' }}>
           <div className="ar-tuning-header">
             <h4>Ring Fit Tuning</h4>
           </div>

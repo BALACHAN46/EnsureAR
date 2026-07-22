@@ -19,6 +19,7 @@ import { JewelrySparkles } from './NecklaceMesh';
 const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles, activeModel, showMesh, customMaterials, ringTuning }) => {
   const { scene } = useGLTF(activeModel?.glbPath || '');
   const groupRef = useRef();
+  const innerGroupRef = useRef();
   const occluderRef = useRef();
 
   // Apply real-time custom material tuning from the UI
@@ -167,6 +168,24 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles,
       groupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.3);
     }
 
+    // Dynamic inner group offset & handedness rotation (computed every frame inside useFrame)
+    if (innerGroupRef.current) {
+      const posX = -(modelPos?.[0] ?? 0);
+      const posY = modelPos?.[1] ?? 0;
+      const posZ = -(modelPos?.[2] ?? 0);
+      innerGroupRef.current.position.set(posX, posY, posZ);
+
+      const rotX = modelRot?.[0] ?? 0;
+      let rotY = modelRot?.[1] ?? 0;
+      let rotZ = modelRot?.[2] ?? 0;
+
+      if (isPhysicalRightHand) {
+        rotY = -rotY;
+        rotZ = -rotZ;
+      }
+      innerGroupRef.current.rotation.set(rotX, rotY, rotZ);
+    }
+
     // 4. Professional Occlusion Masking
     if (occluderRef.current) {
       const currentScale = groupRef.current.scale.x || finalScale;
@@ -183,19 +202,6 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles,
     }
   });
 
-  // Anatomical tuning flipping: 
-  // Make UI sliders intuitive (Pos X = Screen Right, Pos Z = Screen Towards)
-  const isPhysicalRight = landmarksRef.current?.handedness?.label === 'Right';
-  const adjustedPos = modelPos ? [...modelPos] : [0, 0, 0];
-  adjustedPos[0] = -adjustedPos[0]; // Flip local X so +X slider moves screen right
-  adjustedPos[2] = -adjustedPos[2]; // Flip local Z so +Z slider moves screen towards
-
-  const adjustedRot = modelRot ? [...modelRot] : [0, 0, 0];
-  if (isPhysicalRight) {
-    adjustedRot[1] = -adjustedRot[1];
-    adjustedRot[2] = -adjustedRot[2];
-  }
-
   if (!clonedScene) return null;
 
   return (
@@ -207,10 +213,8 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles,
         <meshBasicMaterial colorWrite={false} depthWrite={true} />
       </mesh>
 
-      {/* Apply user tuning position and rotation ONLY to the ring, to correct GLB model centering! */}
-      <group position={adjustedPos} rotation={adjustedRot}>
-
-
+      {/* Apply user tuning position and rotation dynamically inside useFrame */}
+      <group ref={innerGroupRef}>
         {/* Development Debug Mesh */}
         {showMesh && (
           <mesh>

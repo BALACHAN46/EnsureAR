@@ -730,15 +730,15 @@
       "necklaceType": "open"
     },
     {
-      "id": "ea5ace30985b",
-      "name": "Ring",
+      "id": "fd27ab032085",
+      "name": "ringd",
       "category": "rings",
-      "modelPath": "/models/rings/ea5ace30985b.glb",
+      "modelPath": "/models/rings/fd27ab032085.glb",
       "mtlPath": "",
       "texturePath": "",
-      "glbPath": "/models/rings/ea5ace30985b.glb",
-      "thumbnailPath": "/models/rings/ea5ace30985b.jpg",
-      "uploadedAt": "2026-06-24T12:48:50.5060282Z",
+      "glbPath": "/models/rings/fd27ab032085.glb",
+      "thumbnailPath": "/models/rings/ring4.png",
+      "uploadedAt": "2026-07-06T06:18:15.899185Z",
       "scale": [
         1,
         1,
@@ -757,15 +757,69 @@
       "necklaceType": "open"
     },
     {
-      "id": "fd27ab032085",
-      "name": "ringd",
+      "id": "narya_gandalfs_ring",
+      "name": "Narya Gandalf's Ring",
       "category": "rings",
-      "modelPath": "/models/rings/fd27ab032085.glb",
+      "modelPath": "/models/rings/narya_gandalfs_ring.glb",
       "mtlPath": "",
       "texturePath": "",
-      "glbPath": "/models/rings/fd27ab032085.glb",
-      "thumbnailPath": "/models/rings/fd27ab032085.jpg",
-      "uploadedAt": "2026-07-06T06:18:15.899185Z",
+      "glbPath": "/models/rings/narya_gandalfs_ring.glb",
+      "thumbnailPath": "/models/rings/ring1.png",
+      "uploadedAt": "2026-07-22T14:34:00.0000000Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "diamond_ring",
+      "name": "Diamond Ring",
+      "category": "rings",
+      "modelPath": "/models/rings/diamond_ring.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/rings/diamond_ring.glb",
+      "thumbnailPath": "/models/rings/ring2.png",
+      "uploadedAt": "2026-07-22T14:41:00.0000000Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "ring_with_black_stone_diamond",
+      "name": "Black Stone & Diamond Ring",
+      "category": "rings",
+      "modelPath": "/models/rings/ring_with_big_black_stone_and_diamond - Copy.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/rings/ring_with_big_black_stone_and_diamond - Copy.glb",
+      "thumbnailPath": "/models/rings/ring3.png",
+      "uploadedAt": "2026-07-22T14:41:00.0000000Z",
       "scale": [
         1,
         1,

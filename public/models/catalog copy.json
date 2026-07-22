@@ -1187,6 +1187,87 @@
         0
       ],
       "necklaceType": "open"
+    },
+    {
+      "id": "narya_gandalfs_ring",
+      "name": "Narya Gandalf's Ring",
+      "category": "rings",
+      "modelPath": "/models/rings/narya_gandalfs_ring.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/rings/narya_gandalfs_ring.glb",
+      "thumbnailPath": "/models/rings/narya_gandalfs_ring.glb",
+      "uploadedAt": "2026-07-22T14:34:00.0000000Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "diamond_ring",
+      "name": "Diamond Ring",
+      "category": "rings",
+      "modelPath": "/models/rings/diamond_ring.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/rings/diamond_ring.glb",
+      "thumbnailPath": "/models/rings/diamond_ring.glb",
+      "uploadedAt": "2026-07-22T14:41:00.0000000Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+    {
+      "id": "ring_with_black_stone_diamond",
+      "name": "Black Stone & Diamond Ring",
+      "category": "rings",
+      "modelPath": "/models/rings/ring_with_big_black_stone_and_diamond - Copy.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/rings/ring_with_big_black_stone_and_diamond - Copy.glb",
+      "thumbnailPath": "/models/rings/ring_with_big_black_stone_and_diamond - Copy.glb",
+      "uploadedAt": "2026-07-22T14:41:00.0000000Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
     }
   ]
 }

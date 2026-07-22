@@ -8,8 +8,8 @@ import RingMesh from './components/ar/RingMesh';
 import ModelErrorBoundary from './components/ar/ModelErrorBoundary';
 import { applyAndExtractMaterials } from './utils/materialHelper';
 
-// Categories that use the face-landmark eyewear AR
-const FACE_AR_CATEGORIES = ['eyewear'];
+// Categories that use the face-landmark eyewear & earrings AR
+const FACE_AR_CATEGORIES = ['eyewear', 'earrings'];
 // Ring AR: fixed position in frame (no body tracking)
 const RING_AR_CATEGORIES = ['rings'];
 
@@ -329,10 +329,11 @@ const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkl
       );
     };
 
-    // Use tragus/temple landmarks as ear anchors (234 left, 454 right)
-    // Note: MediaPipe FaceMesh 234 is the left ear, 454 is the right ear
+    // Use tragus landmarks as ear anchors (234 left ear area, 454 right ear area)
     const leftAnchor = getMapped(234);
     const rightAnchor = getMapped(454);
+    const top = getMapped(10);
+    const bottom = getMapped(152);
 
     // Center of the head (between the temples)
     const centerPos = new THREE.Vector3().addVectors(leftAnchor, rightAnchor).multiplyScalar(0.5);
@@ -343,53 +344,57 @@ const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkl
     const rawDiffZ = -(landmarks[454].z - landmarks[234].z) * viewport.width;
     const faceWidth = Math.sqrt(rawDiffX * rawDiffX + rawDiffY * rawDiffY + rawDiffZ * rawDiffZ);
 
-    // Head rotation estimation
-    const diffX = rightAnchor.x - leftAnchor.x;
-    const diffY = rightAnchor.y - leftAnchor.y;
-    const diffZ = rightAnchor.z - leftAnchor.z;
+    // 3D coordinate system attached to user's head
+    const headRight = new THREE.Vector3().subVectors(rightAnchor, leftAnchor).normalize(); // Points -X (screen left / user right ear)
+    const headLeft = headRight.clone().negate(); // Points +X (screen right / user left ear)
+    const headUp = new THREE.Vector3().subVectors(top, bottom).normalize(); // Points +Y (towards forehead)
+    const headDown = headUp.clone().negate(); // Points -Y (towards chin)
+    const headForward = new THREE.Vector3().crossVectors(headLeft, headUp).normalize(); // Points +Z (out of face)
+    const headBackward = headForward.clone().negate(); // Points -Z (into head)
 
-    const roll = Math.atan2(diffY, diffX);
-    const yaw = Math.asin(diffZ / Math.sqrt(diffX * diffX + diffY * diffY + diffZ * diffZ));
+    // Construct rotation matrix & quaternion directly from head orientation basis
+    const rotMatrix = new THREE.Matrix4().makeBasis(headRight, headUp, headForward);
+    const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix);
 
-    const top = getMapped(10);
-    const bottom = getMapped(152);
+    // Calculate precise physical earlobe positions
+    // Earlobes are located outward from the tragus, downward towards the jawline, and slightly backward.
+    const outwardOffset = faceWidth * 0.025;
+    const downwardOffset = faceWidth * 0.25;
+    const backwardOffset = faceWidth * 0.02;
 
-    const verticalDist = bottom.distanceTo(top);
-    const pitch = -Math.asin((bottom.z - top.z) / verticalDist);
+    const leftEarlobe = leftAnchor.clone()
+      .addScaledVector(headLeft, outwardOffset)
+      .addScaledVector(headDown, downwardOffset)
+      .addScaledVector(headBackward, backwardOffset);
 
-    const targetEuler = new THREE.Euler(pitch, yaw, roll, 'YXZ');
-    const targetQuat = new THREE.Quaternion().setFromEuler(targetEuler);
-
-    // Calculate synthetic earlobe positions
-    // The earlobe is located physically below the tragus.
-    // In our mirrored 3D space: leftAnchor is +X (right screen), rightAnchor is -X (left screen).
-    // To push OUTWARD, we ADD to leftAnchor's X, and SUBTRACT from rightAnchor's X.
-    const downwardOffset = -faceWidth * 0.15;
-    const outwardOffset = faceWidth * 0.05;
-
-    const leftEarlobeOffset = new THREE.Vector3(outwardOffset, downwardOffset, 0);
-    leftEarlobeOffset.applyQuaternion(targetQuat);
-    const leftEarlobe = new THREE.Vector3().addVectors(leftAnchor, leftEarlobeOffset);
-
-    const rightEarlobeOffset = new THREE.Vector3(-outwardOffset, downwardOffset, 0);
-    rightEarlobeOffset.applyQuaternion(targetQuat);
-    const rightEarlobe = new THREE.Vector3().addVectors(rightAnchor, rightEarlobeOffset);
+    const rightEarlobe = rightAnchor.clone()
+      .addScaledVector(headRight, outwardOffset)
+      .addScaledVector(headDown, downwardOffset)
+      .addScaledVector(headBackward, backwardOffset);
 
     const finalScale = faceWidth * 1.05 * (modelScale || 1);
-
-    // The occluder needs to be slightly narrower than the face width
-    // so it doesn't accidentally swallow the earrings themselves!
     const occluderScale = faceWidth * 0.85;
+
+    // Use adaptive lerp factor synchronized with face tracking engine
+    const masterLerp = sharedState?.current?.adaptiveLerp || 0.35;
+
+    // Determine ear visibility based on head orientation relative to camera.
+    // headLeft points out from left ear, headRight points out from right ear.
+    // When a side of the head turns away from the camera, its normal z component becomes negative.
+    const isLeftEarVisible = headLeft.z > -0.05;
+    const isRightEarVisible = headRight.z > -0.05;
 
     if (leftGroupRef.current.scale.x === 1) { // Uninitialized
       leftGroupRef.current.position.copy(leftEarlobe);
       leftGroupRef.current.quaternion.copy(targetQuat);
       leftGroupRef.current.scale.set(finalScale, finalScale, finalScale);
+      leftGroupRef.current.visible = isLeftEarVisible;
 
       rightGroupRef.current.position.copy(rightEarlobe);
       rightGroupRef.current.quaternion.copy(targetQuat);
       // Mirror the right earring anatomically by flipping X scale
       rightGroupRef.current.scale.set(-finalScale, finalScale, finalScale);
+      rightGroupRef.current.visible = isRightEarVisible;
 
       if (occluderRef.current) {
         occluderRef.current.position.copy(centerPos);
@@ -397,21 +402,15 @@ const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkl
         occluderRef.current.scale.set(occluderScale, occluderScale, occluderScale);
       }
     } else {
-      const dist = leftGroupRef.current.position.distanceTo(leftEarlobe);
-      const posLerp = Math.min(1.0, 0.2 + (dist * 10.0));
-      const angle = leftGroupRef.current.quaternion.angleTo(targetQuat);
-      const rotLerp = Math.min(1.0, 0.2 + (angle * 10.0));
-      const masterLerp = Math.max(posLerp, rotLerp);
-
-      if (sharedState) sharedState.current.adaptiveLerp = masterLerp;
-
       leftGroupRef.current.position.lerp(leftEarlobe, masterLerp);
       leftGroupRef.current.quaternion.slerp(targetQuat, masterLerp);
       leftGroupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), masterLerp);
+      leftGroupRef.current.visible = isLeftEarVisible;
 
       rightGroupRef.current.position.lerp(rightEarlobe, masterLerp);
       rightGroupRef.current.quaternion.slerp(targetQuat, masterLerp);
       rightGroupRef.current.scale.lerp(new THREE.Vector3(-finalScale, finalScale, finalScale), masterLerp);
+      rightGroupRef.current.visible = isRightEarVisible;
 
       if (occluderRef.current) {
         occluderRef.current.position.lerp(centerPos, masterLerp);
@@ -1061,8 +1060,7 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles
       return new THREE.Vector3(
         -(lm.x - 0.5) * (viewport.width * scaleX),
         -(lm.y - 0.5) * (viewport.height * scaleY),
-        // Use the exact same scale multiplier for Z to maintain isometric 3D proportions
-        -lm.z * (viewport.width * scaleX)
+        -lm.z * viewport.width * 1.5
       );
     };
 
@@ -1072,8 +1070,6 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles
     const p17 = getMapped(17);
 
     // Define the absolute normal of the palm using the knuckles
-    // Using vAcross (p17 - p5) and vForwardRaw (p9 - p0) creates a 90-degree cross product, 
-    // which is MUCH more stable than vPinky x vIndex when the hand is angled or making a fist!
     const vAcross = new THREE.Vector3().subVectors(p17, p5).normalize();
     const vForwardRaw = new THREE.Vector3().subVectors(p9, p0).normalize();
     const vUp = new THREE.Vector3().crossVectors(vAcross, vForwardRaw).normalize();
@@ -1085,9 +1081,6 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles
     }
 
     // PALM PLANE PROJECTION: 
-    // Project the forward vector onto the palm plane so it stays perfectly flat 
-    // against the back of the hand even when fingers bend!
-    // Formula: V_proj = V - (V dot N) * N
     const vForward = vForwardRaw.clone().sub(vUp.clone().multiplyScalar(vForwardRaw.dot(vUp))).normalize();
 
     // Orthogonal right vector (points across the wrist)
@@ -1096,28 +1089,18 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles
     const rotationMatrix = new THREE.Matrix4().makeBasis(vRight, vUp, vForward);
     const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotationMatrix);
 
-    // Scale based on 3D distance from wrist to middle knuckle.
-    // We use 3D distance (distanceTo) so the bracelet doesn't shrink (foreshorten) 
-    // when the user tilts their hand backwards or forwards!
     const palmLength3D = p9.distanceTo(p0);
 
-    // Dynamic scale based on wrist rotation (user preference):
-    // Inverted logic based on real-world testing:
-    const viewFactor = THREE.MathUtils.clamp(vUp.z, -0.5, 0.5); // Clamped between -0.5 and 0.5
-    const normalizedView = viewFactor + 0.5; // Mapped to 0.0 - 1.0 range
-    // When normalizedView is 1.0, scale is 0.50. When 0.0, scale is 0.60.
+    const viewFactor = THREE.MathUtils.clamp(vUp.z, -0.5, 0.5);
+    const normalizedView = viewFactor + 0.5;
     const dynamicMultiplier = 0.60 - (0.10 * normalizedView);
     let finalScale = palmLength3D * dynamicMultiplier;
 
-    // Adjust scale slightly smaller for the right hand as requested by user
-    const isActuallyRightHand = landmarks.handedness?.label === 'Left'; // Mirrored webcam
+    const isActuallyRightHand = landmarks.handedness?.label === 'Left';
     if (isActuallyRightHand) {
-      finalScale *= 0.95; // Reduce scale by 15% for right hand
+      finalScale *= 0.95;
     }
 
-    // Position offset: Center exactly at the wrist (p0). 
-    // We do not push it down the forearm because MediaPipe only gives palm-based tracking. 
-    // Pushing it down the arm causes it to float in the air when the wrist bends!
     const targetPos = p0.clone();
 
     if (groupRef.current.scale.x === 1) {
@@ -1125,17 +1108,10 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles
       groupRef.current.quaternion.copy(targetQuat);
       groupRef.current.scale.set(finalScale, finalScale, finalScale);
     } else {
-      // ADAPTIVE LERP: Solves both "lag" and "jitter"!
-      // Calculate how far the hand just moved
       const dist = groupRef.current.position.distanceTo(targetPos);
-
-      // If moving fast (high distance), lerp is high (0.9) to catch up instantly without lag.
-      // If moving slow/still (low distance), lerp is low (0.2) to absorb camera jitter.
-      // Multiplier increased to 3.0 so even medium movements reach max speed instantly!
       const posLerp = THREE.MathUtils.clamp(dist * 3.0, 0.2, 0.9);
       const rotLerp = THREE.MathUtils.clamp(dist * 3.0, 0.2, 0.85);
 
-      // ADAPTIVE SCALE LERP:
       const currentScale = groupRef.current.scale.x;
       const scaleDiff = Math.abs(currentScale - finalScale);
       const scaleLerp = THREE.MathUtils.clamp(scaleDiff * 5.0, 0.2, 0.9);
@@ -1144,24 +1120,31 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles
       groupRef.current.quaternion.slerp(targetQuat, rotLerp);
       groupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), scaleLerp);
     }
-  });
 
-  // Mirror tuning parameters anatomically for the physical right hand
-  const isPhysicalRight = landmarksRef.current?.handedness?.label === 'Right';
-  const adjustedPos = modelPos ? [...modelPos] : [0, 0, 0];
-  const adjustedRot = modelRot ? [...modelRot] : [0, 0, 0];
-  if (isPhysicalRight) {
-    adjustedPos[0] = -adjustedPos[0]; // Flip X position
-    adjustedRot[1] = -adjustedRot[1]; // Flip Y rotation (Yaw)
-    adjustedRot[2] = -adjustedRot[2]; // Flip Z rotation (Roll)
-  }
+    // Dynamic inner group tuning & handedness rotation computed inside useFrame
+    if (innerGroupRef.current) {
+      let posX = modelPos?.[0] ?? 0;
+      const posY = modelPos?.[1] ?? 0;
+      const posZ = modelPos?.[2] ?? 0;
+
+      let rotX = modelRot?.[0] ?? 0;
+      let rotY = modelRot?.[1] ?? 0;
+      let rotZ = modelRot?.[2] ?? 0;
+
+      if (isPhysicalRight) {
+        posX = -posX;
+        rotY = -rotY;
+        rotZ = -rotZ;
+      }
+      innerGroupRef.current.position.set(posX, posY, posZ);
+      innerGroupRef.current.rotation.set(rotX, rotY, rotZ);
+    }
+  });
 
   if (!clonedScene) return null;
 
   return (
     <group ref={groupRef}>
-      {/* Invisible Arm Occluder: hides the back of the watch strap so it doesn't render over the arm */}
-      {/* Squashed into an ellipse (scale Z = 0.6) to match the natural shape of a wrist */}
       <mesh renderOrder={-1} rotation={[Math.PI / 2, 0, 0]} scale={[1, 1, 0.6]}>
         <cylinderGeometry args={[0.65, 0.65, 10, 32]} />
         <meshBasicMaterial
@@ -1175,7 +1158,6 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles
         />
       </mesh>
 
-      {/* Visible Wrist Point (Helper) to point out exactly where the wrist landmark is */}
       {showMesh && (
         <mesh>
           <sphereGeometry args={[0.3, 16, 16]} />
@@ -1188,7 +1170,7 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles
         </mesh>
       )}
 
-      <group position={adjustedPos} rotation={adjustedRot} scale={[modelScale || 1, modelScale || 1, modelScale || 1]}>
+      <group ref={innerGroupRef} scale={[modelScale || 1, modelScale || 1, modelScale || 1]}>
         <primitive object={clonedScene} />
         {modelSparkles && <JewelrySparkles count={60} isPlane={false} modelScene={clonedScene} />}
       </group>

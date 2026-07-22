@@ -343,12 +343,13 @@
     },
     "3c1d189abcd123": {
       "posX": 0,
-      "posY": 0.08,
+      "posY": 0.02,
       "posZ": 0,
-      "rotX": 0.52841,
+      "rotX": 0.00841,
       "rotY": 0.00841,
       "rotZ": 3.13841,
       "scale": 3,
+      "enableSparkles": false,
       "category": "earrings"
     },
     "dummy_nosepin": {
@@ -423,6 +424,39 @@
       "rotY": 0.00841,
       "rotZ": -0.02159,
       "scale": 0.02,
+      "enableSparkles": true,
+      "category": "rings"
+    },
+    "narya_gandalfs_ring": {
+      "posX": 0.11,
+      "posY": 1.7,
+      "posZ": -0.15,
+      "rotX": 1.33841,
+      "rotY": 0.49841,
+      "rotZ": 0.45841,
+      "scale": 20,
+      "enableSparkles": true,
+      "category": "rings"
+    },
+    "diamond_ring": {
+      "posX": 0.08,
+      "posY": 1.7,
+      "posZ": -0.15,
+      "rotX": 0.83841,
+      "rotY": 0.16841,
+      "rotZ": 0.06841,
+      "scale": 0.33,
+      "enableSparkles": true,
+      "category": "rings"
+    },
+    "ring_with_black_stone_diamond": {
+      "posX": 0.15,
+      "posY": 1.91,
+      "posZ": -0.15,
+      "rotX": 0.78841,
+      "rotY": 0.06841,
+      "rotZ": -0.02159,
+      "scale": 14.67,
       "enableSparkles": true,
       "category": "rings"
     }

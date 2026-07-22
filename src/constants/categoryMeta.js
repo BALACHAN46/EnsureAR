@@ -3,7 +3,7 @@
 // consistently: admin sidebar nav, the Try On page's category rail, and
 // the SuperAdmin Overview dashboard.
 
-export const CATEGORY_ORDER = ['eyewear', 'necklace', 'rings', 'bracelets', 'watch', 'earrings', 'nosepin'];
+export const CATEGORY_ORDER = ['necklace', 'rings', 'bracelets', 'watch', 'earrings', 'nosepin', 'eyewear'];
 
 export const CATEGORY_META = {
   eyewear: { emoji: '👓', icon: '/eyeware.png', color: '#22d3ee', label: 'Eyewear' },
