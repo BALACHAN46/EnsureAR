@@ -479,13 +479,13 @@
       "rotX": 0.78841,
       "rotY": 0.06841,
       "rotZ": -0.02159,
-      "leftPosX": 0.15,
-      "leftPosY": 1.67,
+      "leftPosX": 0.3,
+      "leftPosY": 1.62,
       "leftPosZ": -0.3,
       "leftRotX": -0.91159,
       "leftRotY": -0.05159,
       "leftRotZ": 3.13841,
-      "scale": 13.93,
+      "scale": 13.83,
       "enableSparkles": true,
       "category": "rings"
     }
