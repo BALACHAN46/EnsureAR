@@ -11,7 +11,7 @@ export const CATEGORY_META = {
   rings: { emoji: '💍', icon: '/rings.png', color: '#8b5cf6', label: 'Rings' },
   bracelets: { emoji: '🔗', icon: '/bracelets.png', color: '#10b981', label: 'Bracelets' },
   watch: { emoji: '⌚', icon: '/watch.png', color: '#3b82f6', label: 'Watches' },
-  earrings: { emoji: '💎', color: '#a78bfa', label: 'Earrings' },
+  earrings: { emoji: '💎', icon: '/earrings_thumbnail.png', color: '#a78bfa', label: 'Earrings' },
   nosepin: { emoji: '✨', color: '#14b8a6', label: 'Nose Pin' },
 };
 

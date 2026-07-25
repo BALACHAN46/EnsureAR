@@ -836,6 +836,167 @@
         0
       ],
       "necklaceType": "open"
+    },
+    {
+      "id": "3c1d189abcd123",
+      "name": "Earring",
+      "category": "earrings",
+      "modelPath": "/models/earrings/3c1d189abcd123.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/earrings/3c1d189abcd123.glb",
+      "thumbnailPath": "/models/necklace/3c1d189ac571.png",
+      "uploadedAt": "2026-06-30T05:42:41.3805306Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open"
+    },
+
+
+    {
+      "id": "diamond_earring3",
+      "name": "Diamond Earring 3",
+      "category": "earrings",
+      "modelPath": "/models/earrings/new3_diamond_earring3.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/earrings/new3_diamond_earring3.png",
+      "thumbnailPath": "/models/earrings/new3_diamond_earring3.png",
+      "uploadedAt": "2026-07-23T00:00:00.000Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "new1_diamond_earring2",
+      "name": "New1 Diamond Earring 2",
+      "category": "earrings",
+      "modelPath": "/models/earrings/new1_diamond_earring2.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/earrings/new1_diamond_earring2.png",
+      "thumbnailPath": "/models/earrings/new1_diamond_earring2.png",
+      "uploadedAt": "2026-07-23T00:00:00.000Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "diamond_earring1",
+      "name": "Diamond Earring 1",
+      "category": "earrings",
+      "modelPath": "/models/earrings/left_diamond_earring1.png",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/earrings/left_diamond_earring1.png",
+      "leftGlbPath": "/models/earrings/left_diamond_earring1.png",
+      "rightGlbPath": "/models/earrings/right_diamond_earring1.png",
+      "thumbnailPath": "/models/earrings/left_diamond_earring1.png",
+      "uploadedAt": "2026-07-23T00:00:00.000Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "pointy_nose_ring",
+      "name": "Pointy Nose Ring",
+      "category": "nosepin",
+      "modelPath": "/models/nosepin/pointy_nose_ring.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/nosepin/pointy_nose_ring.glb",
+      "thumbnailPath": "/models/nosepin/pointy_nose_ring.glb",
+      "uploadedAt": "2026-07-24T00:00:00.000Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "red_nose_pin",
+      "name": "Red Nose Pin",
+      "category": "nosepin",
+      "modelPath": "/models/nosepin/red%20nose%20pin.obj",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/nosepin/red%20nose%20pin.obj",
+      "thumbnailPath": "",
+      "uploadedAt": "2026-07-24T00:00:00.000Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ]
     }
   ]
 }

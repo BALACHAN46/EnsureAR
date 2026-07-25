@@ -40,6 +40,7 @@ export default function ARViewPage() {
   const [activeModel, setActiveModel] = useState(null);
   const [activeCategoryModels, setActiveCategoryModels] = useState([]);
   const [showFaceMesh, setShowFaceMesh] = useState(false);
+  const [showOccluder, setShowOccluder] = useState(false);
   const [modelPos, setModelPos] = useState([0, 0, 0]);
   const [modelRot, setModelRot] = useState([0, 0, 0]);
   const [leftModelPos, setLeftModelPos] = useState([0, 0, 0]);
@@ -574,6 +575,14 @@ export default function ARViewPage() {
             )}
             {viewMode === 'tryon' && isAdmin && (
               <button
+                className={`ar-ctrl-btn ${showOccluder ? 'ar-ctrl-btn--active' : ''}`}
+                onClick={() => setShowOccluder(p => !p)}
+              >
+                {showOccluder ? 'Hide Occluder' : 'Show Occluder'}
+              </button>
+            )}
+            {viewMode === 'tryon' && isAdmin && (
+              <button
                 className={`ar-ctrl-btn ${showTuning ? 'ar-ctrl-btn--active' : ''}`}
                 onClick={() => setShowTuning(p => !p)}
               >
@@ -604,19 +613,19 @@ export default function ARViewPage() {
               style={{ flex: 1, padding: '4px 8px', borderRadius: '6px', background: tuningHand === 'right' ? '#3b82f6' : 'transparent', color: tuningHand === 'right' ? '#fff' : '#94a3b8', border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
               onClick={() => setTuningHand('right')}
             >
-              Right Hand
+              {category === 'earrings' ? 'Left Ear' : 'Left Hand'}
             </button>
             <button
               style={{ flex: 1, padding: '4px 8px', borderRadius: '6px', background: tuningHand === 'left' ? '#3b82f6' : 'transparent', color: tuningHand === 'left' ? '#fff' : '#94a3b8', border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
               onClick={() => setTuningHand('left')}
             >
-              Left Hand
+              {category === 'earrings' ? 'Right Ear' : 'Right Hand'}
             </button>
           </div>
 
           <label className="ar-tuning-label">
             <span>Pos X (Left/Right): <strong>{(tuningHand === 'right' ? modelPos[0] : leftModelPos[0]).toFixed(2)}</strong></span>
-            <input type="range" min="-20" max="20" step="0.01" value={tuningHand === 'right' ? modelPos[0] : leftModelPos[0]}
+            <input type="range" min={category === 'nosepin' ? -0.5 : -20} max={category === 'nosepin' ? 0.5 : 20} step="0.01" value={tuningHand === 'right' ? modelPos[0] : leftModelPos[0]}
               onChange={e => {
                 const val = parseFloat(e.target.value);
                 tuningHand === 'right' ? setModelPos([val, modelPos[1], modelPos[2]]) : setLeftModelPos([val, leftModelPos[1], leftModelPos[2]]);
@@ -624,7 +633,7 @@ export default function ARViewPage() {
           </label>
           <label className="ar-tuning-label">
             <span>Pos Y (Up/Down): <strong>{(tuningHand === 'right' ? modelPos[1] : leftModelPos[1]).toFixed(2)}</strong></span>
-            <input type="range" min="-20" max="20" step="0.01" value={tuningHand === 'right' ? modelPos[1] : leftModelPos[1]}
+            <input type="range" min={category === 'nosepin' ? -0.5 : -20} max={category === 'nosepin' ? 0.5 : 20} step="0.01" value={tuningHand === 'right' ? modelPos[1] : leftModelPos[1]}
               onChange={e => {
                 const val = parseFloat(e.target.value);
                 tuningHand === 'right' ? setModelPos([modelPos[0], val, modelPos[2]]) : setLeftModelPos([leftModelPos[0], val, leftModelPos[2]]);
@@ -632,7 +641,7 @@ export default function ARViewPage() {
           </label>
           <label className="ar-tuning-label">
             <span>Pos Z (Forward/Back): <strong>{(tuningHand === 'right' ? modelPos[2] : leftModelPos[2]).toFixed(2)}</strong></span>
-            <input type="range" min="-20" max="20" step="0.01" value={tuningHand === 'right' ? modelPos[2] : leftModelPos[2]}
+            <input type="range" min={category === 'nosepin' ? -0.5 : -20} max={category === 'nosepin' ? 0.5 : 20} step="0.01" value={tuningHand === 'right' ? modelPos[2] : leftModelPos[2]}
               onChange={e => {
                 const val = parseFloat(e.target.value);
                 tuningHand === 'right' ? setModelPos([modelPos[0], modelPos[1], val]) : setLeftModelPos([leftModelPos[0], leftModelPos[1], val]);
@@ -775,6 +784,7 @@ export default function ARViewPage() {
             poseLandmarksRef={poseLandmarksRef}
             videoFrameRef={videoFrameRef}
             showFaceMesh={showFaceMesh}
+            showOccluder={showOccluder}
             modelPos={modelPos}
             modelRot={modelRot}
             leftModelPos={leftModelPos}

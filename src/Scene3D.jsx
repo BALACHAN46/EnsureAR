@@ -1,6 +1,7 @@
 import React, { useRef, Suspense, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Environment, useGLTF, Html, useProgress, Center } from '@react-three/drei';
+import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber';
+import { Environment, useGLTF, useTexture, Html, useProgress, Center } from '@react-three/drei';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import * as THREE from 'three';
 import NecklaceMesh, { JewelrySparkles } from './components/ar/NecklaceMesh';
 import RingMesh from './components/ar/RingMesh';
@@ -14,8 +15,14 @@ const FACE_AR_CATEGORIES = ['eyewear', 'earrings'];
 const RING_AR_CATEGORIES = ['rings'];
 
 
-const FullFaceMesh = ({ landmarksRef, showFaceMesh, sharedState }) => {
+const FullFaceMesh = ({ landmarksRef, showFaceMesh, showOccluder, sharedState, isNoseOccluder }) => {
   const meshRef = useRef();
+
+  const uniformsRef = useRef({
+    uNoseCenter: { value: new THREE.Vector3() },
+    uClipRadius: { value: 0.5 },
+    uIsNoseOccluder: { value: false }
+  });
 
   // Convert MediaPipe's edge tesselation into solid triangles (3-cycles)
   const triangles = React.useMemo(() => {
@@ -127,6 +134,20 @@ const FullFaceMesh = ({ landmarksRef, showFaceMesh, sharedState }) => {
         positions[i * 3 + 2] += (targetZ - positions[i * 3 + 2]) * adaptiveLerp;
       }
     }
+    
+    uniformsRef.current.uIsNoseOccluder.value = !!isNoseOccluder;
+    if (isNoseOccluder) {
+      const nIdx = 4 * 3; // Nose tip
+      if (positions[nIdx] !== undefined) {
+        uniformsRef.current.uNoseCenter.value.set(positions[nIdx], positions[nIdx + 1], positions[nIdx + 2]);
+        
+        const leftX = positions[234 * 3];
+        const rightX = positions[454 * 3];
+        const faceWidth = Math.abs(rightX - leftX);
+        uniformsRef.current.uClipRadius.value = faceWidth * 0.22; // ~22% of face width covers the nose perfectly
+      }
+    }
+    
     geometry.attributes.position.needsUpdate = true;
   });
 
@@ -134,20 +155,50 @@ const FullFaceMesh = ({ landmarksRef, showFaceMesh, sharedState }) => {
 
   return (
     <group ref={meshRef}>
-      {/* 1. Invisible Occluder: ALWAYS render this so glasses arms are hidden behind the head */}
+      {/* 1. Debug Occluder: Rendered visibly for debugging if showOccluder is true */}
       <mesh geometry={occluderGeometry} renderOrder={-1}>
         <meshBasicMaterial
+          color="#add8e6"
           side={THREE.DoubleSide}
           transparent={true}
-          opacity={0.0}   // Invisible
+          opacity={showOccluder ? 0.5 : 0.0}   // Visible light color if toggled
           depthWrite={true}
-          colorWrite={false} // Writes only to the depth buffer
+          colorWrite={showOccluder} // Writes to color buffer if toggled
           // Push the mask backward by a tiny fraction.
           // This prevents the lenses and the rest of the model from clipping into the cheeks during rotation, 
           // but is small enough that the temples still get hidden properly!
           polygonOffset={true}
           polygonOffsetFactor={0.1}
           polygonOffsetUnits={5}
+          onBeforeCompile={(shader) => {
+            shader.uniforms.uNoseCenter = uniformsRef.current.uNoseCenter;
+            shader.uniforms.uClipRadius = uniformsRef.current.uClipRadius;
+            shader.uniforms.uIsNoseOccluder = uniformsRef.current.uIsNoseOccluder;
+            
+            shader.vertexShader = `
+              varying vec3 vPos;
+              ${shader.vertexShader}
+            `.replace(
+              `#include <begin_vertex>`,
+              `#include <begin_vertex>
+               vPos = position;`
+            );
+            
+            shader.fragmentShader = `
+              uniform vec3 uNoseCenter;
+              uniform float uClipRadius;
+              uniform bool uIsNoseOccluder;
+              varying vec3 vPos;
+              ${shader.fragmentShader}
+            `.replace(
+              `void main() {`,
+              `void main() {
+                 if (uIsNoseOccluder && distance(vPos.xy, uNoseCenter.xy) > uClipRadius) {
+                   discard;
+                 }
+              `
+            );
+          }}
         />
       </mesh>
 
@@ -159,6 +210,13 @@ const FullFaceMesh = ({ landmarksRef, showFaceMesh, sharedState }) => {
             opacity={100}
             depthWrite={false}
             side={THREE.DoubleSide}
+            onBeforeCompile={(shader) => {
+              shader.uniforms.uNoseCenter = uniformsRef.current.uNoseCenter;
+              shader.uniforms.uClipRadius = uniformsRef.current.uClipRadius;
+              shader.uniforms.uIsNoseOccluder = uniformsRef.current.uIsNoseOccluder;
+              shader.vertexShader = `varying vec3 vPos;\n${shader.vertexShader}`.replace(`#include <begin_vertex>`, `#include <begin_vertex>\nvPos = position;`);
+              shader.fragmentShader = `uniform vec3 uNoseCenter;\nuniform float uClipRadius;\nuniform bool uIsNoseOccluder;\nvarying vec3 vPos;\n${shader.fragmentShader}`.replace(`void main() {`, `void main() {\nif (uIsNoseOccluder && distance(vPos.xy, uNoseCenter.xy) > uClipRadius) discard;`);
+            }}
           />
         </mesh>
       )}
@@ -281,23 +339,14 @@ const HandMesh = ({ landmarksRef, showMesh }) => {
   );
 };
 
-const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles, sharedState, activeModel, customMaterials }) => {
-  const leftGroupRef = useRef();
-  const rightGroupRef = useRef();
-  const occluderRef = useRef();
+// Shared tracking logic for both 3D GLTF earrings and 2D Image earrings
+const useEarringTracker = (landmarksRef, leftGroupRef, rightGroupRef, occluderRef, leftSkullRef, rightSkullRef, modelScale, sharedState, modelPos, leftModelPos, is2D = false) => {
+  // Memory states for Smart Calibration
+  const calibratedLeftDrop = useRef(null);
+  const calibratedRightDrop = useRef(null);
+  const smoothedPitchFactor = useRef(0);
 
-  const gltfPath = activeModel?.glbPath;
-  const { scene } = useGLTF(gltfPath || '');
-
-  const { clonedScene } = React.useMemo(() => {
-    return applyAndExtractMaterials(scene, customMaterials);
-  }, [scene, customMaterials]);
-
-  // Clone the scene so we can render two earrings (one for each ear)
-  const leftScene = React.useMemo(() => clonedScene ? clonedScene.clone() : null, [clonedScene]);
-  const rightScene = React.useMemo(() => clonedScene ? clonedScene.clone() : null, [clonedScene]);
-
-  useFrame((state) => {
+  useFrame((state, delta) => {
     const landmarks = landmarksRef.current;
     if (!landmarks || landmarks.length === 0 || !leftGroupRef.current || !rightGroupRef.current) {
       if (leftGroupRef.current) leftGroupRef.current.visible = false;
@@ -310,8 +359,8 @@ const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkl
 
     const { viewport } = state;
 
-    // Account for object-fit: cover scaling
-    const videoNode = document.querySelector('.webcam-video'); const videoAspect = (videoNode && videoNode.videoHeight) ? (videoNode.videoWidth / videoNode.videoHeight) : (640 / 480);
+    const videoNode = document.querySelector('.webcam-video');
+    const videoAspect = (videoNode && videoNode.videoHeight) ? (videoNode.videoWidth / videoNode.videoHeight) : (640 / 480);
     const containerAspect = viewport.width / viewport.height;
     let scaleX = 1; let scaleY = 1;
     if (containerAspect > videoAspect) {
@@ -329,60 +378,161 @@ const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkl
       );
     };
 
-    // Use tragus landmarks as ear anchors (234 left ear area, 454 right ear area)
-    const leftAnchor = getMapped(234);
-    const rightAnchor = getMapped(454);
+    const leftTragus = getMapped(234);
+    const rightTragus = getMapped(454);
+    const leftJaw = getMapped(132);
+    const rightJaw = getMapped(361);
+
     const top = getMapped(10);
     const bottom = getMapped(152);
 
-    // Center of the head (between the temples)
-    const centerPos = new THREE.Vector3().addVectors(leftAnchor, rightAnchor).multiplyScalar(0.5);
+    const centerPos = getMapped(1); // Set head mesh center to nose tip as requested
 
-    // Calculate physical face width
     const rawDiffX = -(landmarks[454].x - landmarks[234].x) * (viewport.width * scaleX);
     const rawDiffY = -(landmarks[454].y - landmarks[234].y) * (viewport.height * scaleY);
     const rawDiffZ = -(landmarks[454].z - landmarks[234].z) * viewport.width;
     const faceWidth = Math.sqrt(rawDiffX * rawDiffX + rawDiffY * rawDiffY + rawDiffZ * rawDiffZ);
 
-    // 3D coordinate system attached to user's head
-    const headRight = new THREE.Vector3().subVectors(rightAnchor, leftAnchor).normalize(); // Points -X (screen left / user right ear)
-    const headLeft = headRight.clone().negate(); // Points +X (screen right / user left ear)
-    const headUp = new THREE.Vector3().subVectors(top, bottom).normalize(); // Points +Y (towards forehead)
-    const headDown = headUp.clone().negate(); // Points -Y (towards chin)
-    const headForward = new THREE.Vector3().crossVectors(headLeft, headUp).normalize(); // Points +Z (out of face)
-    const headBackward = headForward.clone().negate(); // Points -Z (into head)
+    const noseTip = getMapped(1);
+    const headLeft = new THREE.Vector3().subVectors(leftTragus, rightTragus).normalize();
+    const headRight = headLeft.clone().negate();
+    const headUp = new THREE.Vector3().subVectors(top, bottom).normalize();
+    const headDown = headUp.clone().negate();
+    const headForward = new THREE.Vector3().crossVectors(headLeft, headUp).normalize();
+    const headBackward = headForward.clone().negate();
 
-    // Construct rotation matrix & quaternion directly from head orientation basis
-    const rotMatrix = new THREE.Matrix4().makeBasis(headRight, headUp, headForward);
-    const targetQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix);
+    const rotMatrix = new THREE.Matrix4().makeBasis(headLeft, headUp, headForward);
+    const fullQuat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix);
 
-    // Calculate precise physical earlobe positions
-    // Earlobes are located outward from the tragus, downward towards the jawline, and slightly backward.
-    const outwardOffset = faceWidth * 0.025;
-    const downwardOffset = faceWidth * 0.25;
-    const backwardOffset = faceWidth * 0.02;
+    // Earrings should dangle straight down (gravity) but still turn with the head's yaw
+    const dangleUp = new THREE.Vector3(0, 1, 0);
+    const dangleForward = new THREE.Vector3(headForward.x, 0, headForward.z).normalize();
+    if (dangleForward.lengthSq() < 0.001) {
+      dangleForward.set(0, 0, 1);
+    }
+    const dangleLeft = new THREE.Vector3().crossVectors(dangleUp, dangleForward).normalize();
+    const dangleRotMatrix = new THREE.Matrix4().makeBasis(dangleLeft, dangleUp, dangleForward);
+    const targetQuat = is2D
+      ? new THREE.Quaternion()
+      : new THREE.Quaternion().setFromRotationMatrix(dangleRotMatrix);
 
-    const leftEarlobe = leftAnchor.clone()
-      .addScaledVector(headLeft, outwardOffset)
-      .addScaledVector(headDown, downwardOffset)
-      .addScaledVector(headBackward, backwardOffset);
+    const headForwardXZ = new THREE.Vector3(headForward.x, 0, headForward.z).normalize();
+    const yawAngle = Math.atan2(headForwardXZ.x, headForwardXZ.z);
 
-    const rightEarlobe = rightAnchor.clone()
-      .addScaledVector(headRight, outwardOffset)
-      .addScaledVector(headDown, downwardOffset)
-      .addScaledVector(headBackward, backwardOffset);
+    // Calculate pitch angle to ensure user is looking somewhat straight vertically too
+    const headForwardYZ = new THREE.Vector3(0, headForward.y, headForward.z).normalize();
+    const pitchAngle = Math.atan2(headForwardYZ.y, headForwardYZ.z);
+
+    // Dynamic Anchor Blend based on yaw
+    const absYaw = Math.abs(yawAngle);
+    // blendWeight: 0 when looking straight, smoothly becomes 1 when turned > ~25 degrees
+    const blendWeight = Math.min(1.0, absYaw * 2.5);
+
+    // Pitch Distortion Fix with Deadzone:
+    // Acts exactly like looking straight until tilted beyond the threshold.
+    const pitchThreshold = 0.25;
+    let pitchCompensation = 0;
+
+    if (headForward.y > pitchThreshold) {
+      // Looking up beyond threshold
+      pitchCompensation = (headForward.y - pitchThreshold) * faceWidth * 0.95;
+    } else if (headForward.y < -pitchThreshold) {
+      // Looking down beyond threshold
+      pitchCompensation = (headForward.y + pitchThreshold) * faceWidth * 0.90;
+    }
+
+    const noseBaseLeft = noseTip.clone()
+      .addScaledVector(headLeft, faceWidth * 0.48)
+      .addScaledVector(headDown, pitchCompensation);
+
+    const noseBaseRight = noseTip.clone()
+      .addScaledVector(headRight, faceWidth * 0.48)
+      .addScaledVector(headDown, pitchCompensation);
+
+    // Dynamic Earlobe Drop: Automatically adjust for long vs short ears
+    // Measures distance from Tragus to Jaw. Longer jaw distance = deeper earlobe drop.
+    const leftJawDist = leftTragus.distanceTo(leftJaw);
+    const rightJawDist = rightTragus.distanceTo(rightJaw);
+
+    // Baseline drop for short ears + proportional scaling for long ears
+    const leftEarlobeDrop = (faceWidth * 0.03) + (leftJawDist * 0.18);
+    const rightEarlobeDrop = (faceWidth * 0.03) + (rightJawDist * 0.18);
+
+    const leftLobeTarget = leftTragus.clone().addScaledVector(headDown, leftEarlobeDrop);
+    const rightLobeTarget = rightTragus.clone().addScaledVector(headDown, rightEarlobeDrop);
+
+    const leftAnchor = noseBaseLeft.lerp(leftLobeTarget, blendWeight);
+    const rightAnchor = noseBaseRight.lerp(rightLobeTarget, blendWeight);
 
     const finalScale = faceWidth * 1.05 * (modelScale || 1);
     const occluderScale = faceWidth * 0.85;
 
-    // Use adaptive lerp factor synchronized with face tracking engine
-    const masterLerp = sharedState?.current?.adaptiveLerp || 0.35;
+    const leftUserPos = leftModelPos || modelPos || [0, 0, 0];
+    const rightUserPos = modelPos || [0, 0, 0];
 
-    // Determine ear visibility based on head orientation relative to camera.
-    // headLeft points out from left ear, headRight points out from right ear.
-    // When a side of the head turns away from the camera, its normal z component becomes negative.
-    const isLeftEarVisible = headLeft.z > -0.05;
-    const isRightEarVisible = headRight.z > -0.05;
+    const leftUserVec = new THREE.Vector3(leftUserPos[0], leftUserPos[1], leftUserPos[2]).multiplyScalar(finalScale);
+    const rightUserVec = new THREE.Vector3(-rightUserPos[0], rightUserPos[1], rightUserPos[2]).multiplyScalar(finalScale);
+
+    const xPushDistance = 0.04 * faceWidth;
+    const zPushDistance = 0.09 * faceWidth;
+
+    const leftUserOffset = new THREE.Vector3()
+      .addScaledVector(headLeft, leftUserVec.x)
+      .addScaledVector(headUp, leftUserVec.y)
+      .addScaledVector(headForward, leftUserVec.z);
+
+    const rightUserOffset = new THREE.Vector3()
+      .addScaledVector(headLeft, rightUserVec.x)
+      .addScaledVector(headUp, rightUserVec.y)
+      .addScaledVector(headForward, rightUserVec.z);
+
+    // Dynamic Pitch Correction: When looking down, MediaPipe pulls the jaw forward onto the cheek.
+    // We detect pitch-down and dynamically pull the earlobe back up to counteract the jaw sliding.
+    const targetPitchFactor = Math.max(0, -headForwardYZ.y);
+    smoothedPitchFactor.current = THREE.MathUtils.lerp(smoothedPitchFactor.current, targetPitchFactor, 0.1);
+    const pitchDownFactor = smoothedPitchFactor.current;
+
+    const yawFactor = Math.abs(headForward.x);
+    const pitchCorrectionDistance = 0.10 * faceWidth * pitchDownFactor;
+    const dynamicZPush = zPushDistance + (0.08 * faceWidth * pitchDownFactor * yawFactor);
+
+    // Earlobe correctly tracks 2D mesh directly using Jaw angle, independent of 3D pitch perspective squash
+    const leftEarlobe = leftAnchor.clone()
+      .lerp(leftJaw, 0.35)
+      .addScaledVector(headLeft, xPushDistance)
+      .addScaledVector(headBackward, dynamicZPush)
+      .addScaledVector(dangleUp, pitchCorrectionDistance)
+      .add(leftUserOffset);
+
+    const rightEarlobe = rightAnchor.clone()
+      .lerp(rightJaw, 0.35)
+      .addScaledVector(headRight, xPushDistance)
+      .addScaledVector(headBackward, dynamicZPush)
+      .addScaledVector(dangleUp, pitchCorrectionDistance)
+      .add(rightUserOffset);
+
+
+
+    const masterLerp = sharedState?.current?.adaptiveLerp || 0.35;
+    // rigidLerp = 1.0 → instant position copy every frame so the earring
+    // never drifts away from the ear when the head turns quickly.
+    const rigidLerp = 1.0;
+
+    // Give more tolerance before hiding the ear so it doesn't flicker when facing forward
+    let isLeftEarVisible = headLeft.z > -0.20;
+    let isRightEarVisible = headRight.z > -0.20;
+    let warningMsg = null;
+
+    // If head is pitched up or down beyond the 0.25 threshold, show "Face Not Detected"
+    if (Math.abs(headForward.y) > 0.75) {
+      warningMsg = 'Face Not Detected';
+      isLeftEarVisible = false;
+      isRightEarVisible = false;
+    }
+
+    if (sharedState?.current) {
+      sharedState.current.earringWarning = warningMsg;
+    }
 
     if (leftGroupRef.current.scale.x === 1) { // Uninitialized
       leftGroupRef.current.position.copy(leftEarlobe);
@@ -392,9 +542,21 @@ const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkl
 
       rightGroupRef.current.position.copy(rightEarlobe);
       rightGroupRef.current.quaternion.copy(targetQuat);
-      // Mirror the right earring anatomically by flipping X scale
       rightGroupRef.current.scale.set(-finalScale, finalScale, finalScale);
       rightGroupRef.current.visible = isRightEarVisible;
+
+      if (leftSkullRef?.current) {
+        leftSkullRef.current.position.copy(leftEarlobe);
+        leftSkullRef.current.quaternion.copy(targetQuat);
+        leftSkullRef.current.scale.set(finalScale, finalScale, finalScale);
+        leftSkullRef.current.visible = isLeftEarVisible;
+      }
+      if (rightSkullRef?.current) {
+        rightSkullRef.current.position.copy(rightEarlobe);
+        rightSkullRef.current.quaternion.copy(targetQuat);
+        rightSkullRef.current.scale.set(-finalScale, finalScale, finalScale);
+        rightSkullRef.current.visible = isRightEarVisible;
+      }
 
       if (occluderRef.current) {
         occluderRef.current.position.copy(centerPos);
@@ -402,6 +564,7 @@ const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkl
         occluderRef.current.scale.set(occluderScale, occluderScale, occluderScale);
       }
     } else {
+      // Use masterLerp to smoothly interpolate position and rotation, eliminating jitter
       leftGroupRef.current.position.lerp(leftEarlobe, masterLerp);
       leftGroupRef.current.quaternion.slerp(targetQuat, masterLerp);
       leftGroupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), masterLerp);
@@ -412,6 +575,19 @@ const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkl
       rightGroupRef.current.scale.lerp(new THREE.Vector3(-finalScale, finalScale, finalScale), masterLerp);
       rightGroupRef.current.visible = isRightEarVisible;
 
+      if (leftSkullRef?.current) {
+        leftSkullRef.current.position.lerp(leftEarlobe, masterLerp);
+        leftSkullRef.current.quaternion.slerp(targetQuat, masterLerp);
+        leftSkullRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), masterLerp);
+        leftSkullRef.current.visible = isLeftEarVisible;
+      }
+      if (rightSkullRef?.current) {
+        rightSkullRef.current.position.lerp(rightEarlobe, masterLerp);
+        rightSkullRef.current.quaternion.slerp(targetQuat, masterLerp);
+        rightSkullRef.current.scale.lerp(new THREE.Vector3(-finalScale, finalScale, finalScale), masterLerp);
+        rightSkullRef.current.visible = isRightEarVisible;
+      }
+
       if (occluderRef.current) {
         occluderRef.current.position.lerp(centerPos, masterLerp);
         occluderRef.current.quaternion.slerp(targetQuat, masterLerp);
@@ -419,55 +595,226 @@ const EarringMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkl
       }
     }
   });
+};
+
+const EarringGLTFMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelSparkles, sharedState, activeModel, customMaterials, showOccluder }) => {
+  const leftGroupRef = useRef();
+  const rightGroupRef = useRef();
+  const leftSkullRef = useRef();
+  const rightSkullRef = useRef();
+  const occluderRef = useRef();
+
+  const gltfPath = activeModel?.glbPath;
+  const { scene } = useGLTF(gltfPath || '');
+
+  const { clonedScene } = React.useMemo(() => applyAndExtractMaterials(scene, customMaterials), [scene, customMaterials]);
+
+  const { leftScene, rightScene, autoYOffset } = React.useMemo(() => {
+    if (!clonedScene) return { leftScene: null, rightScene: null, autoYOffset: 0 };
+    const left = clonedScene.clone();
+    const right = clonedScene.clone();
+
+    const box = new THREE.Box3().setFromObject(clonedScene);
+    const maxY = box.max.y !== -Infinity ? box.max.y : 0;
+    const autoYOffset = -maxY - 0.01;
+
+    return { leftScene: left, rightScene: right, autoYOffset };
+  }, [clonedScene]);
+
+  useEarringTracker(landmarksRef, leftGroupRef, rightGroupRef, occluderRef, leftSkullRef, rightSkullRef, modelScale, sharedState, modelPos, leftModelPos);
 
   if (!leftScene || !rightScene) return null;
 
   return (
     <group>
-      {/* Invisible Head Occluder: hides earrings on the opposite side of the head when turning */}
-      <mesh ref={occluderRef} renderOrder={-1}>
-        {/* Sphere offset slightly backwards to match the skull shape without clipping the face */}
-        <sphereGeometry args={[0.5, 32, 32]} />
-        <meshBasicMaterial
-          colorWrite={false}
-          depthWrite={true}
-          polygonOffset={true}
-          polygonOffsetFactor={0.1}
-          polygonOffsetUnits={5}
-        />
-      </mesh>
+      <group ref={occluderRef}>
+        <mesh rotation={[0, 0, Math.PI / 2]} renderOrder={-1}>
+          <cylinderGeometry args={[0.01, 0.01, 2.5, 8]} />
+          <meshBasicMaterial
+            color="red"
+            transparent={true}
+            opacity={showOccluder ? 0.5 : 0.0}
+            depthWrite={true}
+            colorWrite={showOccluder}
+            polygonOffset={true}
+            polygonOffsetFactor={0.1}
+            polygonOffsetUnits={5}
+          />
+        </mesh>
+      </group>
 
+      {/* Ear Occluders: These rigidly follow the skull's pitch/yaw/roll to occlude the back of the earring */}
+      <group ref={leftSkullRef}>
+        <mesh renderOrder={-1} position={[0, 0, -0.08]}>
+          <sphereGeometry args={[0.08, 16, 16]} />
+          <meshBasicMaterial colorWrite={false} depthWrite={true} polygonOffset={true} polygonOffsetFactor={0.1} polygonOffsetUnits={5} />
+        </mesh>
+      </group>
+      <group ref={rightSkullRef}>
+        <mesh renderOrder={-1} position={[0, 0, -0.08]}>
+          <sphereGeometry args={[0.08, 16, 16]} />
+          <meshBasicMaterial colorWrite={false} depthWrite={true} polygonOffset={true} polygonOffsetFactor={0.1} polygonOffsetUnits={5} />
+        </mesh>
+      </group>
       <group ref={leftGroupRef}>
-        <primitive
-          object={leftScene}
-          rotation={modelRot || [0, 0, 0]}
-          position={modelPos || [0, 0, 0]}
-        />
+        <primitive object={leftScene} rotation={leftModelRot || modelRot || [0, 0, 0]} position={[0, autoYOffset, 0]} />
         {modelSparkles && <JewelrySparkles count={45} isPlane={false} modelScene={leftScene} />}
       </group>
       <group ref={rightGroupRef}>
-        <primitive
-          object={rightScene}
-          rotation={modelRot || [0, 0, 0]}
-          // The negative X scale on the parent group automatically mirrors the translation!
-          position={modelPos || [0, 0, 0]}
-        />
+        <primitive object={rightScene} rotation={modelRot || [0, 0, 0]} position={[0, autoYOffset, 0]} />
         {modelSparkles && <JewelrySparkles count={45} isPlane={false} modelScene={rightScene} />}
       </group>
     </group>
   );
 };
 
-const NosePinMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles, sharedState, activeModel, customMaterials }) => {
-  const groupRef = useRef();
+const EarringImageMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelSparkles, sharedState, activeModel, showOccluder }) => {
+  const leftGroupRef = useRef();
+  const rightGroupRef = useRef();
+  const leftSkullRef = useRef();
+  const rightSkullRef = useRef();
   const occluderRef = useRef();
 
-  const gltfPath = activeModel?.glbPath;
-  const { scene } = useGLTF(gltfPath || '');
+  const leftImagePath = activeModel?.leftGlbPath || activeModel?.glbPath;
+  const rightImagePath = activeModel?.rightGlbPath || activeModel?.glbPath;
 
-  const { clonedScene } = React.useMemo(() => {
-    return applyAndExtractMaterials(scene, customMaterials);
-  }, [scene, customMaterials]);
+  const leftTexture = useTexture(leftImagePath || '');
+  const rightTexture = useTexture(rightImagePath || leftImagePath || '');
+
+  React.useEffect(() => {
+    if (leftTexture) leftTexture.colorSpace = THREE.SRGBColorSpace;
+    if (rightTexture) rightTexture.colorSpace = THREE.SRGBColorSpace;
+  }, [leftTexture, rightTexture]);
+
+  const leftAspect = leftTexture.image ? (leftTexture.image.width / leftTexture.image.height) : 1;
+  const rightAspect = rightTexture.image ? (rightTexture.image.width / rightTexture.image.height) : 1;
+
+  const leftMaterial = React.useMemo(() => {
+    const mat = new THREE.MeshBasicMaterial({ map: leftTexture, transparent: true, side: THREE.DoubleSide });
+    mat.toneMapped = false;
+    return mat;
+  }, [leftTexture]);
+
+  const rightMaterial = React.useMemo(() => {
+    const mat = new THREE.MeshBasicMaterial({ map: rightTexture, transparent: true, side: THREE.DoubleSide });
+    mat.toneMapped = false;
+    return mat;
+  }, [rightTexture]);
+
+  useEarringTracker(landmarksRef, leftGroupRef, rightGroupRef, occluderRef, leftSkullRef, rightSkullRef, modelScale, sharedState, modelPos, leftModelPos, true);
+
+  return (
+    <group>
+      <mesh ref={occluderRef} renderOrder={-1}>
+        <sphereGeometry args={[0.5, 32, 32]} />
+        <meshBasicMaterial
+          color="#add8e6"
+          transparent={true}
+          opacity={showOccluder ? 0.5 : 0.0}
+          depthWrite={true}
+          colorWrite={showOccluder}
+          polygonOffset={true}
+          polygonOffsetFactor={0.1}
+          polygonOffsetUnits={5}
+        />
+      </mesh>
+
+      <group ref={leftSkullRef}>
+        <mesh renderOrder={-1} position={[0, 0, -0.02]}>
+          <sphereGeometry args={[0.015, 16, 16]} />
+          <meshBasicMaterial colorWrite={false} depthWrite={true} polygonOffset={true} polygonOffsetFactor={0.1} polygonOffsetUnits={5} />
+        </mesh>
+      </group>
+      <group ref={rightSkullRef}>
+        <mesh renderOrder={-1} position={[0, 0, -0.02]}>
+          <sphereGeometry args={[0.015, 16, 16]} />
+          <meshBasicMaterial colorWrite={false} depthWrite={true} polygonOffset={true} polygonOffsetFactor={0.1} polygonOffsetUnits={5} />
+        </mesh>
+      </group>
+
+      <group ref={leftGroupRef}>
+        <mesh rotation={leftModelRot || modelRot || [0, 0, 0]} position={[0, -0.25 / leftAspect, 0]}>
+          <planeGeometry args={[0.5, 0.5 / leftAspect]} />
+          <primitive object={leftMaterial} attach="material" />
+        </mesh>
+        {modelSparkles && <JewelrySparkles count={45} isPlane={true} />}
+      </group>
+
+      <group ref={rightGroupRef}>
+        <mesh rotation={modelRot || [0, 0, 0]} position={[0, -0.25 / rightAspect, 0]}>
+          <planeGeometry args={[0.5, 0.5 / rightAspect]} />
+          <primitive object={rightMaterial} attach="material" />
+        </mesh>
+        {modelSparkles && <JewelrySparkles count={45} isPlane={true} />}
+      </group>
+    </group>
+  );
+};
+
+const EarringMesh = (props) => {
+  const gltfPath = props.activeModel?.glbPath || '';
+  const isImage = gltfPath.toLowerCase().match(/\.(png|jpe?g|webp)$/i);
+  return isImage ? <EarringImageMesh {...props} /> : <EarringGLTFMesh {...props} />;
+};
+
+// Shared by both the GLTF and OBJ nose pin variants: injects a per-fragment
+// world-space fade into every material on the model, so whatever part of it
+// nears the real nostril-hole position fades/blurs away smoothly instead of
+// a hard occluder that can swallow the whole model.
+const useHoleFadeShader = (object3d, holeUniformsRef) => {
+  React.useEffect(() => {
+    if (!object3d) return;
+    object3d.traverse((child) => {
+      if (!child.isMesh || !child.material) return;
+      const materials = Array.isArray(child.material) ? child.material : [child.material];
+      materials.forEach((mat) => {
+        mat.transparent = true;
+        mat.onBeforeCompile = (shader) => {
+          shader.uniforms.uHoleCenter = holeUniformsRef.current.uHoleCenter;
+          shader.uniforms.uHoleInnerRadius = holeUniformsRef.current.uHoleInnerRadius;
+          shader.uniforms.uHoleOuterRadius = holeUniformsRef.current.uHoleOuterRadius;
+
+          shader.vertexShader = `
+            varying vec3 vWorldPos;
+            ${shader.vertexShader}
+          `.replace(
+            `#include <begin_vertex>`,
+            `#include <begin_vertex>
+             vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;`
+          );
+
+          shader.fragmentShader = `
+            uniform vec3 uHoleCenter;
+            uniform float uHoleInnerRadius;
+            uniform float uHoleOuterRadius;
+            varying vec3 vWorldPos;
+            ${shader.fragmentShader}
+          `.replace(
+            `#include <dithering_fragment>`,
+            `#include <dithering_fragment>
+             float holeDist = distance(vWorldPos, uHoleCenter);
+             float holeFade = smoothstep(uHoleInnerRadius, uHoleOuterRadius, holeDist);
+             if (holeFade < 0.05) discard;
+             gl_FragColor.a *= holeFade;`
+          );
+        };
+        mat.needsUpdate = true;
+      });
+    });
+  }, [object3d, holeUniformsRef]);
+};
+
+// Shared by both the GLTF and OBJ nose pin variants: all the face-landmark
+// tracking math (position/rotation/scale/visibility), so only the model
+// loading itself differs between the two.
+const useNosePinTracker = (landmarksRef, groupRef, leftNostrilDebugRef, rightNostrilDebugRef, holeUniformsRef, modelScale, sharedState) => {
+  // Landmark noise gets amplified into visible spin/wobble by atan2/asin,
+  // especially as the head turns toward profile (roll's atan2(diffY, diffX)
+  // gets very sensitive once diffX shrinks). Low-pass filter the raw angles
+  // themselves - independent of the position/rotation lerp below, which
+  // actually responds FASTER the bigger a frame-to-frame jump looks, so it
+  // can't tell noise apart from genuine fast head motion on its own.
+  const smoothedAnglesRef = useRef({ roll: 0, yaw: 0, pitch: 0, initialized: false });
 
   useFrame((state) => {
     const landmarks = landmarksRef.current;
@@ -475,8 +822,6 @@ const NosePinMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkl
       if (groupRef.current) groupRef.current.visible = false;
       return;
     }
-
-    if (groupRef.current) groupRef.current.visible = true;
 
     const { viewport } = state;
 
@@ -504,6 +849,14 @@ const NosePinMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkl
     const anchor = getMapped(358);
     const noseCenter = getMapped(1);
 
+    // DEBUG: mark both nostril landmarks directly in world space so we can see
+    // where MediaPipe thinks the real holes are. The raw ala points (129/358)
+    // sit too far outward on the wing of the nose - blend 35% toward the nose
+    // center to approximate the actual hole position instead.
+    const otherAla = getMapped(129);
+    const leftHoleGuess = otherAla.clone().lerp(noseCenter, 0.48);
+    const rightHoleGuess = anchor.clone().lerp(noseCenter, 0.48);
+
     // Calculate physical face width
     const rawDiffX = -(landmarks[454].x - landmarks[234].x) * (viewport.width * scaleX);
     const rawDiffY = -(landmarks[454].y - landmarks[234].y) * (viewport.height * scaleY);
@@ -511,77 +864,146 @@ const NosePinMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkl
     const faceWidth = Math.sqrt(rawDiffX * rawDiffX + rawDiffY * rawDiffY + rawDiffZ * rawDiffZ);
 
     // Head rotation estimation
-    const leftAnchor = getMapped(234);
-    const rightAnchor = getMapped(454);
-    const diffX = rightAnchor.x - leftAnchor.x;
-    const diffY = rightAnchor.y - leftAnchor.y;
-    const diffZ = rightAnchor.z - leftAnchor.z;
+    // Head rotation estimation (screenRight - screenLeft to maintain positive X axis)
+    const screenRightAnchor = getMapped(234);
+    const screenLeftAnchor = getMapped(454);
+    const diffX = screenRightAnchor.x - screenLeftAnchor.x;
+    const diffY = screenRightAnchor.y - screenLeftAnchor.y;
+    const diffZ = screenRightAnchor.z - screenLeftAnchor.z;
 
     const roll = Math.atan2(diffY, diffX);
-    const yaw = Math.asin(diffZ / Math.sqrt(diffX * diffX + diffY * diffY + diffZ * diffZ));
+    // Clamp before asin: floating-point drift can push the ratio slightly past +/-1,
+    // which returns NaN and makes the whole quaternion NaN for a frame (visible flicker/snap).
+    const yawArg = THREE.MathUtils.clamp(diffZ / Math.sqrt(diffX * diffX + diffY * diffY + diffZ * diffZ), -1, 1);
+    const yaw = Math.asin(yawArg);
 
     const top = getMapped(10);
     const bottom = getMapped(152);
 
     const verticalDist = bottom.distanceTo(top);
-    const pitch = -Math.asin((bottom.z - top.z) / verticalDist);
+    const pitchArg = THREE.MathUtils.clamp((bottom.z - top.z) / verticalDist, -1, 1);
+    const pitch = -Math.asin(pitchArg);
 
-    const targetEuler = new THREE.Euler(pitch, yaw, roll, 'YXZ');
+    // The pin is anchored to ONE nostril (358). When the head turns far enough that
+    // this side of the nose faces away from the camera, MediaPipe still reports an
+    // estimated (guessed) 3D position for it, so without this check the pin would
+    // keep rendering right through the head. Same threshold/technique as the earring
+    // per-side visibility check.
+    // Also cut off at an extreme turn on the OTHER side (near-profile), where
+    // landmark tracking for a tiny feature like a nostril gets unreliable.
+    // Extreme up/down tilt is unreliable the same way (perspective distortion on
+    // a tiny feature) - hide + show the same warning rather than a wrong position.
+    const isPinYawOk = yawArg < 0.5 && yawArg > -0.85;
+    const isPinPitchOk = Math.abs(pitch) < 0.5;
+    const isPinSideVisible = isPinYawOk && isPinPitchOk;
+    groupRef.current.visible = isPinSideVisible;
+    if (sharedState) sharedState.current.nosePinWarning = isPinSideVisible ? null : (isPinYawOk ? 'Face the camera to see the nose pin' : 'Turn back to see the nose pin');
+
+    if (leftNostrilDebugRef.current) leftNostrilDebugRef.current.position.copy(leftHoleGuess);
+    if (rightNostrilDebugRef.current) rightNostrilDebugRef.current.position.copy(rightHoleGuess);
+
+    if (!smoothedAnglesRef.current.initialized) {
+      smoothedAnglesRef.current.roll = roll;
+      smoothedAnglesRef.current.yaw = yaw;
+      smoothedAnglesRef.current.pitch = pitch;
+      smoothedAnglesRef.current.initialized = true;
+    } else {
+      const angleSmoothing = 0.3;
+      smoothedAnglesRef.current.roll = THREE.MathUtils.lerp(smoothedAnglesRef.current.roll, roll, angleSmoothing);
+      smoothedAnglesRef.current.yaw = THREE.MathUtils.lerp(smoothedAnglesRef.current.yaw, yaw, angleSmoothing);
+      smoothedAnglesRef.current.pitch = THREE.MathUtils.lerp(smoothedAnglesRef.current.pitch, pitch, angleSmoothing);
+    }
+
+    // Keep the pin's orientation close to the good frontal look across the whole
+    // visible turning range (it just tracks position), instead of continuously
+    // re-orienting with yaw - only the visibility cutoff above should react to
+    // an extreme turn, not the rendered angle itself.
+    const yawRotationInfluence = 0;
+    const targetEuler = new THREE.Euler(smoothedAnglesRef.current.pitch, smoothedAnglesRef.current.yaw * yawRotationInfluence, smoothedAnglesRef.current.roll, 'YXZ');
     const targetQuat = new THREE.Quaternion().setFromEuler(targetEuler);
 
     const finalScale = faceWidth * 1.05 * (modelScale || 1);
 
-    // The occluder needs to be roughly the size of the nose
-    const occluderScale = faceWidth * 0.25;
-
     if (groupRef.current.scale.x === 1) { // Uninitialized
-      groupRef.current.position.copy(anchor);
+      groupRef.current.position.copy(rightHoleGuess);
       groupRef.current.quaternion.copy(targetQuat);
       groupRef.current.scale.set(finalScale, finalScale, finalScale);
-
-      if (occluderRef.current) {
-        occluderRef.current.position.copy(noseCenter);
-        occluderRef.current.quaternion.copy(targetQuat);
-        occluderRef.current.scale.set(occluderScale, occluderScale, occluderScale);
-      }
     } else {
-      const dist = groupRef.current.position.distanceTo(anchor);
-      const posLerp = Math.min(1.0, 0.2 + (dist * 10.0));
+      // Normalize movement by face size (not absolute distance) so tiny per-frame
+      // landmark noise on a small object like a nose pin gets smoothed away, while
+      // genuine head movement still tracks quickly. Same technique as RingMesh.
+      const dist = groupRef.current.position.distanceTo(rightHoleGuess);
+      const normalizedDist = dist / faceWidth;
       const angle = groupRef.current.quaternion.angleTo(targetQuat);
-      const rotLerp = Math.min(1.0, 0.2 + (angle * 10.0));
+
+      const posLerp = Math.min(Math.max(0.14 + normalizedDist * 4.0, 0.14), 0.85);
+      const rotLerp = Math.min(Math.max(0.14 + angle * 2.5, 0.14), 0.85);
       const masterLerp = Math.max(posLerp, rotLerp);
 
       if (sharedState) sharedState.current.adaptiveLerp = masterLerp;
 
-      groupRef.current.position.lerp(anchor, masterLerp);
-      groupRef.current.quaternion.slerp(targetQuat, masterLerp);
-      groupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), masterLerp);
-
-      if (occluderRef.current) {
-        occluderRef.current.position.lerp(noseCenter, masterLerp);
-        occluderRef.current.quaternion.slerp(targetQuat, masterLerp);
-        occluderRef.current.scale.lerp(new THREE.Vector3(occluderScale, occluderScale, occluderScale), masterLerp);
-      }
+      groupRef.current.position.lerp(rightHoleGuess, posLerp);
+      groupRef.current.quaternion.slerp(targetQuat, rotLerp);
+      // Scale never needs to snap fast - keep it on a fixed gentle lerp to avoid pulsing.
+      groupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.25);
     }
+
+    // Soft fade: update the shader uniform driving the per-fragment hole fade
+    // on the ring's own material (see useHoleFadeShader above). Uses the ring's
+    // ACTUAL (lerped/lagged) rendered position, not the raw instantaneous
+    // target - otherwise during a turn the hole-center races ahead of where
+    // the ring visually is, and the ring's leading edge gets eaten by the
+    // fade, looking like it sinks into the nose the moment the head moves.
+    holeUniformsRef.current.uHoleCenter.value.copy(groupRef.current.position);
   });
+};
+
+const NosePinDebugMarkers = ({ leftNostrilDebugRef, rightNostrilDebugRef, showOccluder }) => {
+  if (!showOccluder) return null;
+  return (
+    <>
+      <mesh ref={leftNostrilDebugRef} renderOrder={999}>
+        <sphereGeometry args={[0.06, 16, 16]} />
+        <meshBasicMaterial color="#22ff22" depthTest={false} />
+      </mesh>
+      <mesh ref={rightNostrilDebugRef} renderOrder={999}>
+        <sphereGeometry args={[0.06, 16, 16]} />
+        <meshBasicMaterial color="#22ff22" depthTest={false} />
+      </mesh>
+    </>
+  );
+};
+
+const NosePinGLTFMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles, sharedState, activeModel, customMaterials, showOccluder }) => {
+  const groupRef = useRef();
+  const leftNostrilDebugRef = useRef();
+  const rightNostrilDebugRef = useRef();
+  const holeUniformsRef = useRef({
+    uHoleCenter: { value: new THREE.Vector3(9999, 9999, 9999) },
+    uHoleInnerRadius: { value: 0.02 },
+    uHoleOuterRadius: { value: 0.045 },
+  });
+
+  const gltfPath = activeModel?.glbPath;
+  const { scene } = useGLTF(gltfPath || '');
+
+  const { clonedScene } = React.useMemo(() => {
+    const { clonedScene: s } = applyAndExtractMaterials(scene, customMaterials);
+    if (!s) return { clonedScene: null };
+    // Automatically center the model to prevent orbiting if origin is off-center
+    const box = new THREE.Box3().setFromObject(s);
+    const center = box.getCenter(new THREE.Vector3());
+    s.position.sub(center);
+    return { clonedScene: s };
+  }, [scene, customMaterials]);
+
+  useHoleFadeShader(clonedScene, holeUniformsRef);
+  useNosePinTracker(landmarksRef, groupRef, leftNostrilDebugRef, rightNostrilDebugRef, holeUniformsRef, modelScale, sharedState);
 
   if (!scene) return null;
 
   return (
-    <group>
-      {/* Invisible Nose Occluder: hides the stem of the nose pin that goes inside the nose */}
-      <mesh ref={occluderRef} renderOrder={-1}>
-        <sphereGeometry args={[0.5, 32, 32]} />
-        <meshBasicMaterial
-          colorWrite={false}
-          depthWrite={true}
-          polygonOffset={true}
-          polygonOffsetFactor={0.1}
-          polygonOffsetUnits={5}
-        />
-      </mesh>
-
-      <group ref={groupRef}>
+    <group>      <group ref={groupRef}>
         <primitive
           object={clonedScene}
           rotation={modelRot || [0, 0, 0]}
@@ -589,8 +1011,64 @@ const NosePinMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkl
         />
         {modelSparkles && <JewelrySparkles count={30} isPlane={false} modelScene={clonedScene} />}
       </group>
+      <NosePinDebugMarkers leftNostrilDebugRef={leftNostrilDebugRef} rightNostrilDebugRef={rightNostrilDebugRef} showOccluder={showOccluder} />
     </group>
   );
+};
+
+const NosePinOBJMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles, sharedState, activeModel, customMaterials, showOccluder }) => {
+  const groupRef = useRef();
+  const leftNostrilDebugRef = useRef();
+  const rightNostrilDebugRef = useRef();
+  const holeUniformsRef = useRef({
+    uHoleCenter: { value: new THREE.Vector3(9999, 9999, 9999) },
+    uHoleInnerRadius: { value: 0.02 },
+    uHoleOuterRadius: { value: 0.045 },
+  });
+
+  const objPath = activeModel?.glbPath;
+  const obj = useLoader(OBJLoader, objPath);
+
+  const { clonedScene } = React.useMemo(() => {
+    // Rhino/plain OBJ exports with no .mtl have no material at all - OBJLoader
+    // already falls back to a default MeshPhongMaterial per mesh, so this just
+    // gives it a metal-ish look instead of the flat default grey.
+    obj.traverse((child) => {
+      if (child.isMesh && (!child.material || child.material.type === 'MeshPhongMaterial')) {
+        child.material = new THREE.MeshStandardMaterial({ color: '#d43b3b', metalness: 0.7, roughness: 0.3 });
+      }
+    });
+    const { clonedScene: s } = applyAndExtractMaterials(obj, customMaterials);
+    if (!s) return { clonedScene: null };
+    const box = new THREE.Box3().setFromObject(s);
+    const center = box.getCenter(new THREE.Vector3());
+    s.position.sub(center);
+    return { clonedScene: s };
+  }, [obj, customMaterials]);
+
+  useHoleFadeShader(clonedScene, holeUniformsRef);
+  useNosePinTracker(landmarksRef, groupRef, leftNostrilDebugRef, rightNostrilDebugRef, holeUniformsRef, modelScale, sharedState);
+
+  if (!obj) return null;
+
+  return (
+    <group>      <group ref={groupRef}>
+        <primitive
+          object={clonedScene}
+          rotation={modelRot || [0, 0, 0]}
+          position={modelPos || [0, 0, 0]}
+        />
+        {modelSparkles && <JewelrySparkles count={30} isPlane={false} modelScene={clonedScene} />}
+      </group>
+      <NosePinDebugMarkers leftNostrilDebugRef={leftNostrilDebugRef} rightNostrilDebugRef={rightNostrilDebugRef} showOccluder={showOccluder} />
+    </group>
+  );
+};
+
+const NosePinMesh = (props) => {
+  const path = props.activeModel?.glbPath || '';
+  const isObj = path.toLowerCase().endsWith('.obj');
+  return isObj ? <NosePinOBJMesh {...props} /> : <NosePinGLTFMesh {...props} />;
 };
 
 const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles, sharedState, activeModel, customMaterials }) => {
@@ -995,20 +1473,30 @@ const Loader = () => {
   );
 };
 
-const TrackingStatus = ({ landmarksRef, isHandTracking, category }) => {
-  const [detected, setDetected] = useState(true);
+const TrackingStatus = ({ landmarksRef, isHandTracking, category, sharedState }) => {
+  const [warningMsg, setWarningMsg] = useState('');
   // Rings don't need face detection — suppress warning
   const needsFace = category !== 'rings';
 
   useFrame(() => {
     if (!needsFace) return;
-    const isDetected = !!(landmarksRef.current && landmarksRef.current.length > 0);
-    if (detected !== isDetected) {
-      setDetected(isDetected);
+    const lms = landmarksRef.current;
+    let msg = '';
+
+    if (!lms || lms.length === 0) {
+      msg = isHandTracking ? 'Hand Not Detected' : 'Face Not Detected';
+    } else if (category === 'earrings' && sharedState?.current?.earringWarning) {
+      msg = sharedState.current.earringWarning;
+    } else if (category === 'nosepin' && sharedState?.current?.nosePinWarning) {
+      msg = sharedState.current.nosePinWarning;
+    }
+
+    if (warningMsg !== msg) {
+      setWarningMsg(msg);
     }
   });
 
-  if (!needsFace || detected) return null;
+  if (!needsFace || !warningMsg) return null;
   return (
     <Html center>
       <div style={{
@@ -1017,7 +1505,7 @@ const TrackingStatus = ({ landmarksRef, isHandTracking, category }) => {
         border: '2px solid #f87171', boxShadow: '0 0 20px rgba(220, 38, 38, 0.6)',
         whiteSpace: 'nowrap'
       }}>
-        ⚠️ {isHandTracking ? 'Hand' : 'Face'} Not Detected
+        ⚠️ {warningMsg}
       </div>
     </Html>
   );
@@ -1320,7 +1808,7 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRo
 //   );
 // };
 
-const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelSparkles, activeModel, isHandTracking, category, customMaterials,ringTuning }) => {
+const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, showOccluder, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelSparkles, activeModel, isHandTracking, category, customMaterials, ringTuning }) => {
   // Shared state ensures the face mask and the glasses always use the EXACT same tracking speed!
   const sharedState = useRef({ adaptiveLerp: 0.5 });
   const isEyewear = FACE_AR_CATEGORIES.includes(category);
@@ -1342,7 +1830,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
         <DynamicLighting videoFrameRef={videoFrameRef} />
         <Environment preset="city" />
 
-        <TrackingStatus landmarksRef={landmarksRef} isHandTracking={isHandTracking} category={category} />
+        <TrackingStatus landmarksRef={landmarksRef} isHandTracking={isHandTracking} category={category} sharedState={sharedState} />
 
         {isHandTracking ? (
           <>
@@ -1384,9 +1872,15 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
           </>
         ) : (
           <>
-            {/* Face mesh depth occluder — needed for eyewear and necklace */}
-            {(isEyewear || isNecklace) && (
-              <FullFaceMesh landmarksRef={landmarksRef} showFaceMesh={isEyewear && showFaceMesh} sharedState={sharedState} />
+            {/* Face mesh depth occluder — needed for eyewear, necklace, and nosepin */}
+            {(isEyewear || isNecklace || category === 'nosepin') && (
+              <FullFaceMesh 
+                landmarksRef={landmarksRef} 
+                showFaceMesh={(isEyewear || category === 'nosepin') && showFaceMesh} 
+                showOccluder={showOccluder} 
+                sharedState={sharedState} 
+                isNoseOccluder={category === 'nosepin'}
+              />
             )}
 
             <ModelErrorBoundary resetKey={`${category}-${activeModel?.id}`}>
@@ -1397,11 +1891,14 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                     landmarksRef={landmarksRef}
                     modelPos={modelPos}
                     modelRot={modelRot}
+                    leftModelPos={leftModelPos}
+                    leftModelRot={leftModelRot}
                     modelScale={modelScale}
                     modelSparkles={modelSparkles}
                     sharedState={sharedState}
                     activeModel={activeModel}
                     customMaterials={customMaterials}
+                    showOccluder={showOccluder}
                   />
                 ) : category === 'nosepin' ? (
                   <NosePinMesh
@@ -1414,6 +1911,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                     sharedState={sharedState}
                     activeModel={activeModel}
                     customMaterials={customMaterials}
+                    showOccluder={showOccluder}
                   />
                 ) : category === 'eyewear' ? (
                   <EyewearMesh
