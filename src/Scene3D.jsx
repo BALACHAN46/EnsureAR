@@ -344,6 +344,9 @@ const useEarringTracker = (landmarksRef, leftGroupRef, rightGroupRef, occluderRe
   // Memory states for Smart Calibration
   const calibratedLeftDrop = useRef(null);
   const calibratedRightDrop = useRef(null);
+  const stableCalibrationFrames = useRef(0);
+  const emaLeftEarLength = useRef(null);
+  const emaRightEarLength = useRef(null);
   const smoothedPitchFactor = useRef(0);
 
   useFrame((state, delta) => {
@@ -449,14 +452,44 @@ const useEarringTracker = (landmarksRef, leftGroupRef, rightGroupRef, occluderRe
       .addScaledVector(headRight, faceWidth * 0.48)
       .addScaledVector(headDown, pitchCompensation);
 
-    // Dynamic Earlobe Drop: Automatically adjust for long vs short ears
-    // Measures distance from Tragus to Jaw. Longer jaw distance = deeper earlobe drop.
+    // Dynamic Earlobe Drop: Automatically adjust for long vs short ears.
+    // Tragus-to-jaw distance alone is a weak proxy (mostly reflects jaw angle, not ear length),
+    // so blend it with a face-thirds proxy (forehead-to-chin / 3 approximates ear length,
+    // per the classic facial-proportion "thirds" rule) for a more reliable per-user estimate.
     const leftJawDist = leftTragus.distanceTo(leftJaw);
     const rightJawDist = rightTragus.distanceTo(rightJaw);
+    const faceHeight = top.distanceTo(bottom);
+    const earLengthProxy = faceHeight / 3;
+
+    const leftEarLengthEstimate = (earLengthProxy * 0.35) + (leftJawDist * 0.65);
+    const rightEarLengthEstimate = (earLengthProxy * 0.35) + (rightJawDist * 0.65);
+
+    // Silent auto-calibration: average the estimate over ~0.5s of stable, front-facing tracking,
+    // then lock it in so per-frame landmark jitter stops moving the earring vertically.
+    const isStableForCalibration = absYaw < 0.15 && Math.abs(pitchAngle) < 0.2;
+    const CALIBRATION_FRAMES = 30;
+
+    if (calibratedLeftDrop.current === null && isStableForCalibration) {
+      emaLeftEarLength.current = emaLeftEarLength.current === null
+        ? leftEarLengthEstimate
+        : THREE.MathUtils.lerp(emaLeftEarLength.current, leftEarLengthEstimate, 0.15);
+      emaRightEarLength.current = emaRightEarLength.current === null
+        ? rightEarLengthEstimate
+        : THREE.MathUtils.lerp(emaRightEarLength.current, rightEarLengthEstimate, 0.15);
+      stableCalibrationFrames.current += 1;
+
+      if (stableCalibrationFrames.current >= CALIBRATION_FRAMES) {
+        calibratedLeftDrop.current = emaLeftEarLength.current;
+        calibratedRightDrop.current = emaRightEarLength.current;
+      }
+    }
+
+    const leftEarLengthSignal = calibratedLeftDrop.current ?? (emaLeftEarLength.current ?? leftEarLengthEstimate);
+    const rightEarLengthSignal = calibratedRightDrop.current ?? (emaRightEarLength.current ?? rightEarLengthEstimate);
 
     // Baseline drop for short ears + proportional scaling for long ears
-    const leftEarlobeDrop = (faceWidth * 0.03) + (leftJawDist * 0.18);
-    const rightEarlobeDrop = (faceWidth * 0.03) + (rightJawDist * 0.18);
+    const leftEarlobeDrop = (faceWidth * 0.03) + (leftEarLengthSignal * 0.18);
+    const rightEarlobeDrop = (faceWidth * 0.03) + (rightEarLengthSignal * 0.18);
 
     const leftLobeTarget = leftTragus.clone().addScaledVector(headDown, leftEarlobeDrop);
     const rightLobeTarget = rightTragus.clone().addScaledVector(headDown, rightEarlobeDrop);
@@ -1065,9 +1098,57 @@ const NosePinOBJMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSpa
   );
 };
 
+const NosePinImageMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles, sharedState, activeModel, customMaterials, showOccluder }) => {
+  const groupRef = useRef();
+  const [meshObj, setMeshObj] = useState(null);
+  const leftNostrilDebugRef = useRef();
+  const rightNostrilDebugRef = useRef();
+  const holeUniformsRef = useRef({
+    uHoleCenter: { value: new THREE.Vector3(9999, 9999, 9999) },
+    uHoleInnerRadius: { value: 0.02 },
+    uHoleOuterRadius: { value: 0.045 },
+  });
+
+  const imagePath = activeModel?.glbPath || '';
+  const texture = useTexture(imagePath);
+  
+  const material = React.useMemo(() => {
+    return new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      alphaTest: 0.05,
+      side: THREE.DoubleSide,
+      depthTest: false
+    });
+  }, [texture]);
+
+  useNosePinTracker(landmarksRef, groupRef, leftNostrilDebugRef, rightNostrilDebugRef, holeUniformsRef, modelScale, sharedState);
+
+  if (!texture) return null;
+
+  const aspect = texture.image ? (texture.image.width / texture.image.height) : 1;
+
+  return (
+    <group>
+      <group ref={groupRef}>
+        <mesh ref={setMeshObj} rotation={modelRot || [0, 0, 0]} position={modelPos || [0, 0, 0]} renderOrder={100}>
+          <planeGeometry args={[0.05, 0.05 / aspect]} />
+          <primitive object={material} attach="material" />
+        </mesh>
+        {modelSparkles && <JewelrySparkles count={30} isPlane={true} />}
+      </group>
+      <NosePinDebugMarkers leftNostrilDebugRef={leftNostrilDebugRef} rightNostrilDebugRef={rightNostrilDebugRef} showOccluder={showOccluder} />
+    </group>
+  );
+};
+
 const NosePinMesh = (props) => {
   const path = props.activeModel?.glbPath || '';
   const isObj = path.toLowerCase().endsWith('.obj');
+  const isImage = path.toLowerCase().match(/\.(png|jpe?g|webp)$/i);
+  if (isImage) {
+    return <NosePinImageMesh {...props} />;
+  }
   return isObj ? <NosePinOBJMesh {...props} /> : <NosePinGLTFMesh {...props} />;
 };
 

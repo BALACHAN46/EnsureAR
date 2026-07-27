@@ -845,7 +845,7 @@
       "mtlPath": "",
       "texturePath": "",
       "glbPath": "/models/earrings/3c1d189abcd123.glb",
-      "thumbnailPath": "/models/necklace/3c1d189ac571.png",
+      "thumbnailPath": "/models/earrings/Earring black.png",
       "uploadedAt": "2026-06-30T05:42:41.3805306Z",
       "scale": [
         1,
@@ -864,8 +864,6 @@
       ],
       "necklaceType": "open"
     },
-
-
     {
       "id": "diamond_earring3",
       "name": "Diamond Earring 3",
@@ -874,7 +872,7 @@
       "mtlPath": "",
       "texturePath": "",
       "glbPath": "/models/earrings/new3_diamond_earring3.png",
-      "thumbnailPath": "/models/earrings/new3_diamond_earring3.png",
+      "thumbnailPath": "/models/earrings/diamond_earring3.png",
       "uploadedAt": "2026-07-23T00:00:00.000Z",
       "scale": [
         1,
@@ -900,7 +898,7 @@
       "mtlPath": "",
       "texturePath": "",
       "glbPath": "/models/earrings/new1_diamond_earring2.png",
-      "thumbnailPath": "/models/earrings/new1_diamond_earring2.png",
+      "thumbnailPath": "/models/earrings/diamond_earring2.png",
       "uploadedAt": "2026-07-23T00:00:00.000Z",
       "scale": [
         1,
@@ -928,7 +926,7 @@
       "glbPath": "/models/earrings/left_diamond_earring1.png",
       "leftGlbPath": "/models/earrings/left_diamond_earring1.png",
       "rightGlbPath": "/models/earrings/right_diamond_earring1.png",
-      "thumbnailPath": "/models/earrings/left_diamond_earring1.png",
+      "thumbnailPath": "/models/earrings/diamond_earring1.png",
       "uploadedAt": "2026-07-23T00:00:00.000Z",
       "scale": [
         1,
@@ -954,7 +952,7 @@
       "mtlPath": "",
       "texturePath": "",
       "glbPath": "/models/nosepin/pointy_nose_ring.glb",
-      "thumbnailPath": "/models/nosepin/pointy_nose_ring.glb",
+      "thumbnailPath": "/models/nosepin/pointy_nose_ring.png",
       "uploadedAt": "2026-07-24T00:00:00.000Z",
       "scale": [
         1,
@@ -973,14 +971,14 @@
       ]
     },
     {
-      "id": "red_nose_pin",
-      "name": "Red Nose Pin",
+      "id": "NosePin 1",
+      "name": "NosePin 1",
       "category": "nosepin",
-      "modelPath": "/models/nosepin/red%20nose%20pin.obj",
+      "modelPath": "/models/nosepin/NosePin1-removebg-preview.png",
       "mtlPath": "",
       "texturePath": "",
-      "glbPath": "/models/nosepin/red%20nose%20pin.obj",
-      "thumbnailPath": "",
+      "glbPath": "/models/nosepin/NosePin1-removebg-preview.png",
+      "thumbnailPath": "/models/nosepin/NosePin1-removebg-preview.png",
       "uploadedAt": "2026-07-24T00:00:00.000Z",
       "scale": [
         1,

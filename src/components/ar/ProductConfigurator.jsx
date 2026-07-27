@@ -178,7 +178,7 @@ export default function ProductConfigurator({ activeModel, autoRotate, customMat
           enablePan={false}
           autoRotate={autoRotate}
           autoRotateSpeed={2.2}
-          minDistance={0.8}
+          minDistance={0.05}
           maxDistance={12}
           enableDamping
           dampingFactor={0.08}

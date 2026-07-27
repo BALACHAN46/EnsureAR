@@ -562,6 +562,23 @@
       "scale": 6.69,
       "enableSparkles": false,
       "category": "nosepin"
+    },
+    "NosePin 1": {
+      "posX": -0.01,
+      "posY": 0.02,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0.71841,
+      "rotZ": 0,
+      "leftPosX": 0,
+      "leftPosY": 0,
+      "leftPosZ": 0,
+      "leftRotX": 0,
+      "leftRotY": 0,
+      "leftRotZ": 0,
+      "scale": 2.84,
+      "enableSparkles": true,
+      "category": "nosepin"
     }
   }
 }
