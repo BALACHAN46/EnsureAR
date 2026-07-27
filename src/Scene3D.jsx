@@ -134,20 +134,20 @@ const FullFaceMesh = ({ landmarksRef, showFaceMesh, showOccluder, sharedState, i
         positions[i * 3 + 2] += (targetZ - positions[i * 3 + 2]) * adaptiveLerp;
       }
     }
-    
+
     uniformsRef.current.uIsNoseOccluder.value = !!isNoseOccluder;
     if (isNoseOccluder) {
       const nIdx = 4 * 3; // Nose tip
       if (positions[nIdx] !== undefined) {
         uniformsRef.current.uNoseCenter.value.set(positions[nIdx], positions[nIdx + 1], positions[nIdx + 2]);
-        
+
         const leftX = positions[234 * 3];
         const rightX = positions[454 * 3];
         const faceWidth = Math.abs(rightX - leftX);
         uniformsRef.current.uClipRadius.value = faceWidth * 0.22; // ~22% of face width covers the nose perfectly
       }
     }
-    
+
     geometry.attributes.position.needsUpdate = true;
   });
 
@@ -174,7 +174,7 @@ const FullFaceMesh = ({ landmarksRef, showFaceMesh, showOccluder, sharedState, i
             shader.uniforms.uNoseCenter = uniformsRef.current.uNoseCenter;
             shader.uniforms.uClipRadius = uniformsRef.current.uClipRadius;
             shader.uniforms.uIsNoseOccluder = uniformsRef.current.uIsNoseOccluder;
-            
+
             shader.vertexShader = `
               varying vec3 vPos;
               ${shader.vertexShader}
@@ -183,7 +183,7 @@ const FullFaceMesh = ({ landmarksRef, showFaceMesh, showOccluder, sharedState, i
               `#include <begin_vertex>
                vPos = position;`
             );
-            
+
             shader.fragmentShader = `
               uniform vec3 uNoseCenter;
               uniform float uClipRadius;
@@ -840,7 +840,7 @@ const useHoleFadeShader = (object3d, holeUniformsRef) => {
 // Shared by both the GLTF and OBJ nose pin variants: all the face-landmark
 // tracking math (position/rotation/scale/visibility), so only the model
 // loading itself differs between the two.
-const useNosePinTracker = (landmarksRef, groupRef, leftNostrilDebugRef, rightNostrilDebugRef, holeUniformsRef, modelScale, sharedState) => {
+const useNosePinTracker = (landmarksRef, groupRef, leftNostrilDebugRef, rightNostrilDebugRef, holeUniformsRef, modelScale, sharedState, disableYaw = false) => {
   // Landmark noise gets amplified into visible spin/wobble by atan2/asin,
   // especially as the head turns toward profile (roll's atan2(diffY, diffX)
   // gets very sensitive once diffX shrinks). Low-pass filter the raw angles
@@ -917,6 +917,16 @@ const useNosePinTracker = (landmarksRef, groupRef, leftNostrilDebugRef, rightNos
     const pitchArg = THREE.MathUtils.clamp((bottom.z - top.z) / verticalDist, -1, 1);
     const pitch = -Math.asin(pitchArg);
 
+    // Lift the nose pin slightly upwards (along the face's local Up vector)
+    // as the head turns to the side, to counteract MediaPipe's tendency
+    // to drop the ala landmark when viewed from profile.
+    const headUp = new THREE.Vector3().subVectors(top, bottom).normalize();
+    const absYaw = Math.abs(yaw);
+    // Apply up to ~6% of face width as a vertical lift depending on how far the head is turned
+    const liftAmount = absYaw * faceWidth * 0.01;
+    leftHoleGuess.addScaledVector(headUp, liftAmount);
+    rightHoleGuess.addScaledVector(headUp, liftAmount);
+
     // The pin is anchored to ONE nostril (358). When the head turns far enough that
     // this side of the nose faces away from the camera, MediaPipe still reports an
     // estimated (guessed) 3D position for it, so without this check the pin would
@@ -926,8 +936,9 @@ const useNosePinTracker = (landmarksRef, groupRef, leftNostrilDebugRef, rightNos
     // landmark tracking for a tiny feature like a nostril gets unreliable.
     // Extreme up/down tilt is unreliable the same way (perspective distortion on
     // a tiny feature) - hide + show the same warning rather than a wrong position.
-    const isPinYawOk = yawArg < 0.5 && yawArg > -0.85;
-    const isPinPitchOk = Math.abs(pitch) < 0.5;
+    // Widen visibility angles so the pin doesn't disappear too easily on fast head turns
+    const isPinYawOk = yawArg < 0.75 && yawArg > -0.95;
+    const isPinPitchOk = Math.abs(pitch) < 0.75;
     const isPinSideVisible = isPinYawOk && isPinPitchOk;
     groupRef.current.visible = isPinSideVisible;
     if (sharedState) sharedState.current.nosePinWarning = isPinSideVisible ? null : (isPinYawOk ? 'Face the camera to see the nose pin' : 'Turn back to see the nose pin');
@@ -941,17 +952,16 @@ const useNosePinTracker = (landmarksRef, groupRef, leftNostrilDebugRef, rightNos
       smoothedAnglesRef.current.pitch = pitch;
       smoothedAnglesRef.current.initialized = true;
     } else {
-      const angleSmoothing = 0.3;
+      const angleSmoothing = 0.5; // Faster angle tracking
       smoothedAnglesRef.current.roll = THREE.MathUtils.lerp(smoothedAnglesRef.current.roll, roll, angleSmoothing);
       smoothedAnglesRef.current.yaw = THREE.MathUtils.lerp(smoothedAnglesRef.current.yaw, yaw, angleSmoothing);
       smoothedAnglesRef.current.pitch = THREE.MathUtils.lerp(smoothedAnglesRef.current.pitch, pitch, angleSmoothing);
     }
 
-    // Keep the pin's orientation close to the good frontal look across the whole
-    // visible turning range (it just tracks position), instead of continuously
-    // re-orienting with yaw - only the visibility cutoff above should react to
-    // an extreme turn, not the rendered angle itself.
-    const yawRotationInfluence = 0;
+    // The nosepin must rotate fully with the head so it stays flush against the nose surface
+    // instead of staying flat to the camera when the user turns their head.
+    // However, 2D image models or flat studs shouldn't use yaw rotation.
+    const yawRotationInfluence = disableYaw ? 0 : -1;
     const targetEuler = new THREE.Euler(smoothedAnglesRef.current.pitch, smoothedAnglesRef.current.yaw * yawRotationInfluence, smoothedAnglesRef.current.roll, 'YXZ');
     const targetQuat = new THREE.Quaternion().setFromEuler(targetEuler);
 
@@ -962,21 +972,19 @@ const useNosePinTracker = (landmarksRef, groupRef, leftNostrilDebugRef, rightNos
       groupRef.current.quaternion.copy(targetQuat);
       groupRef.current.scale.set(finalScale, finalScale, finalScale);
     } else {
-      // Normalize movement by face size (not absolute distance) so tiny per-frame
-      // landmark noise on a small object like a nose pin gets smoothed away, while
-      // genuine head movement still tracks quickly. Same technique as RingMesh.
+      // Nosepins are rigidly attached, so they should snap instantly on fast movement
+      // and have minimal lag. Use an aggressive quadratic lerp.
       const dist = groupRef.current.position.distanceTo(rightHoleGuess);
-      const normalizedDist = dist / faceWidth;
       const angle = groupRef.current.quaternion.angleTo(targetQuat);
 
-      const posLerp = Math.min(Math.max(0.14 + normalizedDist * 4.0, 0.14), 0.85);
-      const rotLerp = Math.min(Math.max(0.14 + angle * 2.5, 0.14), 0.85);
+      const posLerp = Math.max(0.25, Math.min(1.0, Math.pow(dist * 15.0, 2)));
+      const rotLerp = Math.max(0.25, Math.min(1.0, Math.pow(angle * 10.0, 2)));
       const masterLerp = Math.max(posLerp, rotLerp);
 
       if (sharedState) sharedState.current.adaptiveLerp = masterLerp;
 
-      groupRef.current.position.lerp(rightHoleGuess, posLerp);
-      groupRef.current.quaternion.slerp(targetQuat, rotLerp);
+      groupRef.current.position.lerp(rightHoleGuess, masterLerp);
+      groupRef.current.quaternion.slerp(targetQuat, masterLerp);
       // Scale never needs to snap fast - keep it on a fixed gentle lerp to avoid pulsing.
       groupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), 0.25);
     }
@@ -1037,13 +1045,13 @@ const NosePinGLTFMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSp
 
   return (
     <group>      <group ref={groupRef}>
-        <primitive
-          object={clonedScene}
-          rotation={modelRot || [0, 0, 0]}
-          position={modelPos || [0, 0, 0]}
-        />
-        {modelSparkles && <JewelrySparkles count={30} isPlane={false} modelScene={clonedScene} />}
-      </group>
+      <primitive
+        object={clonedScene}
+        rotation={modelRot || [0, 0, 0]}
+        position={modelPos || [0, 0, 0]}
+      />
+      {modelSparkles && <JewelrySparkles count={30} isPlane={false} modelScene={clonedScene} />}
+    </group>
       <NosePinDebugMarkers leftNostrilDebugRef={leftNostrilDebugRef} rightNostrilDebugRef={rightNostrilDebugRef} showOccluder={showOccluder} />
     </group>
   );
@@ -1086,13 +1094,13 @@ const NosePinOBJMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSpa
 
   return (
     <group>      <group ref={groupRef}>
-        <primitive
-          object={clonedScene}
-          rotation={modelRot || [0, 0, 0]}
-          position={modelPos || [0, 0, 0]}
-        />
-        {modelSparkles && <JewelrySparkles count={30} isPlane={false} modelScene={clonedScene} />}
-      </group>
+      <primitive
+        object={clonedScene}
+        rotation={modelRot || [0, 0, 0]}
+        position={modelPos || [0, 0, 0]}
+      />
+      {modelSparkles && <JewelrySparkles count={30} isPlane={false} modelScene={clonedScene} />}
+    </group>
       <NosePinDebugMarkers leftNostrilDebugRef={leftNostrilDebugRef} rightNostrilDebugRef={rightNostrilDebugRef} showOccluder={showOccluder} />
     </group>
   );
@@ -1111,7 +1119,7 @@ const NosePinImageMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelS
 
   const imagePath = activeModel?.glbPath || '';
   const texture = useTexture(imagePath);
-  
+
   const material = React.useMemo(() => {
     return new THREE.MeshBasicMaterial({
       map: texture,
@@ -1122,7 +1130,7 @@ const NosePinImageMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelS
     });
   }, [texture]);
 
-  useNosePinTracker(landmarksRef, groupRef, leftNostrilDebugRef, rightNostrilDebugRef, holeUniformsRef, modelScale, sharedState);
+  useNosePinTracker(landmarksRef, groupRef, leftNostrilDebugRef, rightNostrilDebugRef, holeUniformsRef, modelScale, sharedState, true);
 
   if (!texture) return null;
 
@@ -1955,11 +1963,11 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
           <>
             {/* Face mesh depth occluder — needed for eyewear, necklace, and nosepin */}
             {(isEyewear || isNecklace || category === 'nosepin') && (
-              <FullFaceMesh 
-                landmarksRef={landmarksRef} 
-                showFaceMesh={(isEyewear || category === 'nosepin') && showFaceMesh} 
-                showOccluder={showOccluder} 
-                sharedState={sharedState} 
+              <FullFaceMesh
+                landmarksRef={landmarksRef}
+                showFaceMesh={(isEyewear || category === 'nosepin') && showFaceMesh}
+                showOccluder={showOccluder}
+                sharedState={sharedState}
                 isNoseOccluder={category === 'nosepin'}
               />
             )}
