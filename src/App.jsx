@@ -33,7 +33,7 @@ function HomePage() {
     bracelets: { emoji: '🔗', icon: '/bracelets.png', gradient: 'linear-gradient(135deg, #10b981, #06b6d4)', label: 'Bracelets', shadow: 'rgba(16, 185, 129, 0.5)' },
     watch:     { emoji: '⌚', icon: '/watch.png', gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6)', label: 'Watches', shadow: 'rgba(99, 102, 241, 0.5)' },
     earrings:  { emoji: '✨', icon: '/earrings_thumbnail.png', gradient: 'linear-gradient(135deg, #a855f7, #ec4899)', label: 'Earrings', shadow: 'rgba(168, 85, 247, 0.5)' },
-    nosepin:   { emoji: '💎', gradient: 'linear-gradient(135deg, #14b8a6, #0ea5e9)', label: 'Nose Pins', shadow: 'rgba(20, 184, 166, 0.5)' },
+    nosepin:   { emoji: '💎', icon: '/models/nosepin/nosepin_thumnail.png', gradient: 'linear-gradient(135deg, #14b8a6, #0ea5e9)', label: 'Nose Pins', shadow: 'rgba(20, 184, 166, 0.5)' },
   };
 
   const handleCategorySelect = (cat) => {
