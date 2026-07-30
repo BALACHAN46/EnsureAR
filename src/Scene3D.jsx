@@ -1950,7 +1950,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
   const supportsDrag = category === 'necklace' || category === 'earrings';
 
   return (
-    <div className="canvas-container" style={{ position: 'relative', pointerEvents: supportsDrag ? 'auto' : 'none' }}>
+    <div className="canvas-container" style={{ position: 'relative', pointerEvents: supportsDrag ? 'auto' : 'none', touchAction: 'none' }}>
       <Canvas gl={{ preserveDrawingBuffer: true, alpha: true, antialias: true }} orthographic camera={{ zoom: 150, position: [0, 0, 100] }}>
         <VideoBackground videoFrameRef={videoFrameRef} />
         <DynamicLighting videoFrameRef={videoFrameRef} />

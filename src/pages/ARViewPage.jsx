@@ -76,7 +76,7 @@ export default function ARViewPage() {
   const [showTopControls, setShowTopControls] = useState(false);
   
   // Toggle state for bottom model carousel
-  const [showBottomCarousel, setShowBottomCarousel] = useState(true);
+  const [showBottomCarousel, setShowBottomCarousel] = useState(false);
 
   // Draggable help button position
   const [helpBtnPos, setHelpBtnPos] = useState({ x: null, y: null });
@@ -1003,6 +1003,18 @@ export default function ARViewPage() {
 
       {/* ── Right dock: Models ── */}
       <div className="ar-right-dock" style={{ top: railTop }}>
+        <button
+          onClick={() => setShowBottomCarousel(!showBottomCarousel)}
+          className="ar-model-toggle-btn"
+          title={showBottomCarousel ? "Hide Models" : "Show Models"}
+        >
+          {showBottomCarousel ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          )}
+        </button>
+
         <div className="carousel-track vertical">
           {(showBottomCarousel ? activeCategoryModels : [activeModel || activeCategoryModels[0]].filter(Boolean)).map(model => (
             <div
@@ -1027,18 +1039,6 @@ export default function ARViewPage() {
             </div>
           ))}
         </div>
-
-        <button
-          onClick={() => setShowBottomCarousel(!showBottomCarousel)}
-          className="ar-model-toggle-btn"
-          title={showBottomCarousel ? "Hide Models" : "Show Models"}
-        >
-          {showBottomCarousel ? (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
-          ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-          )}
-        </button>
       </div>
     </div>
   );
