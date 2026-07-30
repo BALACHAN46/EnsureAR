@@ -66,6 +66,7 @@ export default function ARViewPage() {
   const [autoRotate, setAutoRotate] = useState(true);
   const [resetTick, setResetTick] = useState(0);
   const [headerHeight, setHeaderHeight] = useState(112);
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   // Category AR guide modal (entry-point + in-AR help)
   const [guideOpen, setGuideOpen] = useState(false);
@@ -74,9 +75,148 @@ export default function ARViewPage() {
 
   // Toggle state for top-right AR controls
   const [showTopControls, setShowTopControls] = useState(false);
-  
-  // Toggle state for bottom model carousel
-  const [showBottomCarousel, setShowBottomCarousel] = useState(false);
+
+  // Whether the sidebar's category strip / model grid / promo content is expanded
+  const [categoryStripOpen, setCategoryStripOpen] = useState(true);
+
+  // Which page of the model grid is showing (paginated)
+  const [modelPage, setModelPage] = useState(0);
+
+  // Phone/tablet bottom sheet shows 1 row of 3 (rest via pagination);
+  // desktop sidebar shows 3 rows of 3 (9 per page)
+  const [isMobileLayout, setIsMobileLayout] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : false
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)');
+    const handler = (e) => setIsMobileLayout(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  const MODELS_PER_PAGE = isMobileLayout ? 3 : 9;
+
+  // Reset to the first page whenever the active category changes
+  useEffect(() => {
+    setModelPage(0);
+  }, [category]);
+
+  // Also reset to the first page if the layout switches between mobile/desktop
+  // page sizes (otherwise modelPage could point past the end of the new,
+  // smaller page size)
+  useEffect(() => {
+    setModelPage(0);
+  }, [MODELS_PER_PAGE]);
+
+  // Phone-only bottom bar (zoom/capture/category row) — hidden by default,
+  // revealed by tapping its toggle arrow
+  const [mobileBarOpen, setMobileBarOpen] = useState(false);
+
+  // Category strip: auto-scrolls continuously and non-stop, at all times —
+  // the user can also grab and drag it (mouse) or swipe it (touch, native) to
+  // move it manually at any moment. Hovering pauses it; moving off resumes it
+  // smoothly. Positioning is done via a CSS transform on the track (not
+  // scrollLeft) — this page also runs a heavy WebGL/face-tracking render loop
+  // every frame, and reading scrollLeft right after writing it (as a
+  // scrollLeft-based approach requires) forces a synchronous layout on every
+  // single animation frame, which combined with that render load is what was
+  // causing the visible stutter. A transform is compositor-only and doesn't
+  // force layout, so it stays smooth under that same load.
+  const categoryStripRef = useRef(null);
+  const categoryTrackRef = useRef(null);
+  const categoryOffsetRef = useRef(0);
+  const categoryDragRef = useRef({ isDown: false, startX: 0, startOffset: 0, moved: false });
+
+  useEffect(() => {
+    const strip = categoryStripRef.current;
+    const track = categoryTrackRef.current;
+    if (!strip || !track) return;
+
+    let rafId;
+    let lastTime = null;
+    let hovered = false;
+    let halfWidth = track.scrollWidth / 2;
+    const SPEED_PX_PER_SEC = 40; // time-based (not per-frame) so it stays a
+    // constant, visible speed regardless of the actual frame rate.
+
+    const applyOffset = () => {
+      track.style.transform = `translateX(${-categoryOffsetRef.current}px)`;
+    };
+    applyOffset();
+
+    const tick = (time) => {
+      if (lastTime === null) lastTime = time;
+      const dt = (time - lastTime) / 1000;
+      lastTime = time;
+
+      if (!hovered && !categoryDragRef.current.isDown && halfWidth > 0) {
+        categoryOffsetRef.current += SPEED_PX_PER_SEC * dt;
+        if (categoryOffsetRef.current >= halfWidth) categoryOffsetRef.current -= halfWidth;
+        applyOffset();
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+
+    // Re-measure whenever the track's actual rendered width changes — not just
+    // on window resize, but also the moment the category list first populates
+    // (orderedCategories loads asynchronously from catalog.json), which a
+    // one-time measurement at mount would otherwise miss, leaving halfWidth
+    // stuck at 0 and the auto-scroll permanently doing nothing until some
+    // unrelated resize happened to fire.
+    const ro = new ResizeObserver(() => { halfWidth = track.scrollWidth / 2; });
+    ro.observe(track);
+
+    const onMouseEnter = () => { hovered = true; };
+    const onMouseLeave = () => { hovered = false; };
+
+    const onDown = (clientX) => {
+      categoryDragRef.current = { isDown: true, startX: clientX, startOffset: categoryOffsetRef.current, moved: false };
+    };
+    const onMove = (clientX) => {
+      const drag = categoryDragRef.current;
+      if (!drag.isDown) return;
+      const dx = clientX - drag.startX;
+      if (Math.abs(dx) > 4) drag.moved = true;
+      let next = drag.startOffset - dx;
+      if (halfWidth > 0) next = ((next % halfWidth) + halfWidth) % halfWidth;
+      categoryOffsetRef.current = next;
+      applyOffset();
+    };
+    const onUp = () => {
+      categoryDragRef.current.isDown = false;
+    };
+
+    const onMouseDown = (e) => onDown(e.clientX);
+    const onMouseMove = (e) => onMove(e.clientX);
+    const onTouchStart = (e) => onDown(e.touches[0].clientX);
+    const onTouchMove = (e) => onMove(e.touches[0].clientX);
+
+    strip.addEventListener('mouseenter', onMouseEnter);
+    strip.addEventListener('mouseleave', onMouseLeave);
+    strip.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onUp);
+    strip.addEventListener('touchstart', onTouchStart, { passive: true });
+    strip.addEventListener('touchmove', onTouchMove, { passive: true });
+    strip.addEventListener('touchend', onUp);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      ro.disconnect();
+      strip.removeEventListener('mouseenter', onMouseEnter);
+      strip.removeEventListener('mouseleave', onMouseLeave);
+      strip.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onUp);
+      strip.removeEventListener('touchstart', onTouchStart);
+      strip.removeEventListener('touchmove', onTouchMove);
+      strip.removeEventListener('touchend', onUp);
+    };
+  }, [categoryStripOpen]);
+
+  // Phone-only bottom sheet (models + promo) — opened by tapping a category
+  // chip in the mobile bottom bar, or the bar's chevron
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
 
   // Draggable help button position
   const [helpBtnPos, setHelpBtnPos] = useState({ x: null, y: null });
@@ -159,7 +299,7 @@ export default function ARViewPage() {
     const size = 42;
     const finalX = Math.min(Math.max(nx, 4), vw - size - 4);
     const finalY = Math.min(Math.max(ny, 4), vh - size - 4);
-    
+
     if (helpDragRef.current) {
       helpDragRef.current.style.position = 'fixed';
       helpDragRef.current.style.left = `${finalX}px`;
@@ -573,8 +713,60 @@ export default function ARViewPage() {
     );
   }
 
+  // Shared between the desktop sidebar and the phone bottom sheet
+  const renderModelGridAndPromo = () => (
+    <>
+      <div className="carousel-track grid">
+        {activeCategoryModels.slice(modelPage * MODELS_PER_PAGE, modelPage * MODELS_PER_PAGE + MODELS_PER_PAGE).map(model => (
+          <div
+            key={model.id}
+            className={`carousel-item ${activeModel?.id === model.id ? 'active' : ''}`}
+            onClick={() => handleModelSelect(model)}
+            title={model.name}
+          >
+            {model.thumbnailPath ? (
+              <img src={model.thumbnailPath} alt={model.name} />
+            ) : (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#94a3b8' }}>
+                {model.name.charAt(0)}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {activeCategoryModels.length > MODELS_PER_PAGE && (
+        <div className="tryon-pagination">
+          <button
+            type="button"
+            onClick={() => setModelPage(p => Math.max(0, p - 1))}
+            disabled={modelPage === 0}
+            aria-label="Previous models"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+          </button>
+          <span>{modelPage + 1} / {Math.ceil(activeCategoryModels.length / MODELS_PER_PAGE)}</span>
+          <button
+            type="button"
+            onClick={() => setModelPage(p => Math.min(Math.ceil(activeCategoryModels.length / MODELS_PER_PAGE) - 1, p + 1))}
+            disabled={modelPage >= Math.ceil(activeCategoryModels.length / MODELS_PER_PAGE) - 1}
+            aria-label="Next models"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+          </button>
+        </div>
+      )}
+
+      <div className="tryon-sidebar-promo">
+        <h3>Try before you buy — virtually</h3>
+        <p>A seamless blend of technology and style — see how your favorite pieces look on you instantly.</p>
+      </div>
+    </>
+  );
+
   return (
-    <div className="app-container">
+    <div className="tryon-split-layout">
+    <div className="tryon-camera-pane">
 
       {/* ── Fixed header: back button, Try On / 3D Configurator switcher, mode-specific controls ── */}
       <div className="ar-header" ref={headerRef}>
@@ -613,106 +805,126 @@ export default function ARViewPage() {
             </button>
           </div>
 
-          <div className="ar-topbar-right" style={{ flex: 1, minWidth: 0, display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'flex-end' }}>
-            {viewMode === 'tryon' && (
-              <div className="ar-extra-controls-scroll" style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', minWidth: 0, scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                <style>{`.ar-extra-controls-scroll::-webkit-scrollbar { display: none; } .ar-extra-controls-scroll > * { flex-shrink: 0; }`}</style>
-                <button
-                  className="ar-ctrl-btn"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.8rem', borderRadius: '8px' }}
-                  onClick={handleCapture}
-                  title="Take Photo"
-                >
-                  <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z" /></svg>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Capture</span>
-                </button>
-
-                {showTopControls && (
-                  <>
-                    {(category === 'necklace' || category === 'earrings') && (
-                      <button
-                        className="ar-ctrl-btn"
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.8rem', borderRadius: '8px' }}
-                        onClick={() => setDragResetTick(t => t + 1)}
-                        title="Undo any drag-to-reposition and snap the model back to its original placement"
-                      >
-                        <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" /></svg>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Reset Position</span>
-                      </button>
-                    )}
-
-                    {hasCustomizations && (
-                      <button
-                        className="ar-ctrl-btn"
-                        style={{ color: '#fbbf24', borderColor: 'rgba(251, 191, 36, 0.4)', background: 'rgba(251, 191, 36, 0.1)', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.8rem', borderRadius: '8px' }}
-                        onClick={() => {
-                          setCustomMaterials({});
-                          setActiveColorId('original');
-                          setActiveSecondaryColorId('original_jewel');
-                        }}
-                        title="Reset to Original Model"
-                      >
-                        <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" /></svg>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Reset Design</span>
-                      </button>
-                    )}
-
-                    {isAdmin && (
-                      <button
-                        className={`ar-ctrl-btn ${showFaceMesh ? 'ar-ctrl-btn--active' : ''}`}
-                        onClick={() => setShowFaceMesh(p => !p)}
-                      >
-                        {showFaceMesh ? 'Hide Mesh' : 'Show Mesh'}
-                      </button>
-                    )}
-
-                    {isAdmin && (
-                      <button
-                        className={`ar-ctrl-btn ${showOccluder ? 'ar-ctrl-btn--active' : ''}`}
-                        onClick={() => setShowOccluder(p => !p)}
-                      >
-                        {showOccluder ? 'Hide Occluder' : 'Show Occluder'}
-                      </button>
-                    )}
-
-                    {isAdmin && (
-                      <button
-                        className={`ar-ctrl-btn ${showTuning ? 'ar-ctrl-btn--active' : ''}`}
-                        onClick={() => setShowTuning(p => !p)}
-                      >
-                        ⚙️ Tuning
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-
-            {viewMode === 'tryon' && (
-              <button
-                className="ar-ctrl-btn"
-                onClick={() => setShowTopControls(!showTopControls)}
-                title={showTopControls ? "Hide Controls" : "Show Controls"}
-                style={{ padding: '0.4rem', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                {showTopControls ? (
-                  // Chevron Right (to close)
-                  <svg style={{ width: 18, height: 18 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                ) : (
-                  // Chevron Left (to open)
-                  <svg style={{ width: 18, height: 18 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M15 18l-6-6 6-6" />
-                  </svg>
-                )}
-              </button>
-            )}
-
-
-          </div>
+          <div className="ar-topbar-right" style={{ flex: 1, minWidth: 0, display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'flex-end' }} />
         </div>
       </div>
+
+      {/* ── Vertical control stack: capture at top, zoom/reset/admin toggles below, expand chevron at bottom ── */}
+      {viewMode === 'tryon' && (
+        <div className="ar-vertical-controls">
+          <button
+            className="ar-ctrl-btn"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.6rem', borderRadius: '50%' }}
+            onClick={handleCapture}
+            title="Take Photo"
+          >
+            <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z" /></svg>
+          </button>
+
+          <button
+            className="ar-ctrl-btn"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.6rem', borderRadius: '50%' }}
+            onClick={() => setZoomLevel(z => Math.max(1.0, z - 0.2))}
+            title="Zoom Out"
+          >
+            <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+          </button>
+          <button
+            className="ar-ctrl-btn"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.6rem', borderRadius: '50%' }}
+            onClick={() => setZoomLevel(z => Math.min(3.0, z + 0.2))}
+            title="Zoom In"
+          >
+            <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+          </button>
+
+          {showTopControls && (
+            <>
+              {(category === 'necklace' || category === 'earrings') && (
+                <button
+                  className="ar-ctrl-btn"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.6rem', borderRadius: '50%' }}
+                  onClick={() => setDragResetTick(t => t + 1)}
+                  title="Undo any drag-to-reposition and snap the model back to its original placement"
+                >
+                  <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" /></svg>
+                </button>
+              )}
+
+              {hasCustomizations && (
+                <button
+                  className="ar-ctrl-btn"
+                  style={{ color: '#fbbf24', borderColor: 'rgba(251, 191, 36, 0.4)', background: 'rgba(251, 191, 36, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.6rem', borderRadius: '50%' }}
+                  onClick={() => {
+                    setCustomMaterials({});
+                    setActiveColorId('original');
+                    setActiveSecondaryColorId('original_jewel');
+                  }}
+                  title="Reset to Original Model"
+                >
+                  <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" /></svg>
+                </button>
+              )}
+
+              {isAdmin && (
+                <button
+                  className={`ar-ctrl-btn ${showFaceMesh ? 'ar-ctrl-btn--active' : ''}`}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.6rem', borderRadius: '50%' }}
+                  onClick={() => setShowFaceMesh(p => !p)}
+                  title={showFaceMesh ? 'Hide Mesh' : 'Show Mesh'}
+                >
+                  <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
+                </button>
+              )}
+
+              {isAdmin && (
+                <button
+                  className={`ar-ctrl-btn ${showOccluder ? 'ar-ctrl-btn--active' : ''}`}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.6rem', borderRadius: '50%' }}
+                  onClick={() => setShowOccluder(p => !p)}
+                  title={showOccluder ? 'Hide Occluder' : 'Show Occluder'}
+                >
+                  {showOccluder ? (
+                    <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                  ) : (
+                    <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                  )}
+                </button>
+              )}
+
+              {isAdmin && (
+                <button
+                  className={`ar-ctrl-btn ${showTuning ? 'ar-ctrl-btn--active' : ''}`}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.6rem', borderRadius: '50%' }}
+                  onClick={() => setShowTuning(p => !p)}
+                  title="Tuning"
+                >
+                  <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+                </button>
+              )}
+            </>
+          )}
+
+          <button
+            className="ar-ctrl-btn"
+            onClick={() => setShowTopControls(!showTopControls)}
+            title={showTopControls ? "Hide Controls" : "Show Controls"}
+            style={{ padding: '0.4rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            {showTopControls ? (
+              // Chevron Up (to close)
+              <svg style={{ width: 18, height: 18 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 15l-6-6-6 6" />
+              </svg>
+            ) : (
+              // Chevron Down (to open)
+              <svg style={{ width: 18, height: 18 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* AR Help (?) floating button – draggable, appears after guide accepted, respects config */}
       {viewMode === 'tryon' && guideAccepted && arGuideConfig.helpIconEnabled && (
@@ -926,9 +1138,9 @@ export default function ARViewPage() {
         </div>
       )}
 
-      {/* ── Main viewport: live AR try-on ── */}
+    {/* ── Main viewport: live AR try-on ── */}
       <div className="tracking-container">
-        <div className="ar-content">
+        <div className="ar-content" style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center center', transition: 'transform 0.2s ease-out' }}>
           {isHandTracking ? (
             <HandTracker onLandmarks={(lm, img, worldLm, handedness) => {
               landmarksRef.current = lm;
@@ -978,68 +1190,106 @@ export default function ARViewPage() {
           />
         </div>
       </div>
-      {/* ── Left dock: Categories ── */}
-      <div className="ar-side-dock" style={{ top: railTop }}>
-        <div className="ar-category-col">
-          {orderedCategories.map(cat => {
-            const meta = getCategoryMeta(cat);
-            return (
-              <button
-                key={cat}
-                className={`ar-category-tile ${category === cat ? 'active' : ''}`}
-                style={{ '--chip-color': meta.color }}
-                onClick={() => handleCategorySwitch(cat)}
-                title={meta.label}
-              >
-                <span className="ar-category-tile-icon">
-                  {meta.icon ? <img src={meta.icon} alt={meta.label} style={{ width: '20px', height: '20px', objectFit: 'contain' }} /> : meta.emoji}
-                </span>
-                <span className="ar-category-tile-label">{meta.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+    </div>{/* /tryon-camera-pane */}
 
-      {/* ── Right dock: Models ── */}
-      <div className="ar-right-dock" style={{ top: railTop }}>
+      {/* ── Sidebar: category strip + models in category ── */}
+      <div className="tryon-sidebar">
         <button
-          onClick={() => setShowBottomCarousel(!showBottomCarousel)}
-          className="ar-model-toggle-btn"
-          title={showBottomCarousel ? "Hide Models" : "Show Models"}
+          type="button"
+          className="tryon-sidebar-header"
+          onClick={() => setCategoryStripOpen(o => !o)}
         >
-          {showBottomCarousel ? (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
-          ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-          )}
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {getCategoryMeta(category).label}
+          </span>
+          <svg
+            style={{ width: 16, height: 16, transform: categoryStripOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease', flexShrink: 0 }}
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
         </button>
 
-        <div className="carousel-track vertical">
-          {(showBottomCarousel ? activeCategoryModels : [activeModel || activeCategoryModels[0]].filter(Boolean)).map(model => (
-            <div
-              key={model.id}
-              className={`carousel-item ${activeModel?.id === model.id ? 'active' : ''}`}
-              onClick={() => handleModelSelect(model)}
-              title={model.name}
-            >
-              {model.thumbnailPath ? (
-                <img
-                  src={model.thumbnailPath}
-                  alt={model.name}
-                  style={{
-                    background: model.thumbnailPath.toLowerCase().endsWith('.png') ? 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.2) 100%)' : 'transparent'
-                  }}
-                />
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontWeight: 'bold', color: '#94a3b8' }}>
-                  {model.name.charAt(0)}
-                </div>
-              )}
+        {categoryStripOpen && (
+          <div className="tryon-category-strip" ref={categoryStripRef}>
+            <div className="tryon-category-track" ref={categoryTrackRef}>
+              {[...orderedCategories, ...orderedCategories].map((cat, i) => {
+                const meta = getCategoryMeta(cat);
+                return (
+                  <button
+                    key={`${cat}-${i}`}
+                    className={`tryon-category-chip ${category === cat ? 'active' : ''}`}
+                    onClick={() => { if (categoryDragRef.current.moved) return; handleCategorySwitch(cat); }}
+                  >
+                    <span className="frame">
+                      {meta.icon ? <img src={meta.icon} alt="" style={{ width: '20px', height: '20px', objectFit: 'contain' }} /> : meta.emoji}
+                    </span>
+                    <span>{meta.label}</span>
+                  </button>
+                );
+              })}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
+
+        {renderModelGridAndPromo()}
       </div>
+
+      {/* ── Phone-only bottom bar: hidden by default, revealed by the toggle arrow ── */}
+      {viewMode === 'tryon' && (
+        <div className="tryon-mobile-bar">
+          <button
+            className="tryon-mobile-bar-toggle"
+            onClick={() => setMobileBarOpen(o => {
+              const next = !o;
+              if (!next) setMobileSheetOpen(false); // hiding the bar also hides the model sheet
+              return next;
+            })}
+            title={mobileBarOpen ? 'Hide controls' : 'Show controls'}
+          >
+            <svg style={{ width: 18, height: 18, transform: mobileBarOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 15l-6-6-6 6" />
+            </svg>
+          </button>
+
+          <div className={`tryon-mobile-bar-content ${mobileBarOpen ? 'open' : ''}`}>
+            <div className="tryon-mobile-controls">
+              <button className="ar-ctrl-btn" onClick={() => setZoomLevel(z => Math.max(1.0, z - 0.2))} title="Zoom Out">
+                <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+              </button>
+              <button className="ar-ctrl-btn tryon-mobile-capture" onClick={handleCapture} title="Take Photo">
+                <svg style={{ width: 18, height: 18 }} viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z" /></svg>
+              </button>
+              <button className="ar-ctrl-btn" onClick={() => setZoomLevel(z => Math.min(3.0, z + 0.2))} title="Zoom In">
+                <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+              </button>
+            </div>
+
+            <div className="tryon-mobile-categories">
+              {orderedCategories.map(cat => {
+                const meta = getCategoryMeta(cat);
+                return (
+                  <button
+                    key={cat}
+                    className={`tryon-mobile-category-chip ${category === cat ? 'active' : ''}`}
+                    onClick={() => { handleCategorySwitch(cat); setMobileSheetOpen(true); }}
+                  >
+                    {meta.icon ? <img src={meta.icon} alt="" /> : <span>{meta.emoji}</span>}
+                    <span>{meta.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Phone-only bottom sheet: models + promo, slides up over the bottom bar ── */}
+      {viewMode === 'tryon' && (
+        <div className={`tryon-mobile-sheet ${mobileSheetOpen ? 'open' : ''}`}>
+          {renderModelGridAndPromo()}
+        </div>
+      )}
     </div>
   );
 }

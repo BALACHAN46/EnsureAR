@@ -50,7 +50,7 @@ const HandTracker = ({ onLandmarks }) => {
           }
         },
         width: 1280,
-        height: 720
+        height: 960
       });
       camera.start();
     }
@@ -72,7 +72,7 @@ const HandTracker = ({ onLandmarks }) => {
         videoConstraints={{
           facingMode: "user",
           width: 1280,
-          height: 720
+          height: 960
         }}
       />
       {isLoading && (

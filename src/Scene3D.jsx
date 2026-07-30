@@ -1294,18 +1294,6 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkl
     // Scale Z to match viewport depth dynamically
     const anchorZ = -bridge.z * viewport.width * 1.5;
 
-    const getMapped = (index) => {
-      const lm = landmarks[index];
-      return {
-        x: -(lm.x - 0.5) * (viewport.width * scaleX),
-        y: -(lm.y - 0.5) * (viewport.height * scaleY),
-        z: -lm.z * viewport.width * 1.5
-      };
-    };
-
-    const leftTemple = getMapped(234);
-    const rightTemple = getMapped(454);
-
     // --- DYNAMIC SCALE (ROTATION INDEPENDENT) ---
     // Calculate face width using a true 1:1 Z-ratio so the scale doesn't artificially inflate when the head turns!
     const rawDiffX = -(landmarks[454].x - landmarks[234].x) * (viewport.width * scaleX);
@@ -1316,24 +1304,24 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkl
     const faceWidth = Math.sqrt(rawDiffX * rawDiffX + rawDiffY * rawDiffY + rawDiffZ * rawDiffZ);
 
     // --- 3D ROTATION (POSE ESTIMATION) ---
-    const diffX = rightTemple.x - leftTemple.x;
-    const diffY = rightTemple.y - leftTemple.y;
-    const diffZ = rightTemple.z - leftTemple.z;
+    // NOTE: yaw/pitch must be computed from the same true 1:1-Z-ratio vectors
+    // as faceWidth above (rawDiffX/Y/Z), not from getMapped()'s leftTemple/
+    // rightTemple/top/bottom — those have Z scaled by an extra 1.5x relative
+    // to X/Y (see getMapped's "* viewport.width * 1.5" vs. the 1x used for
+    // rawDiffZ), which distorts the vector's direction and made asin()
+    // over-rotate at larger head-turn angles (glasses flying off to the side
+    // instead of tracking a real side-profile turn).
 
     // Removed negative sign to fix inverted roll!
-    const roll = Math.atan2(diffY, diffX);
-    // Use the scaled faceWidth for accurate yaw calculation
-    const yaw = Math.asin(diffZ / Math.sqrt(diffX * diffX + diffY * diffY + diffZ * diffZ));
+    const roll = Math.atan2(rawDiffY, rawDiffX);
+    const yaw = Math.asin(rawDiffZ / faceWidth);
 
-    const top = getMapped(10);
-    const bottom = getMapped(152);
+    const rawVDiffX = -(landmarks[152].x - landmarks[10].x) * (viewport.width * scaleX);
+    const rawVDiffY = -(landmarks[152].y - landmarks[10].y) * (viewport.height * scaleY);
+    const rawVDiffZ = -(landmarks[152].z - landmarks[10].z) * viewport.width; // 1:1, no 1.5 multiplier
 
-    const verticalDist = Math.sqrt(
-      Math.pow(bottom.x - top.x, 2) +
-      Math.pow(bottom.y - top.y, 2) +
-      Math.pow(bottom.z - top.z, 2)
-    );
-    const pitch = -Math.asin((bottom.z - top.z) / verticalDist);
+    const verticalDist = Math.sqrt(rawVDiffX * rawVDiffX + rawVDiffY * rawVDiffY + rawVDiffZ * rawVDiffZ);
+    const pitch = -Math.asin(rawVDiffZ / verticalDist);
 
     // Apply rotation with correct Euler order (using slerp for smooth rotation)
     const targetEuler = new THREE.Euler(pitch, yaw, roll, 'YXZ');
@@ -1477,43 +1465,53 @@ const JewelryMeshInner = ({ groupRef, landmarksRef, modelPos, modelRot, modelSca
 const VideoBackground = ({ videoFrameRef }) => {
   const { scene } = useThree();
   const textureRef = useRef(null);
+  const meshRef = useRef(null);
 
   React.useEffect(() => {
     const tex = new THREE.Texture();
     tex.colorSpace = THREE.SRGBColorSpace;
-    // Mirror the texture to match AR view
-    tex.wrapS = THREE.RepeatWrapping;
-    tex.repeat.x = -1;
-
     textureRef.current = tex;
-    scene.background = tex;
+
+    const geo = new THREE.PlaneGeometry(1, 1);
+    const mat = new THREE.MeshBasicMaterial({ map: tex, depthTest: false, depthWrite: false, toneMapped: false });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.renderOrder = -9999;
+    scene.add(mesh);
+    meshRef.current = mesh;
 
     return () => {
-      scene.background = null;
+      scene.remove(mesh);
+      geo.dispose();
+      mat.dispose();
       tex.dispose();
     };
   }, [scene]);
 
   useFrame(({ viewport }) => {
-    if (videoFrameRef.current && textureRef.current) {
+    if (videoFrameRef.current && textureRef.current && meshRef.current) {
       const tex = textureRef.current;
       tex.image = videoFrameRef.current;
       tex.needsUpdate = true;
 
-      // Apply object-fit: cover scaling to the background texture!
       const videoNode = document.querySelector('.webcam-video');
       const videoAspect = (videoNode && videoNode.videoHeight) ? (videoNode.videoWidth / videoNode.videoHeight) : (640 / 480);
       const containerAspect = viewport.width / viewport.height;
 
-      let scaleX = 1; let scaleY = 1;
+      let width = viewport.width;
+      let height = viewport.height;
+
+      // Fill the pane fully (crop overflow) instead of shrinking to fit inside it —
+      // matches the "object-fit: cover" assumption the landmark scaleX/scaleY
+      // compensation elsewhere in this file (FullFaceMesh, HandMesh, earring/nosepin
+      // trackers, NecklaceMesh, RingMesh) is already written for.
       if (containerAspect > videoAspect) {
-        scaleY = containerAspect / videoAspect;
+        height = viewport.width / videoAspect;
       } else {
-        scaleX = videoAspect / containerAspect;
+        width = viewport.height * videoAspect;
       }
 
-      tex.repeat.set(-1 / scaleX, 1 / scaleY);
-      tex.offset.set((1 - (-1 / scaleX)) / 2, (1 - (1 / scaleY)) / 2);
+      meshRef.current.scale.set(-width, height, 1);
+      meshRef.current.position.set(0, 0, -50);
     }
   });
 

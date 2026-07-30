@@ -1,12 +1,18 @@
 {
   "modelDefaults": {
     "fd62c174d37c": {
-      "posX": 0.07,
+      "posX": 0.02,
       "posY": 0.61,
       "posZ": -0.27,
       "rotX": 0,
       "rotY": 0,
       "rotZ": 0,
+      "leftPosX": 0.07,
+      "leftPosY": 0.61,
+      "leftPosZ": -0.27,
+      "leftRotX": 0,
+      "leftRotY": 0,
+      "leftRotZ": 0,
       "scale": 1.08,
       "enableSparkles": true,
       "category": "necklace"
@@ -418,13 +424,19 @@
       "category": "necklace"
     },
     "gold_necklace1": {
-      "posX": 0.02,
-      "posY": 1.34,
-      "posZ": -0.27,
+      "posX": 0.05,
+      "posY": -0.15,
+      "posZ": -0.46,
       "rotX": 0,
       "rotY": 0,
       "rotZ": 0,
-      "scale": 1.08,
+      "leftPosX": 0.02,
+      "leftPosY": 1.34,
+      "leftPosZ": -0.27,
+      "leftRotX": 0,
+      "leftRotY": 0,
+      "leftRotZ": 0,
+      "scale": 0.99,
       "enableSparkles": true,
       "category": "necklace"
     },

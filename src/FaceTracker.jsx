@@ -90,7 +90,7 @@ const FaceTracker = ({ onLandmarks, onPoseLandmarks, category }) => {
 
             },
             width: 1280,
-            height: 720
+            height: 960
           });
           camera.start();
         }
@@ -121,7 +121,7 @@ const FaceTracker = ({ onLandmarks, onPoseLandmarks, category }) => {
         videoConstraints={{
           facingMode: "user",
           width: 1280,
-          height: 720
+          height: 960
         }}
       />
       {isLoading && (

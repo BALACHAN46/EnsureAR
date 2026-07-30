@@ -2028,6 +2028,7 @@ img {
 .model-card--deleted .model-card-media {
   filter: grayscale(100%) opacity(0.6);
 }
+
 .model-card--deleted .model-card-name {
   text-decoration: line-through;
   color: rgba(255, 255, 255, 0.5);
@@ -2656,18 +2657,18 @@ img {
 
 .ar-ctrl-btn:hover {
   background: rgba(8, 12, 22, 0.9);
-  border-color: rgba(34, 211, 238, 0.35);
+  border-color: rgba(245, 158, 11, 0.4);
 }
 
 .ar-ctrl-btn--active {
-  background: rgba(34, 211, 238, 0.22);
-  border-color: rgba(34, 211, 238, 0.5);
-  color: var(--sa-cyan-soft);
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.5);
+  color: var(--accent-3);
 }
 
 /* ── Fixed header: back button + Try On / 3D Configurator switcher + mode controls ── */
 .ar-header {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
@@ -2694,8 +2695,10 @@ img {
   padding: 0.875rem 1rem;
   flex-wrap: nowrap;
   overflow-x: auto;
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 .ar-topbar::-webkit-scrollbar {
@@ -2747,9 +2750,28 @@ img {
 }
 
 .ar-mode-btn.active {
-  background: var(--sa-gradient);
-  color: #04121a;
-  box-shadow: 0 2px 14px var(--sa-glow-cyan);
+  background: linear-gradient(135deg, var(--accent-3) 0%, var(--accent) 55%, var(--accent-2) 100%);
+  color: #1c1200;
+  box-shadow: 0 2px 14px var(--accent-glow);
+}
+
+.ar-vertical-controls {
+  position: absolute;
+  top: 0.875rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  max-height: calc(100% - 1.75rem);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.ar-vertical-controls::-webkit-scrollbar {
+  display: none;
 }
 
 @media (max-width: 720px) {
@@ -2783,10 +2805,10 @@ img {
   background: rgba(4, 6, 13, 0.75);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid var(--sa-border-glow);
+  border: 1px solid rgba(245, 158, 11, 0.32);
   border-radius: 12px;
   padding: 8px 18px;
-  color: var(--sa-cyan-soft);
+  color: var(--accent-3);
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
@@ -2917,8 +2939,8 @@ img {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   background: #000;
   overflow: hidden;
   display: flex;
@@ -2955,7 +2977,7 @@ img {
   width: 50px;
   height: 50px;
   border: 4px solid rgba(255, 255, 255, 0.2);
-  border-top-color: var(--sa-cyan);
+  border-top-color: var(--accent-3);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 20px;
@@ -2991,81 +3013,199 @@ img {
 }
 
 /* ─────────────────────────────────────────────────────────
-   LEFT DOCK — column 1: categories, column 2: models in category
+   TRYON SPLIT LAYOUT — camera pane + always-visible category sidebar
 ───────────────────────────────────────────────────────── */
-.ar-side-dock {
-  position: absolute;
-  left: 0;
-  bottom: 0;
+.tryon-split-layout {
   display: flex;
-  align-items: stretch;
-  gap: 0.5rem;
-  padding: 0.625rem 0.5rem 1rem;
-  z-index: 100;
-  transition: top 0.2s ease;
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
 }
 
-.ar-category-col {
+.tryon-camera-pane {
+  flex: 0 0 70%;
+  min-width: 0;
+  height: 100%;
+  position: relative;
+}
+
+.tryon-sidebar {
+  flex: 0 0 30%;
+  min-width: 0;
+  height: 100%;
+  background: var(--sa-glass-strong);
+  border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
   overflow-y: auto;
-  scrollbar-width: none;
-  /* Top/bottom padding must match .ar-model-col so the first tile in each
-     column lines up — otherwise the two rails visibly start at different
-     heights. */
-  padding: 1.25rem 0.375rem;
-  border-radius: 18px;
-  background: transparent;
+  overflow-x: hidden;
 }
 
-.ar-category-col::-webkit-scrollbar {
-  display: none;
+.tryon-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-1);
+  cursor: pointer;
 }
 
-.ar-category-tile {
-  flex-shrink: 0;
-  width: 58px;
+.tryon-sidebar-header:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tryon-category-strip {
+  overflow: hidden;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--border);
+  cursor: grab;
+}
+
+.tryon-category-strip:active {
+  cursor: grabbing;
+}
+
+.tryon-category-track {
+  display: flex;
+  gap: 1.75rem;
+  width: max-content;
+  padding: 0 1.25rem;
+  will-change: transform;
+}
+
+.tryon-category-chip {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 0.5rem 0.25rem;
-  border-radius: 14px;
-  background: rgba(8, 12, 22, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  gap: 0.5rem;
+  flex-shrink: 0;
   color: var(--text-2);
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
   transition: var(--transition);
 }
 
-.ar-category-tile-icon {
-  font-size: 1.125rem;
-  line-height: 1;
-}
-
-.ar-category-tile-label {
-  font-size: 0.5625rem;
-  font-weight: 700;
-  text-align: center;
-  line-height: 1.15;
-  letter-spacing: 0.01em;
-}
-
-.ar-category-tile:hover {
+.tryon-category-chip:hover {
   color: var(--text-1);
-  border-color: rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.08);
 }
 
-.ar-category-tile.active {
-  background: color-mix(in srgb, var(--chip-color) 24%, rgba(8, 12, 22, 0.85));
-  border-color: color-mix(in srgb, var(--chip-color) 60%, transparent);
-  color: white;
-  box-shadow: 0 0 14px color-mix(in srgb, var(--chip-color) 38%, transparent);
+.tryon-category-chip .frame {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
 }
+
+.tryon-category-chip .frame::before,
+.tryon-category-chip .frame::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--text-3);
+  transition: var(--transition);
+}
+
+.tryon-category-chip .frame::before {
+  top: -2px;
+  left: -2px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.tryon-category-chip .frame::after {
+  bottom: -2px;
+  right: -2px;
+  border-left: none;
+  border-top: none;
+}
+
+.tryon-category-chip.active {
+  color: var(--accent-3);
+}
+
+.tryon-category-chip.active .frame::before,
+.tryon-category-chip.active .frame::after {
+  border-color: var(--accent-3);
+}
+
+.tryon-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0 1.25rem;
+}
+
+.tryon-pagination button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-1);
+  transition: var(--transition);
+}
+
+.tryon-pagination button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.tryon-pagination button:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: var(--accent-3);
+}
+
+.tryon-pagination button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.tryon-pagination span {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-2);
+  min-width: 3ch;
+  text-align: center;
+}
+
+.tryon-sidebar-promo {
+  padding: 1.25rem 1.25rem 1.5rem;
+}
+
+.tryon-sidebar-promo h3 {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--text-1);
+  margin-bottom: 0.5rem;
+}
+
+.tryon-sidebar-promo p {
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+/* Tablet/phone (<=768px) handling for the tryon split layout lives in the
+   "TRYON PHONE LAYOUT" block further down (bottom bar + slide-up sheet) —
+   the old stacked-sidebar-below-camera approach was replaced because it left
+   very little vertical room for the sidebar at in-between widths. */
 
 .ar-model-col {
   display: flex;
@@ -3114,22 +3254,29 @@ img {
 }
 
 .carousel-item {
-  flex-shrink: 0;
-  width: 58px;
-  height: 58px;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
   border-radius: 16px;
   overflow: hidden;
-  border: 2px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   cursor: pointer;
   transition: var(--transition);
-  background: radial-gradient(circle, #f8fafc 0%, #94a3b8 100%);
+  background: var(--bg-card);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
 }
 
 .carousel-item img {
+  /* Decoupled from normal flow so each photo's own aspect ratio can never
+     drive the card's box size — every card must stay a uniform square
+     (from .carousel-item's aspect-ratio) no matter how the source photos
+     are cropped. */
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
-  padding: 4px;
+  padding: 10px;
 }
 
 .carousel-item:hover {
@@ -3139,8 +3286,8 @@ img {
 
 .carousel-item.active {
   transform: scale(1.08);
-  border-color: var(--sa-cyan);
-  box-shadow: 0 0 16px var(--sa-glow-cyan);
+  border-color: var(--accent-3);
+  box-shadow: 0 0 14px var(--accent-glow);
 }
 
 .ar-bottom-dock {
@@ -3181,89 +3328,24 @@ img {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 
-.ar-right-dock {
-  position: absolute;
-  right: 0;
-  width: 90px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1.25rem 0.375rem;
-  z-index: 100;
-  pointer-events: none;
-  transition: top 0.2s ease;
-}
-
-.ar-right-dock > * {
-  pointer-events: auto;
-}
-
-.ar-model-toggle-btn {
-  background: rgba(8, 12, 22, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  transition: transform 0.2s ease, background 0.2s ease;
-}
-
-.ar-model-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: scale(1.05);
-}
-
-.carousel-track.vertical {
-  display: flex;
-  flex-direction: column;
-  gap: 0.875rem;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 0.5rem;
-  align-items: center;
+.carousel-track.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-content: start;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  gap: 1.25rem;
+  padding: 1.5rem 1.25rem;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  background: rgba(8, 12, 22, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 18px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-  max-height: calc(100vh - 200px);
 }
 
-.carousel-track.vertical::-webkit-scrollbar {
+.carousel-track.grid::-webkit-scrollbar {
   display: none;
 }
 
 @media (max-width: 640px) {
-  .ar-side-dock {
-    padding: 0.5rem 0.375rem 0.75rem;
-    gap: 0.375rem;
-  }
-
-  .ar-category-tile {
-    width: 46px;
-    padding: 0.4375rem 0.1875rem;
-  }
-
-  .ar-category-tile-label {
-    display: none;
-  }
-
-  .ar-category-col {
-    width: 62px;
-    padding: 0.75rem 0.375rem;
-  }
-
   .ar-bottom-dock {
     bottom: 1rem;
   }
@@ -3274,13 +3356,150 @@ img {
     border-radius: 14px;
   }
 
-  .carousel-item {
-    width: 46px;
-    height: 46px;
-    border-radius: 12px;
+  .carousel-title {
+    display: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   TRYON PHONE/TABLET LAYOUT (<=768px) — full-screen camera, category
+   bar pinned to the bottom, models in a slide-up bottom sheet.
+   Desktop sidebar and vertical controls are hidden here.
+───────────────────────────────────────────────────────── */
+.tryon-mobile-bar,
+.tryon-mobile-sheet {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .tryon-split-layout {
+    flex-direction: row;
   }
 
-  .carousel-title {
+  .tryon-sidebar,
+  .ar-vertical-controls {
+    display: none;
+  }
+
+  .tryon-camera-pane {
+    flex: 1 1 100%;
+  }
+
+  .tryon-mobile-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1001;
+    padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .tryon-mobile-bar-toggle {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 12, 22, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #fff;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    align-self: flex-end;
+    margin-right: 0.25rem;
+  }
+
+  .tryon-mobile-bar-content {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding-top: 0.75rem;
+  }
+
+  .tryon-mobile-bar-content.open {
+    display: flex;
+  }
+
+  .tryon-mobile-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+  }
+
+  .tryon-mobile-capture {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--sa-glass-strong);
+    border: 2px solid rgba(255, 255, 255, 0.6);
+  }
+
+  .tryon-mobile-categories {
+    display: flex;
+    gap: 1.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    width: 100%;
+    justify-content: center;
+    padding: 0 0.5rem;
+  }
+
+  .tryon-mobile-categories::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tryon-mobile-category-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    flex-shrink: 0;
+    color: var(--accent-3);
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .tryon-mobile-category-chip img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+  }
+
+  .tryon-mobile-sheet {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    max-height: 62vh;
+    overflow-y: auto;
+    background: var(--sa-glass-strong);
+    border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    padding-bottom: 150px;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+  }
+
+  .tryon-mobile-sheet.open {
+    transform: translateY(0);
+  }
+
+  .tryon-mobile-sheet .tryon-sidebar-promo {
     display: none;
   }
 }
@@ -3303,16 +3522,16 @@ img {
   border-radius: 9999px;
   font-weight: 600;
   font-size: 0.875rem;
-  border: 1px solid var(--sa-border-glow);
-  box-shadow: 0 0 24px var(--sa-glow-cyan);
+  border: 1px solid rgba(245, 158, 11, 0.32);
+  box-shadow: 0 0 24px var(--accent-glow);
   white-space: nowrap;
 }
 
 .configurator-loader-spinner {
   width: 15px;
   height: 15px;
-  border: 2px solid rgba(34, 211, 238, 0.25);
-  border-top-color: var(--sa-cyan);
+  border: 2px solid rgba(245, 158, 11, 0.25);
+  border-top-color: var(--accent-3);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
   flex-shrink: 0;
@@ -4017,7 +4236,7 @@ img {
    WATCH HELP (?) FLOATING BUTTON
 ───────────────────────────────────────────────────────── */
 .watch-help-btn {
-  position: fixed;
+  position: absolute;
   bottom: 6rem;
   right: 1.1rem;
   z-index: 500;
@@ -4378,22 +4597,27 @@ img {
   margin-bottom: 24px;
   user-select: none;
 }
+
 .drop-zone-react:hover,
 .drop-zone-react.drag-over {
   border-color: #c9973a;
   background: rgba(201, 151, 58, 0.07);
 }
+
 .drop-icon-react {
   font-size: 42px;
   margin-bottom: 12px;
 }
+
 .drop-zone-react p {
   font-size: 14px;
   color: rgba(255, 255, 255, 0.55);
 }
+
 .drop-zone-react strong {
   color: #f5d48e;
 }
+
 .drop-filename-react {
   font-size: 13px;
   color: #c9973a;
@@ -4407,20 +4631,24 @@ img {
   grid-template-columns: 1fr 1fr;
   gap: 18px;
 }
+
 .upload-form-full {
   grid-column: 1 / -1;
 }
+
 .upload-grid-three {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 14px;
   margin-bottom: 14px;
 }
+
 .upload-form-group {
   display: flex;
   flex-direction: column;
   gap: 7px;
 }
+
 .upload-form-group label {
   font-size: 11px;
   font-weight: 600;
@@ -4428,6 +4656,7 @@ img {
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
+
 .upload-form-group input[type='text'],
 .upload-form-group input[type='number'],
 .upload-form-group select {
@@ -4442,12 +4671,14 @@ img {
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
+
 .upload-form-group input[type='text']:focus,
 .upload-form-group input[type='number']:focus,
 .upload-form-group select:focus {
   border-color: rgba(201, 151, 58, 0.55);
   box-shadow: 0 0 0 3px rgba(201, 151, 58, 0.1);
 }
+
 .upload-form-group input[type='file'] {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -4458,9 +4689,11 @@ img {
   cursor: pointer;
   outline: none;
 }
+
 .upload-form-group select option {
   background: #1a1a24;
 }
+
 .upload-hint {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.35);
@@ -4475,6 +4708,7 @@ img {
   border-radius: 12px;
   padding: 0 16px;
 }
+
 .upload-advanced summary {
   padding: 14px 0;
   cursor: pointer;
@@ -4484,11 +4718,13 @@ img {
   list-style: none;
   outline: none;
 }
+
 .upload-advanced[open] summary {
   color: rgba(255, 255, 255, 0.65);
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   margin-bottom: 16px;
 }
+
 .upload-advanced-body {
   padding-bottom: 16px;
 }
@@ -4501,6 +4737,7 @@ img {
   overflow: hidden;
   margin-top: 16px;
 }
+
 .upload-progress-bar-fill {
   height: 100%;
   background: linear-gradient(90deg, #c9973a, #f5d48e);
@@ -4525,10 +4762,12 @@ img {
   transition: transform 0.15s, box-shadow 0.2s;
   box-shadow: 0 4px 20px rgba(201, 151, 58, 0.35);
 }
+
 .upload-btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 28px rgba(201, 151, 58, 0.45);
 }
+
 .upload-btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -4548,9 +4787,11 @@ img {
   justify-content: stretch;
   z-index: 2000;
 }
+
 .upload-modal-overlay.active {
   display: flex;
 }
+
 .upload-modal-content {
   display: flex;
   flex-direction: row;
@@ -4587,12 +4828,14 @@ img {
   padding-bottom: 12px;
   margin-bottom: 4px;
 }
+
 .upload-modal-section-header h3 {
   font-size: 15px;
   font-weight: 700;
   margin: 0 0 3px;
   color: #eef2ff;
 }
+
 .upload-modal-section-header span {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.4);
@@ -4606,6 +4849,7 @@ img {
   flex-direction: column;
   gap: 6px;
 }
+
 .upload-checklist-group-label {
   font-size: 10px;
   font-weight: 700;
@@ -4613,17 +4857,22 @@ img {
   letter-spacing: 0.08em;
   color: rgba(255, 255, 255, 0.55);
 }
+
 .upload-chk-item {
   display: flex;
   align-items: center;
   gap: 8px;
   transition: color 0.3s;
 }
+
 .upload-chk-item.done {
   color: rgba(80, 200, 120, 0.9);
   font-weight: 500;
 }
-.chk-icon { font-size: 14px; }
+
+.chk-icon {
+  font-size: 14px;
+}
 
 /* Rotation sliders */
 .upload-rot-row {
@@ -4631,6 +4880,7 @@ img {
   align-items: center;
   gap: 8px;
 }
+
 .upload-rot-row input[type='range'] {
   accent-color: #c9973a;
 }
@@ -4645,6 +4895,7 @@ img {
   position: relative;
   min-height: 0;
 }
+
 .upload-preview-canvas {
   width: 100%;
   height: 100%;
@@ -4661,8 +4912,14 @@ img {
   gap: 6px;
   z-index: 10;
 }
-.upload-toolbar-left { left: 12px; }
-.upload-toolbar-right { right: 12px; }
+
+.upload-toolbar-left {
+  left: 12px;
+}
+
+.upload-toolbar-right {
+  right: 12px;
+}
 
 .upload-toolbar-btn {
   padding: 6px 12px;
@@ -4677,7 +4934,10 @@ img {
   transition: background 0.15s;
   white-space: nowrap;
 }
-.upload-toolbar-btn:hover { background: rgba(255, 255, 255, 0.2); }
+
+.upload-toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
 
 /* Preview hint */
 .upload-preview-hint {
@@ -4700,6 +4960,7 @@ img {
   gap: 12px;
   justify-content: flex-end;
 }
+
 .upload-btn-cancel {
   padding: 12px 24px;
   border-radius: 10px;
@@ -4712,8 +4973,16 @@ img {
   transition: all 0.2s;
   font-family: 'Inter', sans-serif;
 }
-.upload-btn-cancel:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
-.upload-btn-cancel:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.upload-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.upload-btn-cancel:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 
 .upload-btn-confirm {
   padding: 12px 28px;
@@ -4728,8 +4997,18 @@ img {
   box-shadow: 0 4px 16px rgba(201, 151, 58, 0.3);
   font-family: 'Inter', sans-serif;
 }
-.upload-btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(201, 151, 58, 0.4); }
-.upload-btn-confirm:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.upload-btn-confirm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(201, 151, 58, 0.4);
+}
+
+.upload-btn-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
 
 /* ── Toast ── */
 .upload-toast {
@@ -4751,14 +5030,42 @@ img {
   z-index: 9999;
   pointer-events: none;
 }
-.upload-toast.show { transform: translateY(0); opacity: 1; }
-.upload-toast.success { border-color: rgba(80, 200, 120, 0.35); color: #7df0a8; }
-.upload-toast.error   { border-color: rgba(255, 80, 80, 0.35);  color: #ff9a9a; }
+
+.upload-toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.upload-toast.success {
+  border-color: rgba(80, 200, 120, 0.35);
+  color: #7df0a8;
+}
+
+.upload-toast.error {
+  border-color: rgba(255, 80, 80, 0.35);
+  color: #ff9a9a;
+}
 
 @media (max-width: 768px) {
-  .upload-form-grid    { grid-template-columns: 1fr; }
-  .upload-grid-three   { grid-template-columns: 1fr 1fr; }
-  .upload-modal-content { flex-direction: column; }
-  .upload-modal-left   { width: 100%; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.08); }
-  .upload-page-body    { padding: 16px; }
+  .upload-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .upload-grid-three {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .upload-modal-content {
+    flex-direction: column;
+  }
+
+  .upload-modal-left {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .upload-page-body {
+    padding: 16px;
+  }
 }

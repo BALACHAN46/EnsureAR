@@ -5,7 +5,11 @@ import * as THREE from 'three';
 import { applyAndExtractMaterials } from '../../utils/materialHelper';
 import { useDragOffset } from '../../utils/useDragOffset';
 
-const getAdaptiveFactor = (vel, scale, base = 0.08) => Math.min(1.0, base + Math.pow(vel * scale, 2));
+const getAdaptiveFactor = (vel, scale, base = 0.08) => {
+  const dampBase = base * 0.2; 
+  const dampScale = scale * 0.5;
+  return Math.min(1.0, dampBase + Math.pow(vel * dampScale, 2));
+};
 const ZERO_VECTOR = new THREE.Vector3();
 
 let cachedSparkleTexture = null;
