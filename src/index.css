@@ -1761,7 +1761,7 @@ img {
 
   .admin-model-grid {
     padding: 1.125rem;
-    grid-template-columns: repeat(2, 155px);
+    grid-template-columns: 1fr;
     gap: 0.875rem;
   }
 }
@@ -1795,7 +1795,13 @@ img {
      NOT from aspect-ratio on this element directly. This element's
      other children (badge, overlay) are all position:absolute, and
      combined with overflow:hidden a grid item sized only by those
-     computes to zero intrinsic height, collapsing/overlapping rows. */
+     computes to zero intrinsic height, collapsing/overlapping rows.
+     min-height is a hard floor against exactly that: if .model-card-media
+     ever fails to size itself (e.g. its width can't be resolved in some
+     narrow/1-column grid configuration), the card still reserves enough
+     room for the overlay's name + meta + id + actions to render without
+     being clipped down to just the bottom-most row (the actions). */
+  min-height: 240px;
 }
 
 .model-card:hover,
@@ -1823,8 +1829,8 @@ img {
   height: 100%;
   box-sizing: border-box;
   object-fit: contain;
-  /* Add extra padding at the bottom so the model doesn't overlap the title */
-  padding: 10% 10% 45% 10%;
+  /* Extra padding at the bottom so the model doesn't overlap the title */
+  padding: 6% 6% 22% 6%;
   transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
