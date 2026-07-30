@@ -995,6 +995,62 @@
         0,
         0
       ]
+    },
+    {
+      "id": "u6m7mr1gijf",
+      "name": "sample necklase 1",
+      "category": "necklace",
+      "modelPath": "/models/necklace/u6m7mr1gijf.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/u6m7mr1gijf.glb",
+      "thumbnailPath": "/models/necklace/u6m7mr1gijf_thumb.png",
+      "uploadedAt": "2026-07-30T05:38:06.013Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "closed",
+      "deleted": true
+    },
+    {
+      "id": "vce9jc260lp",
+      "name": "sample necklase 2",
+      "category": "necklace",
+      "modelPath": "/models/necklace/vce9jc260lp.glb",
+      "mtlPath": "",
+      "texturePath": "",
+      "glbPath": "/models/necklace/vce9jc260lp.glb",
+      "thumbnailPath": "/models/necklace/vce9jc260lp_thumb.png",
+      "uploadedAt": "2026-07-30T05:44:07.195Z",
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ],
+      "necklaceType": "open",
+      "deleted": false
     }
   ]
 }

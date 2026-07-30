@@ -8,6 +8,10 @@ import RingMesh from './components/ar/RingMesh';
 
 import ModelErrorBoundary from './components/ar/ModelErrorBoundary';
 import { applyAndExtractMaterials } from './utils/materialHelper';
+import { useDragOffset } from './utils/useDragOffset';
+
+// Shared read-only zero offset for refs that may not have been given a drag offset
+const ZERO_VECTOR = new THREE.Vector3();
 
 // Categories that use the face-landmark eyewear & earrings AR
 const FACE_AR_CATEGORIES = ['eyewear', 'earrings'];
@@ -340,7 +344,7 @@ const HandMesh = ({ landmarksRef, showMesh }) => {
 };
 
 // Shared tracking logic for both 3D GLTF earrings and 2D Image earrings
-const useEarringTracker = (landmarksRef, leftGroupRef, rightGroupRef, occluderRef, leftSkullRef, rightSkullRef, modelScale, sharedState, modelPos, leftModelPos, is2D = false) => {
+const useEarringTracker = (landmarksRef, leftGroupRef, rightGroupRef, occluderRef, leftSkullRef, rightSkullRef, modelScale, sharedState, modelPos, leftModelPos, is2D = false, leftDragOffsetRef, rightDragOffsetRef) => {
   // Memory states for Smart Calibration
   const calibratedLeftDrop = useRef(null);
   const calibratedRightDrop = useRef(null);
@@ -535,14 +539,16 @@ const useEarringTracker = (landmarksRef, leftGroupRef, rightGroupRef, occluderRe
       .addScaledVector(headLeft, xPushDistance)
       .addScaledVector(headBackward, dynamicZPush)
       .addScaledVector(dangleUp, pitchCorrectionDistance)
-      .add(leftUserOffset);
+      .add(leftUserOffset)
+      .add(leftDragOffsetRef?.current || ZERO_VECTOR);
 
     const rightEarlobe = rightAnchor.clone()
       .lerp(rightJaw, 0.35)
       .addScaledVector(headRight, xPushDistance)
       .addScaledVector(headBackward, dynamicZPush)
       .addScaledVector(dangleUp, pitchCorrectionDistance)
-      .add(rightUserOffset);
+      .add(rightUserOffset)
+      .add(rightDragOffsetRef?.current || ZERO_VECTOR);
 
 
 
@@ -597,40 +603,45 @@ const useEarringTracker = (landmarksRef, leftGroupRef, rightGroupRef, occluderRe
         occluderRef.current.scale.set(occluderScale, occluderScale, occluderScale);
       }
     } else {
-      // Use masterLerp to smoothly interpolate position and rotation, eliminating jitter
-      leftGroupRef.current.position.lerp(leftEarlobe, masterLerp);
-      leftGroupRef.current.quaternion.slerp(targetQuat, masterLerp);
-      leftGroupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), masterLerp);
+      // Distance-based adaptive lerp: smooth when still to remove jitter, fast when moving to eliminate lag
+      const dist = leftGroupRef.current.position.distanceTo(leftEarlobe);
+      const normalizedDist = dist / (faceWidth || 1);
+      // Base lerp is 0.3 (smooth). Scales up to 0.9 (fast) during rapid head movements.
+      const earringLerp = Math.min(Math.max(0.3 + (normalizedDist * 8.0), 0.3), 0.9);
+
+      leftGroupRef.current.position.lerp(leftEarlobe, earringLerp);
+      leftGroupRef.current.quaternion.slerp(targetQuat, earringLerp);
+      leftGroupRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), earringLerp);
       leftGroupRef.current.visible = isLeftEarVisible;
 
-      rightGroupRef.current.position.lerp(rightEarlobe, masterLerp);
-      rightGroupRef.current.quaternion.slerp(targetQuat, masterLerp);
-      rightGroupRef.current.scale.lerp(new THREE.Vector3(-finalScale, finalScale, finalScale), masterLerp);
+      rightGroupRef.current.position.lerp(rightEarlobe, earringLerp);
+      rightGroupRef.current.quaternion.slerp(targetQuat, earringLerp);
+      rightGroupRef.current.scale.lerp(new THREE.Vector3(-finalScale, finalScale, finalScale), earringLerp);
       rightGroupRef.current.visible = isRightEarVisible;
 
       if (leftSkullRef?.current) {
-        leftSkullRef.current.position.lerp(leftEarlobe, masterLerp);
-        leftSkullRef.current.quaternion.slerp(targetQuat, masterLerp);
-        leftSkullRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), masterLerp);
+        leftSkullRef.current.position.lerp(leftEarlobe, earringLerp);
+        leftSkullRef.current.quaternion.slerp(targetQuat, earringLerp);
+        leftSkullRef.current.scale.lerp(new THREE.Vector3(finalScale, finalScale, finalScale), earringLerp);
         leftSkullRef.current.visible = isLeftEarVisible;
       }
       if (rightSkullRef?.current) {
-        rightSkullRef.current.position.lerp(rightEarlobe, masterLerp);
-        rightSkullRef.current.quaternion.slerp(targetQuat, masterLerp);
-        rightSkullRef.current.scale.lerp(new THREE.Vector3(-finalScale, finalScale, finalScale), masterLerp);
+        rightSkullRef.current.position.lerp(rightEarlobe, earringLerp);
+        rightSkullRef.current.quaternion.slerp(targetQuat, earringLerp);
+        rightSkullRef.current.scale.lerp(new THREE.Vector3(-finalScale, finalScale, finalScale), earringLerp);
         rightSkullRef.current.visible = isRightEarVisible;
       }
 
       if (occluderRef.current) {
-        occluderRef.current.position.lerp(centerPos, masterLerp);
-        occluderRef.current.quaternion.slerp(targetQuat, masterLerp);
-        occluderRef.current.scale.lerp(new THREE.Vector3(occluderScale, occluderScale, occluderScale), masterLerp);
+        occluderRef.current.position.lerp(centerPos, earringLerp);
+        occluderRef.current.quaternion.slerp(targetQuat, earringLerp);
+        occluderRef.current.scale.lerp(new THREE.Vector3(occluderScale, occluderScale, occluderScale), earringLerp);
       }
     }
   });
 };
 
-const EarringGLTFMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelSparkles, sharedState, activeModel, customMaterials, showOccluder }) => {
+const EarringGLTFMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelSparkles, sharedState, activeModel, customMaterials, showOccluder, dragResetTick }) => {
   const leftGroupRef = useRef();
   const rightGroupRef = useRef();
   const leftSkullRef = useRef();
@@ -654,7 +665,10 @@ const EarringGLTFMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftM
     return { leftScene: left, rightScene: right, autoYOffset };
   }, [clonedScene]);
 
-  useEarringTracker(landmarksRef, leftGroupRef, rightGroupRef, occluderRef, leftSkullRef, rightSkullRef, modelScale, sharedState, modelPos, leftModelPos);
+  const leftDrag = useDragOffset(leftGroupRef, dragResetTick);
+  const rightDrag = useDragOffset(rightGroupRef, dragResetTick);
+
+  useEarringTracker(landmarksRef, leftGroupRef, rightGroupRef, occluderRef, leftSkullRef, rightSkullRef, modelScale, sharedState, modelPos, leftModelPos, false, leftDrag.offsetRef, rightDrag.offsetRef);
 
   if (!leftScene || !rightScene) return null;
 
@@ -689,11 +703,11 @@ const EarringGLTFMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftM
           <meshBasicMaterial colorWrite={false} depthWrite={true} polygonOffset={true} polygonOffsetFactor={0.1} polygonOffsetUnits={5} />
         </mesh>
       </group>
-      <group ref={leftGroupRef}>
+      <group ref={leftGroupRef} {...leftDrag.dragHandlers}>
         <primitive object={leftScene} rotation={leftModelRot || modelRot || [0, 0, 0]} position={[0, autoYOffset, 0]} />
         {modelSparkles && <JewelrySparkles count={45} isPlane={false} modelScene={leftScene} />}
       </group>
-      <group ref={rightGroupRef}>
+      <group ref={rightGroupRef} {...rightDrag.dragHandlers}>
         <primitive object={rightScene} rotation={modelRot || [0, 0, 0]} position={[0, autoYOffset, 0]} />
         {modelSparkles && <JewelrySparkles count={45} isPlane={false} modelScene={rightScene} />}
       </group>
@@ -701,7 +715,7 @@ const EarringGLTFMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftM
   );
 };
 
-const EarringImageMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelSparkles, sharedState, activeModel, showOccluder }) => {
+const EarringImageMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelSparkles, sharedState, activeModel, showOccluder, dragResetTick }) => {
   const leftGroupRef = useRef();
   const rightGroupRef = useRef();
   const leftSkullRef = useRef();
@@ -734,7 +748,10 @@ const EarringImageMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, left
     return mat;
   }, [rightTexture]);
 
-  useEarringTracker(landmarksRef, leftGroupRef, rightGroupRef, occluderRef, leftSkullRef, rightSkullRef, modelScale, sharedState, modelPos, leftModelPos, true);
+  const leftDrag = useDragOffset(leftGroupRef, dragResetTick);
+  const rightDrag = useDragOffset(rightGroupRef, dragResetTick);
+
+  useEarringTracker(landmarksRef, leftGroupRef, rightGroupRef, occluderRef, leftSkullRef, rightSkullRef, modelScale, sharedState, modelPos, leftModelPos, true, leftDrag.offsetRef, rightDrag.offsetRef);
 
   return (
     <group>
@@ -765,7 +782,7 @@ const EarringImageMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, left
         </mesh>
       </group>
 
-      <group ref={leftGroupRef}>
+      <group ref={leftGroupRef} {...leftDrag.dragHandlers}>
         <mesh rotation={leftModelRot || modelRot || [0, 0, 0]} position={[0, -0.25 / leftAspect, 0]}>
           <planeGeometry args={[0.5, 0.5 / leftAspect]} />
           <primitive object={leftMaterial} attach="material" />
@@ -773,7 +790,7 @@ const EarringImageMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, left
         {modelSparkles && <JewelrySparkles count={45} isPlane={true} />}
       </group>
 
-      <group ref={rightGroupRef}>
+      <group ref={rightGroupRef} {...rightDrag.dragHandlers}>
         <mesh rotation={modelRot || [0, 0, 0]} position={[0, -0.25 / rightAspect, 0]}>
           <planeGeometry args={[0.5, 0.5 / rightAspect]} />
           <primitive object={rightMaterial} attach="material" />
@@ -840,7 +857,7 @@ const useHoleFadeShader = (object3d, holeUniformsRef) => {
 // Shared by both the GLTF and OBJ nose pin variants: all the face-landmark
 // tracking math (position/rotation/scale/visibility), so only the model
 // loading itself differs between the two.
-const useNosePinTracker = (landmarksRef, groupRef, leftNostrilDebugRef, rightNostrilDebugRef, holeUniformsRef, modelScale, sharedState, disableYaw = false) => {
+const useNosePinTracker = (landmarksRef, groupRef, leftNostrilDebugRef, rightNostrilDebugRef, holeUniformsRef, modelScale, sharedState, yawMultiplier = -1) => {
   // Landmark noise gets amplified into visible spin/wobble by atan2/asin,
   // especially as the head turns toward profile (roll's atan2(diffY, diffX)
   // gets very sensitive once diffX shrinks). Low-pass filter the raw angles
@@ -921,11 +938,29 @@ const useNosePinTracker = (landmarksRef, groupRef, leftNostrilDebugRef, rightNos
     // as the head turns to the side, to counteract MediaPipe's tendency
     // to drop the ala landmark when viewed from profile.
     const headUp = new THREE.Vector3().subVectors(top, bottom).normalize();
+    const headRight = new THREE.Vector3().subVectors(screenRightAnchor, screenLeftAnchor).normalize();
     const absYaw = Math.abs(yaw);
-    // Apply up to ~6% of face width as a vertical lift depending on how far the head is turned
-    const liftAmount = absYaw * faceWidth * 0.01;
+    // Apply different vertical lift and side offset depending on if head is turned left or right
+    let liftAmount = 0;
+    let sideAmount = 0; // Positive moves outward (to the side), negative moves inward (to center)
+
+    if (yaw > 0) {
+      // Turning to one side
+      liftAmount = absYaw * faceWidth * -0.02;
+      sideAmount = 0;
+    } else {
+      // Turning to the other side
+      liftAmount = absYaw * faceWidth * 0.01;
+      sideAmount = absYaw * faceWidth * 0.08; // Adjust this value to push it more right/outside
+    }
+
+    // Apply vertical lift
     leftHoleGuess.addScaledVector(headUp, liftAmount);
     rightHoleGuess.addScaledVector(headUp, liftAmount);
+
+    // Apply horizontal side shift (outwards)
+    leftHoleGuess.addScaledVector(headRight, sideAmount); // user's right nostril
+    rightHoleGuess.addScaledVector(headRight, -sideAmount); // user's left nostril
 
     // The pin is anchored to ONE nostril (358). When the head turns far enough that
     // this side of the nose faces away from the camera, MediaPipe still reports an
@@ -960,9 +995,7 @@ const useNosePinTracker = (landmarksRef, groupRef, leftNostrilDebugRef, rightNos
 
     // The nosepin must rotate fully with the head so it stays flush against the nose surface
     // instead of staying flat to the camera when the user turns their head.
-    // However, 2D image models or flat studs shouldn't use yaw rotation.
-    const yawRotationInfluence = disableYaw ? 0 : -1;
-    const targetEuler = new THREE.Euler(smoothedAnglesRef.current.pitch, smoothedAnglesRef.current.yaw * yawRotationInfluence, smoothedAnglesRef.current.roll, 'YXZ');
+    const targetEuler = new THREE.Euler(smoothedAnglesRef.current.pitch, smoothedAnglesRef.current.yaw * yawMultiplier, smoothedAnglesRef.current.roll, 'YXZ');
     const targetQuat = new THREE.Quaternion().setFromEuler(targetEuler);
 
     const finalScale = faceWidth * 1.05 * (modelScale || 1);
@@ -1039,7 +1072,7 @@ const NosePinGLTFMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSp
   }, [scene, customMaterials]);
 
   useHoleFadeShader(clonedScene, holeUniformsRef);
-  useNosePinTracker(landmarksRef, groupRef, leftNostrilDebugRef, rightNostrilDebugRef, holeUniformsRef, modelScale, sharedState);
+  useNosePinTracker(landmarksRef, groupRef, leftNostrilDebugRef, rightNostrilDebugRef, holeUniformsRef, modelScale, sharedState, -1);
 
   if (!scene) return null;
 
@@ -1088,7 +1121,7 @@ const NosePinOBJMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSpa
   }, [obj, customMaterials]);
 
   useHoleFadeShader(clonedScene, holeUniformsRef);
-  useNosePinTracker(landmarksRef, groupRef, leftNostrilDebugRef, rightNostrilDebugRef, holeUniformsRef, modelScale, sharedState);
+  useNosePinTracker(landmarksRef, groupRef, leftNostrilDebugRef, rightNostrilDebugRef, holeUniformsRef, modelScale, sharedState, -1);
 
   if (!obj) return null;
 
@@ -1130,7 +1163,7 @@ const NosePinImageMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelS
     });
   }, [texture]);
 
-  useNosePinTracker(landmarksRef, groupRef, leftNostrilDebugRef, rightNostrilDebugRef, holeUniformsRef, modelScale, sharedState, true);
+  useNosePinTracker(landmarksRef, groupRef, leftNostrilDebugRef, rightNostrilDebugRef, holeUniformsRef, modelScale, sharedState, 1);
 
   if (!texture) return null;
 
@@ -1897,7 +1930,7 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRo
 //   );
 // };
 
-const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, showOccluder, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelSparkles, activeModel, isHandTracking, category, customMaterials, ringTuning }) => {
+const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, showOccluder, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelSparkles, activeModel, isHandTracking, category, customMaterials, ringTuning, dragResetTick }) => {
   // Shared state ensures the face mask and the glasses always use the EXACT same tracking speed!
   const sharedState = useRef({ adaptiveLerp: 0.5 });
   const isEyewear = FACE_AR_CATEGORIES.includes(category);
@@ -1912,8 +1945,12 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
   // loader, which is what crashes the whole Canvas.
   const modelReady = !!activeModel && activeModel.category === category;
 
+  // Drag-to-reposition is only offered on necklace & earrings (see useDragOffset) -
+  // for every other category, keep letting clicks pass through the canvas as before.
+  const supportsDrag = category === 'necklace' || category === 'earrings';
+
   return (
-    <div className="canvas-container" style={{ position: 'relative' }}>
+    <div className="canvas-container" style={{ position: 'relative', pointerEvents: supportsDrag ? 'auto' : 'none' }}>
       <Canvas gl={{ preserveDrawingBuffer: true, alpha: true, antialias: true }} orthographic camera={{ zoom: 150, position: [0, 0, 100] }}>
         <VideoBackground videoFrameRef={videoFrameRef} />
         <DynamicLighting videoFrameRef={videoFrameRef} />
@@ -1988,6 +2025,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                     activeModel={activeModel}
                     customMaterials={customMaterials}
                     showOccluder={showOccluder}
+                    dragResetTick={dragResetTick}
                   />
                 ) : category === 'nosepin' ? (
                   <NosePinMesh
@@ -2026,6 +2064,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                     activeModel={activeModel}
                     showFaceMesh={showFaceMesh}
                     customMaterials={customMaterials}
+                    dragResetTick={dragResetTick}
                   />
                 ) : null)}
               </Suspense>

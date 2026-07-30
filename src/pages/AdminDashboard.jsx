@@ -12,6 +12,8 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   // Auth guard
   useEffect(() => {
@@ -38,23 +40,56 @@ export default function AdminDashboard() {
       .catch(() => setLoading(false));
   }, []);
 
+  // Reset pagination on category or search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeCategory, searchQuery]);
+
   const handleLogout = () => {
     sessionStorage.removeItem('sa_auth');
     navigate('/admin');
   };
 
+  const handleToggleDelete = async (id, deleted) => {
+    try {
+      const resp = await fetch('/api/mock-toggle-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, deleted })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        setCatalog(prev => prev.map(m => m.id === id ? { ...m, deleted } : m));
+      } else {
+        alert('Failed to update model status');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error updating model');
+    }
+  };
+
   const modelCounts = categories.reduce((acc, cat) => {
-    acc[cat] = catalog.filter(m => m.category === cat).length;
+    acc[cat] = catalog.filter(m => m.category === cat && !m.deleted).length;
     return acc;
   }, {});
 
   const filteredModels = catalog.filter(m => {
-    const inCategory = m.category === activeCategory;
     const matchesSearch = !searchQuery || m.name.toLowerCase().includes(searchQuery.toLowerCase()) || m.id.includes(searchQuery);
-    return inCategory && matchesSearch;
+    
+    if (activeCategory === 'deleted-models') {
+      return m.deleted && matchesSearch;
+    }
+    
+    return m.category === activeCategory && !m.deleted && matchesSearch;
   });
 
-  const totalModels = catalog.length;
+  const totalModels = catalog.filter(m => !m.deleted).length;
+
+  const totalPages = Math.ceil(filteredModels.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const paginatedModels = filteredModels.slice(indexOfFirstItem, indexOfLastItem);
 
   if (loading) {
     return (
@@ -91,9 +126,11 @@ export default function AdminDashboard() {
               </svg>
             </button>
             <h2 className="admin-page-title">
-              {activeCategory
-                ? `${activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1)} Models`
-                : 'All Models'}
+              {activeCategory === 'deleted-models' 
+                ? 'Deleted Models' 
+                : activeCategory
+                  ? `${activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1)} Models`
+                  : 'All Models'}
             </h2>
             <span className="admin-model-count-badge">
               {filteredModels.length} model{filteredModels.length !== 1 ? 's' : ''}
@@ -147,11 +184,34 @@ export default function AdminDashboard() {
               {searchQuery && <span>Try a different search term</span>}
             </div>
           ) : (
-            filteredModels.map(model => (
-              <ModelCard key={model.id} model={model} />
+            paginatedModels.map(model => (
+              <ModelCard key={model.id} model={model} onToggleDelete={handleToggleDelete} />
             ))
           )}
         </div>
+        
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="admin-pagination">
+            <button 
+              className="pagination-btn" 
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </button>
+            <span className="pagination-info">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button 
+              className="pagination-btn" 
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </button>
+          </div>
+        )}
       </main>
     </div>
   );

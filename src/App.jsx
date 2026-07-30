@@ -5,6 +5,8 @@ import AdminOverview from './pages/AdminOverview';
 import AdminDashboard from './pages/AdminDashboard';
 import ModelEditPage from './pages/ModelEditPage';
 import ARViewPage from './pages/ARViewPage';
+import ARGuideSettingsPage from './pages/ARGuideSettingsPage';
+import UploadPage from './pages/UploadPage';
 import './index.css';
 
 // Public Home Page
@@ -18,8 +20,9 @@ function HomePage() {
       .then(res => res.json())
       .then(data => {
         if (data?.models) {
-          setCatalog(data.models);
-          const cats = [...new Set(data.models.map(m => m.category))];
+          const activeModels = data.models.filter(m => !m.deleted);
+          setCatalog(activeModels);
+          const cats = [...new Set(activeModels.map(m => m.category))];
           setCategories(cats);
         }
       })
@@ -103,6 +106,8 @@ function AppRoutes() {
       <Route path="/admin/models" element={<AdminDashboard />} />
       <Route path="/admin/models/:category" element={<AdminDashboard />} />
       <Route path="/admin/model/:id/edit" element={<ModelEditPage />} />
+      <Route path="/admin/ar-guide" element={<ARGuideSettingsPage />} />
+      <Route path="/admin/upload" element={<UploadPage />} />
       <Route path="/ar/:category/:modelId" element={<ARViewPage />} />
     </Routes>
   );

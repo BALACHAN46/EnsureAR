@@ -354,7 +354,7 @@
       "leftRotX": 0,
       "leftRotY": 0.45841,
       "leftRotZ": 0,
-      "scale": 4.43,
+      "scale": 3.8,
       "enableSparkles": false,
       "category": "earrings"
     },
@@ -579,6 +579,34 @@
       "scale": 2.84,
       "enableSparkles": true,
       "category": "nosepin"
+    },
+    "u6m7mr1gijf": {
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "rotationOffset": [
+        0,
+        0,
+        0
+      ]
+    },
+    "vce9jc260lp": {
+      "posX": 0,
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "enableSparkles": true,
+      "category": "necklace"
     }
   }
 }

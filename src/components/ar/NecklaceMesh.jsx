@@ -3,8 +3,10 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import { applyAndExtractMaterials } from '../../utils/materialHelper';
+import { useDragOffset } from '../../utils/useDragOffset';
 
 const getAdaptiveFactor = (vel, scale, base = 0.08) => Math.min(1.0, base + Math.pow(vel * scale, 2));
+const ZERO_VECTOR = new THREE.Vector3();
 
 let cachedSparkleTexture = null;
 const getSparkleTexture = () => {
@@ -421,10 +423,11 @@ export function computeCollarbone(faceLandmarks, poseLandmarks, viewport, offset
 
 
 // ── NecklaceMesh ─────────────────────────────────────────────────────
-export default function NecklaceMesh({ landmarksRef, poseLandmarksRef, activeModel, modelPos, modelRot, modelScale, modelSparkles, customMaterials, showFaceMesh }) {
+export default function NecklaceMesh({ landmarksRef, poseLandmarksRef, activeModel, modelPos, modelRot, modelScale, modelSparkles, customMaterials, showFaceMesh, dragResetTick }) {
   const groupRef = useRef();
   const boxHeightRef = useRef(0);
   const boxWidthRef = useRef(1);
+  const drag = useDragOffset(groupRef, dragResetTick);
   const modelPath = activeModel?.glbPath || activeModel?.modelPath;
   if (!modelPath) return null;
 
@@ -442,6 +445,8 @@ export default function NecklaceMesh({ landmarksRef, poseLandmarksRef, activeMod
         modelSparkles={modelSparkles}
         imagePath={modelPath}
         showFaceMesh={showFaceMesh}
+        dragOffsetRef={drag.offsetRef}
+        dragHandlers={drag.dragHandlers}
       />
     );
   }
@@ -458,11 +463,13 @@ export default function NecklaceMesh({ landmarksRef, poseLandmarksRef, activeMod
       gltfPath={modelPath}
       showFaceMesh={showFaceMesh}
       customMaterials={customMaterials}
+      dragOffsetRef={drag.offsetRef}
+      dragHandlers={drag.dragHandlers}
     />
   );
 };
 
-const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos, modelRot, modelScale, modelSparkles, gltfPath, showFaceMesh, customMaterials }) => {
+const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos, modelRot, modelScale, modelSparkles, gltfPath, showFaceMesh, customMaterials, dragOffsetRef, dragHandlers }) => {
   const { scene } = useGLTF(gltfPath);
 
   const { clonedScene } = React.useMemo(() => {
@@ -715,7 +722,7 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
       anchor.x + offsetX,
       anchoredY,
       anchor.z
-    );
+    ).add(dragOffsetRef?.current || ZERO_VECTOR);
 
     const rotX = propsRef.current.modelRot ? (propsRef.current.modelRot[0] ?? 0) : 0;
     const rotY = propsRef.current.modelRot ? (propsRef.current.modelRot[1] ?? 0) : 0;
@@ -797,7 +804,7 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
   return (
     <group>
       {/* The visible necklace model */}
-      <group ref={groupRef}>
+      <group ref={groupRef} {...dragHandlers}>
         <primitive object={clonedScene} />
         {modelSparkles && <JewelrySparkles count={75} isPlane={false} modelScene={clonedScene} />}
       </group>
@@ -805,7 +812,7 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
   );
 };
 
-const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos, modelRot, modelScale, modelSparkles, imagePath, showFaceMesh }) => {
+const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos, modelRot, modelScale, modelSparkles, imagePath, showFaceMesh, dragOffsetRef, dragHandlers }) => {
   const texture = useTexture(imagePath);
 
   React.useEffect(() => {
@@ -959,7 +966,7 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
       anchor.x + offsetX,
       anchoredY,
       anchor.z
-    );
+    ).add(dragOffsetRef?.current || ZERO_VECTOR);
 
     const rotX = propsRef.current.modelRot ? (propsRef.current.modelRot[0] ?? 0) : 0;
     const rotY = propsRef.current.modelRot ? (propsRef.current.modelRot[1] ?? 0) : 0;
@@ -999,7 +1006,7 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
 
   return (
     <group>
-      <group ref={groupRef}>
+      <group ref={groupRef} {...dragHandlers}>
         <mesh>
           <planeGeometry args={[1, 1]} />
           <primitive object={material} attach="material" />

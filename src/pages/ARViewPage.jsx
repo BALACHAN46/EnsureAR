@@ -6,6 +6,8 @@ import Scene3D from '../Scene3D';
 import ProductConfigurator from '../components/ar/ProductConfigurator';
 import { getModelConfig, saveModelConfig, resetModelConfig, configToPosition, configToRotation, configToScale, configToLeftPosition, configToLeftRotation } from '../utils/modelConfig';
 import { getCategoryMeta, orderCategories } from '../constants/categoryMeta';
+import ARGuideModal from '../components/ar/ARGuideModal';
+import { loadARGuideConfig } from '../utils/arGuideConfig';
 
 const PREDEFINED_COLORS = [
   { id: 'original', name: 'Original 3D Model', color: 'transparent' },
@@ -59,10 +61,30 @@ export default function ARViewPage() {
   });
   const [showTuning, setShowTuning] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [dragResetTick, setDragResetTick] = useState(0);
   const [viewMode, setViewMode] = useState('tryon'); // 'tryon' | 'configurator'
   const [autoRotate, setAutoRotate] = useState(true);
   const [resetTick, setResetTick] = useState(0);
   const [headerHeight, setHeaderHeight] = useState(112);
+
+  // Category AR guide modal (entry-point + in-AR help)
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [guideAccepted, setGuideAccepted] = useState(false);
+
+  // Toggle state for top-right AR controls
+  const [showTopControls, setShowTopControls] = useState(false);
+  
+  // Toggle state for bottom model carousel
+  const [showBottomCarousel, setShowBottomCarousel] = useState(true);
+
+  // Draggable help button position
+  const [helpBtnPos, setHelpBtnPos] = useState({ x: null, y: null });
+  const helpDragRef = useRef(null);
+  const helpDragState = useRef({ dragging: false, startX: 0, startY: 0, origX: 0, origY: 0 });
+
+  // AR Guide config (loaded from localStorage, set by SuperAdmin)
+  const [arGuideConfig, setArGuideConfig] = useState(() => loadARGuideConfig());
 
   const [customMaterials, setCustomMaterials] = useState({});
   const [modelMeshes, setModelMeshes] = useState([]);
@@ -91,7 +113,7 @@ export default function ARViewPage() {
       fetch('/models/catalog.json').then(r => r.json()),
       fetch('/models/model-defaults.json').then(r => r.json()),
     ]).then(([catalogData, defaultsData]) => {
-      const models = catalogData.models || [];
+      const models = (catalogData.models || []).filter(m => !m.deleted);
       const defs = defaultsData.modelDefaults || {};
       setCatalog(models);
       setDefaults(defs);
@@ -106,6 +128,57 @@ export default function ARViewPage() {
       }
     }).catch(console.error);
   }, [category, modelId]);
+
+  // Show AR guide modal every time category changes (respects SuperAdmin config)
+  useEffect(() => {
+    const cfg = loadARGuideConfig(); // Re-read in case admin changed it
+    setArGuideConfig(cfg);
+    if (category && cfg.entryModalEnabled) {
+      setGuideOpen(true);
+      setGuideAccepted(false);
+    } else {
+      setGuideOpen(false);
+      setGuideAccepted(!cfg.entryModalEnabled); // auto-accept if modal disabled
+    }
+  }, [category]);
+
+  // Draggable help button handlers
+  const onHelpDragStart = (clientX, clientY) => {
+    const el = helpDragRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    helpDragState.current = { dragging: true, startX: clientX, startY: clientY, origX: rect.left, origY: rect.top };
+    el.style.transition = 'none';
+  };
+  const onHelpDragMove = (clientX, clientY) => {
+    if (!helpDragState.current.dragging) return;
+    const { startX, startY, origX, origY } = helpDragState.current;
+    const nx = origX + (clientX - startX);
+    const ny = origY + (clientY - startY);
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const size = 42;
+    const finalX = Math.min(Math.max(nx, 4), vw - size - 4);
+    const finalY = Math.min(Math.max(ny, 4), vh - size - 4);
+    
+    if (helpDragRef.current) {
+      helpDragRef.current.style.position = 'fixed';
+      helpDragRef.current.style.left = `${finalX}px`;
+      helpDragRef.current.style.top = `${finalY}px`;
+      helpDragRef.current.style.bottom = 'unset';
+      helpDragRef.current.style.right = 'unset';
+    }
+  };
+  const onHelpDragEnd = () => {
+    helpDragState.current.dragging = false;
+    if (helpDragRef.current) {
+      helpDragRef.current.style.transition = '';
+      const left = parseFloat(helpDragRef.current.style.left);
+      const top = parseFloat(helpDragRef.current.style.top);
+      if (!isNaN(left) && !isNaN(top)) {
+        setHelpBtnPos({ x: left, y: top });
+      }
+    }
+  };
 
   // Keep the fixed header's measured height in sync so the side rail / tuning
   // panel / hints never sit underneath it, regardless of how it wraps.
@@ -506,17 +579,19 @@ export default function ARViewPage() {
       {/* ── Fixed header: back button, Try On / 3D Configurator switcher, mode-specific controls ── */}
       <div className="ar-header" ref={headerRef}>
         <div className="ar-topbar">
-          <button
-            className="ar-ctrl-btn ar-back-btn"
-            onClick={() => { if (isAdmin) navigate('/admin/models'); else navigate('/'); }}
-          >
-            <svg viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-            </svg>
-            <span>{isAdmin ? 'Models' : 'Home'}</span>
-          </button>
+          <div className="ar-topbar-left" style={{ flex: '1 0 auto', display: 'flex', justifyContent: 'flex-start' }}>
+            <button
+              className="ar-ctrl-btn ar-back-btn"
+              onClick={() => { if (isAdmin) navigate('/admin/models'); else navigate('/'); }}
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+              </svg>
+              <span>{isAdmin ? 'Models' : 'Home'}</span>
+            </button>
+          </div>
 
-          <div className="ar-mode-switch">
+          <div className="ar-mode-switch" style={{ flexShrink: 0 }}>
             <button
               className={`ar-mode-btn ${viewMode === 'tryon' ? 'active' : ''}`}
               onClick={() => setViewMode('tryon')}
@@ -538,67 +613,170 @@ export default function ARViewPage() {
             </button>
           </div>
 
-          <div className="ar-topbar-right">
+          <div className="ar-topbar-right" style={{ flex: 1, minWidth: 0, display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'flex-end' }}>
+            {viewMode === 'tryon' && (
+              <div className="ar-extra-controls-scroll" style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', minWidth: 0, scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <style>{`.ar-extra-controls-scroll::-webkit-scrollbar { display: none; } .ar-extra-controls-scroll > * { flex-shrink: 0; }`}</style>
+                <button
+                  className="ar-ctrl-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.8rem', borderRadius: '8px' }}
+                  onClick={handleCapture}
+                  title="Take Photo"
+                >
+                  <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z" /></svg>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Capture</span>
+                </button>
+
+                {showTopControls && (
+                  <>
+                    {(category === 'necklace' || category === 'earrings') && (
+                      <button
+                        className="ar-ctrl-btn"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.8rem', borderRadius: '8px' }}
+                        onClick={() => setDragResetTick(t => t + 1)}
+                        title="Undo any drag-to-reposition and snap the model back to its original placement"
+                      >
+                        <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" /></svg>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Reset Position</span>
+                      </button>
+                    )}
+
+                    {hasCustomizations && (
+                      <button
+                        className="ar-ctrl-btn"
+                        style={{ color: '#fbbf24', borderColor: 'rgba(251, 191, 36, 0.4)', background: 'rgba(251, 191, 36, 0.1)', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.8rem', borderRadius: '8px' }}
+                        onClick={() => {
+                          setCustomMaterials({});
+                          setActiveColorId('original');
+                          setActiveSecondaryColorId('original_jewel');
+                        }}
+                        title="Reset to Original Model"
+                      >
+                        <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" /></svg>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Reset Design</span>
+                      </button>
+                    )}
+
+                    {isAdmin && (
+                      <button
+                        className={`ar-ctrl-btn ${showFaceMesh ? 'ar-ctrl-btn--active' : ''}`}
+                        onClick={() => setShowFaceMesh(p => !p)}
+                      >
+                        {showFaceMesh ? 'Hide Mesh' : 'Show Mesh'}
+                      </button>
+                    )}
+
+                    {isAdmin && (
+                      <button
+                        className={`ar-ctrl-btn ${showOccluder ? 'ar-ctrl-btn--active' : ''}`}
+                        onClick={() => setShowOccluder(p => !p)}
+                      >
+                        {showOccluder ? 'Hide Occluder' : 'Show Occluder'}
+                      </button>
+                    )}
+
+                    {isAdmin && (
+                      <button
+                        className={`ar-ctrl-btn ${showTuning ? 'ar-ctrl-btn--active' : ''}`}
+                        onClick={() => setShowTuning(p => !p)}
+                      >
+                        ⚙️ Tuning
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
             {viewMode === 'tryon' && (
               <button
                 className="ar-ctrl-btn"
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.8rem', borderRadius: '8px' }}
-                onClick={handleCapture}
-                title="Take Photo"
+                onClick={() => setShowTopControls(!showTopControls)}
+                title={showTopControls ? "Hide Controls" : "Show Controls"}
+                style={{ padding: '0.4rem', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
-                <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z" /></svg>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Capture</span>
+                {showTopControls ? (
+                  // Chevron Right (to close)
+                  <svg style={{ width: 18, height: 18 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                ) : (
+                  // Chevron Left (to open)
+                  <svg style={{ width: 18, height: 18 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M15 18l-6-6 6-6" />
+                  </svg>
+                )}
               </button>
             )}
-            {viewMode === 'tryon' && hasCustomizations && (
-              <button
-                className="ar-ctrl-btn"
-                style={{ color: '#fbbf24', borderColor: 'rgba(251, 191, 36, 0.4)', background: 'rgba(251, 191, 36, 0.1)', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.8rem', borderRadius: '8px' }}
-                onClick={() => {
-                  setCustomMaterials({});
-                  setActiveColorId('original');
-                  setActiveSecondaryColorId('original_jewel');
-                }}
-                title="Reset to Original Model"
-              >
-                <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" /></svg>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Reset Design</span>
-              </button>
-            )}
-            {viewMode === 'tryon' && isAdmin && (
-              <button
-                className={`ar-ctrl-btn ${showFaceMesh ? 'ar-ctrl-btn--active' : ''}`}
-                onClick={() => setShowFaceMesh(p => !p)}
-              >
-                {showFaceMesh ? 'Hide Mesh' : 'Show Mesh'}
-              </button>
-            )}
-            {viewMode === 'tryon' && isAdmin && (
-              <button
-                className={`ar-ctrl-btn ${showOccluder ? 'ar-ctrl-btn--active' : ''}`}
-                onClick={() => setShowOccluder(p => !p)}
-              >
-                {showOccluder ? 'Hide Occluder' : 'Show Occluder'}
-              </button>
-            )}
-            {viewMode === 'tryon' && isAdmin && (
-              <button
-                className={`ar-ctrl-btn ${showTuning ? 'ar-ctrl-btn--active' : ''}`}
-                onClick={() => setShowTuning(p => !p)}
-              >
-                ⚙️ Tuning
-              </button>
-            )}
+
+
           </div>
         </div>
       </div>
 
-      {/* Hint overlays for jewelry (Try On mode only) */}
-      {/* {viewMode === 'tryon' && category === 'rings' && (
-        <div className="ar-hint">
-          💍 Show the back of your hand to try the ring — use Tuning to adjust position &amp; size
-        </div>
-      )} */}
+      {/* AR Help (?) floating button – draggable, appears after guide accepted, respects config */}
+      {viewMode === 'tryon' && guideAccepted && arGuideConfig.helpIconEnabled && (
+        <button
+          ref={helpDragRef}
+          className="watch-help-btn"
+          style={
+            helpBtnPos.x !== null
+              ? { position: 'fixed', left: helpBtnPos.x, top: helpBtnPos.y, bottom: 'unset', right: 'unset' }
+              : {}
+          }
+          onClick={(e) => {
+            // Only open help if not dragged
+            if (!helpDragState.current.wasDragged) setHelpOpen(true);
+            helpDragState.current.wasDragged = false;
+          }}
+          onMouseDown={(e) => {
+            helpDragState.current.wasDragged = false;
+            onHelpDragStart(e.clientX, e.clientY);
+            const move = (ev) => { onHelpDragMove(ev.clientX, ev.clientY); helpDragState.current.wasDragged = true; };
+            const up = () => { onHelpDragEnd(); window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
+            window.addEventListener('mousemove', move);
+            window.addEventListener('mouseup', up);
+          }}
+          onTouchStart={(e) => {
+            helpDragState.current.wasDragged = false;
+            const t = e.touches[0];
+            onHelpDragStart(t.clientX, t.clientY);
+          }}
+          onTouchMove={(e) => {
+            const t = e.touches[0];
+            onHelpDragMove(t.clientX, t.clientY);
+            helpDragState.current.wasDragged = true;
+          }}
+          onTouchEnd={onHelpDragEnd}
+          title="AR Try-On Help — drag to move"
+          aria-label="AR guide help"
+        >
+          <svg viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+          </svg>
+        </button>
+      )}
+
+      {/* AR Entry-Point Guide Modal (all categories) */}
+      <ARGuideModal
+        isOpen={guideOpen}
+        category={category}
+        mode="entry"
+        overrides={arGuideConfig.categoryOverrides?.[category] || {}}
+        onAccept={() => {
+          setGuideOpen(false);
+          setGuideAccepted(true);
+        }}
+      />
+
+      {/* AR In-AR Help Modal (all categories) */}
+      <ARGuideModal
+        isOpen={helpOpen}
+        category={category}
+        mode="help"
+        overrides={arGuideConfig.categoryOverrides?.[category] || {}}
+        onClose={() => setHelpOpen(false)}
+      />
 
       {/* Live Tuning Panel (Admin only, Try On mode only) */}
       {viewMode === 'tryon' && isAdmin && showTuning && (
@@ -796,6 +974,7 @@ export default function ARViewPage() {
             category={category}
             customMaterials={customMaterials}
             ringTuning={ringTuning}
+            dragResetTick={dragResetTick}
           />
         </div>
       </div>
@@ -822,36 +1001,44 @@ export default function ARViewPage() {
         </div>
       </div>
 
-      {/* ── Bottom dock: Models ── */}
-      <div className="ar-bottom-dock">
-
-
-        <div className="ar-model-bar">
-          <div className="carousel-track horizontal">
-            {activeCategoryModels.map(model => (
-              <div
-                key={model.id}
-                className={`carousel-item ${activeModel?.id === model.id ? 'active' : ''}`}
-                onClick={() => handleModelSelect(model)}
-                title={model.name}
-              >
-                {model.thumbnailPath ? (
-                  <img
-                    src={model.thumbnailPath}
-                    alt={model.name}
-                    style={{
-                      background: model.thumbnailPath.toLowerCase().endsWith('.png') ? 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.2) 100%)' : 'transparent'
-                    }}
-                  />
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontWeight: 'bold', color: '#94a3b8' }}>
-                    {model.name.charAt(0)}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+      {/* ── Right dock: Models ── */}
+      <div className="ar-right-dock" style={{ top: railTop }}>
+        <div className="carousel-track vertical">
+          {(showBottomCarousel ? activeCategoryModels : [activeModel || activeCategoryModels[0]].filter(Boolean)).map(model => (
+            <div
+              key={model.id}
+              className={`carousel-item ${activeModel?.id === model.id ? 'active' : ''}`}
+              onClick={() => handleModelSelect(model)}
+              title={model.name}
+            >
+              {model.thumbnailPath ? (
+                <img
+                  src={model.thumbnailPath}
+                  alt={model.name}
+                  style={{
+                    background: model.thumbnailPath.toLowerCase().endsWith('.png') ? 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.2) 100%)' : 'transparent'
+                  }}
+                />
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontWeight: 'bold', color: '#94a3b8' }}>
+                  {model.name.charAt(0)}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
+
+        <button
+          onClick={() => setShowBottomCarousel(!showBottomCarousel)}
+          className="ar-model-toggle-btn"
+          title={showBottomCarousel ? "Hide Models" : "Show Models"}
+        >
+          {showBottomCarousel ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          )}
+        </button>
       </div>
     </div>
   );
