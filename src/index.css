@@ -1768,7 +1768,7 @@ img {
 
 @media (max-width: 420px) {
   .admin-model-grid {
-    grid-template-columns: repeat(2, 135px);
+    grid-template-columns: 1fr;
     gap: 0.625rem;
   }
 
@@ -1952,11 +1952,13 @@ img {
 
 .model-card-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
 .model-card-btn {
-  flex: 1;
+  flex: 1 1 70px;
+  min-width: 70px;
   display: flex;
   align-items: center;
   justify-content: center;
