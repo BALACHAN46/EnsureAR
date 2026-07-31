@@ -1,7 +1,7 @@
 {
   "modelDefaults": {
     "fd62c174d37c": {
-      "posX": 0.02,
+      "posX": 0,
       "posY": 0.61,
       "posZ": -0.27,
       "rotX": 0,
@@ -18,12 +18,18 @@
       "category": "necklace"
     },
     "d9a1822e7a88": {
-      "posX": 0.1,
+      "posX": 0.03,
       "posY": -1.06,
       "posZ": -0.58,
       "rotX": 0,
       "rotY": 0,
       "rotZ": 0,
+      "leftPosX": 0.1,
+      "leftPosY": -1.06,
+      "leftPosZ": -0.58,
+      "leftRotX": 0,
+      "leftRotY": 0,
+      "leftRotZ": 0,
       "scale": 1.7,
       "enableSparkles": true,
       "category": "necklace"
@@ -51,12 +57,18 @@
       "category": "necklace"
     },
     "new_2dpng": {
-      "posX": 0.02,
+      "posX": 0,
       "posY": 0.64,
       "posZ": 0.93,
       "rotX": 0,
       "rotY": 0,
       "rotZ": 0,
+      "leftPosX": 0.02,
+      "leftPosY": 0.64,
+      "leftPosZ": 0.93,
+      "leftRotX": 0,
+      "leftRotY": 0,
+      "leftRotZ": 0,
       "scale": 1,
       "enableSparkles": true,
       "category": "necklace"
@@ -424,7 +436,7 @@
       "category": "necklace"
     },
     "gold_necklace1": {
-      "posX": 0.05,
+      "posX": 0,
       "posY": -0.15,
       "posZ": -0.46,
       "rotX": 0,
@@ -441,13 +453,19 @@
       "category": "necklace"
     },
     "gold_necklace2": {
-      "posX": 0.06,
-      "posY": -1.98,
+      "posX": 0,
+      "posY": 0.13,
       "posZ": 1.82,
       "rotX": 0,
       "rotY": 0,
       "rotZ": -0.01159,
-      "scale": 1.08,
+      "leftPosX": 0.06,
+      "leftPosY": -1.98,
+      "leftPosZ": 1.82,
+      "leftRotX": 0,
+      "leftRotY": 0,
+      "leftRotZ": -0.01159,
+      "scale": 0.91,
       "enableSparkles": true,
       "category": "necklace"
     },

@@ -1383,6 +1383,18 @@ img {
   align-content: start;
 }
 
+/* Tablet/laptop widths: the fixed 4x260px desktop grid needs ~1096px of
+   content width, which only clears once the 268px admin sidebar is gone
+   (<=1024px) or the window is wide (>~1450px with the sidebar showing).
+   Everywhere in between — including iPad Mini/Air/Pro — it overflowed the
+   pane before the 640px single-column breakpoint kicked in. Reflow to
+   however many 220px+ cards actually fit instead of a fixed count. */
+@media (max-width: 1450px) and (min-width: 641px) {
+  .admin-model-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+}
+
 .admin-pagination {
   display: flex;
   align-items: center;
@@ -3145,12 +3157,12 @@ img {
 
 .tryon-category-chip .icon-box {
   position: relative;
-  width: 46px;
-  height: 46px;
+  width: 70px;
+  height: 70px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
+  font-size: 2rem;
 }
 
 /* Global Corner Brackets (Desktop & Mobile) */
@@ -3288,10 +3300,11 @@ img {
   color: var(--text-2);
 }
 
-/* Tablet/phone (<=768px) handling for the tryon split layout lives in the
-   "TRYON PHONE LAYOUT" block further down (bottom bar + slide-up sheet) —
-   the old stacked-sidebar-below-camera approach was replaced because it left
-   very little vertical room for the sidebar at in-between widths. */
+/* Tablet/phone (<=1024px) handling for the tryon split layout lives in the
+   "MOBILE AR VIEW STYLES" block further down (full-screen camera + bottom
+   accordion) — the old stacked-sidebar-below-camera approach was replaced
+   because it left very little vertical room for the sidebar at in-between
+   widths. */
 
 .ar-model-col {
   display: flex;
@@ -3417,6 +3430,7 @@ img {
 .carousel-track.grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  justify-items: center;
   align-content: start;
   width: 100%;
   min-width: 0;
@@ -3425,6 +3439,11 @@ img {
   padding: 1.5rem 1.5rem;
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+.tryon-sidebar .carousel-track.grid .carousel-item {
+  width: 100%;
+  max-width: 80px;
 }
 
 .carousel-track.grid::-webkit-scrollbar {
@@ -3443,149 +3462,6 @@ img {
   }
 
   .carousel-title {
-    display: none;
-  }
-}
-
-/* ─────────────────────────────────────────────────────────
-   TRYON PHONE/TABLET LAYOUT (<=768px) — full-screen camera, category
-   bar pinned to the bottom, models in a slide-up bottom sheet.
-   Desktop sidebar and vertical controls are hidden here.
-───────────────────────────────────────────────────────── */
-.tryon-mobile-bar,
-.tryon-mobile-sheet {
-  display: none;
-}
-
-@media (max-width: 767px) {
-  .tryon-split-layout {
-    flex-direction: row;
-  }
-
-  .tryon-sidebar,
-  .ar-vertical-controls {
-    display: none;
-  }
-
-  .tryon-camera-pane {
-    flex: 1 1 100%;
-  }
-
-  .tryon-mobile-bar {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1001;
-    padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
-  }
-
-  .tryon-mobile-bar-toggle {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(8, 12, 22, 0.72);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    color: #fff;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    align-self: flex-end;
-    margin-right: 0.25rem;
-  }
-
-  .tryon-mobile-bar-content {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    width: 100%;
-    padding-top: 0.75rem;
-  }
-
-  .tryon-mobile-bar-content.open {
-    display: flex;
-  }
-
-  .tryon-mobile-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.875rem;
-  }
-
-  .tryon-mobile-capture {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--sa-glass-strong);
-    border: 2px solid rgba(255, 255, 255, 0.6);
-  }
-
-  .tryon-mobile-categories {
-    display: flex;
-    gap: 1.5rem;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    width: 100%;
-    justify-content: center;
-    padding: 0 0.5rem;
-  }
-
-  .tryon-mobile-categories::-webkit-scrollbar {
-    display: none;
-  }
-
-  .tryon-mobile-category-chip {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.3rem;
-    flex-shrink: 0;
-    color: var(--accent-3);
-    font-size: 0.625rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-  }
-
-  .tryon-mobile-category-chip img {
-    width: 22px;
-    height: 22px;
-    object-fit: contain;
-  }
-
-  .tryon-mobile-sheet {
-    display: block;
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1000;
-    max-height: 62vh;
-    overflow-y: auto;
-    background: var(--sa-glass-strong);
-    border-top: 1px solid var(--border);
-    border-radius: 20px 20px 0 0;
-    padding-bottom: 150px;
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
-  }
-
-  .tryon-mobile-sheet.open {
-    transform: translateY(0);
-  }
-
-  .tryon-mobile-sheet .tryon-sidebar-promo {
     display: none;
   }
 }
@@ -4017,8 +3893,8 @@ img {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: rgba(3, 6, 18, 0.96);
-  backdrop-filter: blur(32px) saturate(1.4);
+  background: rgba(3, 6, 18, 0.75);
+  backdrop-filter: blur(0px) saturate(1.4);
   -webkit-backdrop-filter: blur(32px) saturate(1.4);
   display: flex;
   align-items: center;
@@ -4040,7 +3916,7 @@ img {
 .wgm-modal {
   position: relative;
   width: 100%;
-  max-width: 520px;
+  max-width: 750px;
   max-height: 90dvh;
   overflow-y: auto;
   background: linear-gradient(150deg, rgba(13, 18, 36, 0.98) 0%, rgba(7, 11, 22, 0.99) 100%);
@@ -4326,8 +4202,8 @@ img {
   bottom: 6rem;
   right: 1.1rem;
   z-index: 500;
-  width: 42px;
-  height: 42px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.85) 0%, rgba(99, 102, 241, 0.8) 100%);
   border: 1.5px solid rgba(99, 102, 241, 0.45);
@@ -4347,8 +4223,8 @@ img {
 }
 
 .watch-help-btn svg {
-  width: 20px;
-  height: 20px;
+  width: 10px;
+  height: 10px;
   flex-shrink: 0;
   pointer-events: none;
 }
@@ -4365,6 +4241,19 @@ img {
   cursor: grabbing;
   transform: scale(1.05);
   animation: none;
+}
+
+/* Desktop web: a touch bigger than the compact mobile/tablet size above */
+@media (min-width: 1025px) {
+  .watch-help-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .watch-help-btn svg {
+    width: 16px;
+    height: 16px;
+  }
 }
 
 @keyframes watch-help-pulse {
@@ -5162,7 +5051,7 @@ img {
 /* ─────────────────────────────────────────────────────────
    MOBILE AR VIEW STYLES
 ───────────────────────────────────────────────────────── */
-@media (max-width: 767px) {
+@media (max-width: 1024px) {
   /* Layout restructuring */
   .tryon-split-layout {
     flex-direction: column;
@@ -5275,7 +5164,7 @@ img {
   }
 
   .tryon-mobile-accordion.expanded .tryon-mobile-categories-wrapper {
-    max-height: 150px;
+    max-height: 168px;
   }
 
   .tryon-mobile-categories {
@@ -5305,16 +5194,16 @@ img {
     color: #ffffff;
   }
   .tryon-mobile-category-chip .icon-box {
-    width: 44px;
-    height: 44px;
+    width: 80px;
+    height: 80px;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
   }
   .tryon-mobile-category-chip img {
-    width: 24px;
-    height: 24px;
+    width: 54px;
+    height: 54px;
     object-fit: contain;
     filter: brightness(0.7);
   }
@@ -5343,8 +5232,8 @@ img {
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: nowrap;
-    padding: 16px !important;
-    gap: 16px !important;
+    padding: 0 !important;
+    gap: 0 !important;
     overflow-x: auto !important;
     overflow-y: hidden !important;
     justify-content: flex-start;
@@ -5352,15 +5241,31 @@ img {
     scroll-behavior: smooth !important;
     scroll-snap-type: x mandatory !important;
   }
-  
-  .tryon-mobile-models-wrapper .carousel-item {
-    width: 72px;
-    height: 72px;
+
+  /* Each page is exactly one viewport-width wide and holds a clean 4-up
+     grid, so a scroll gesture always lands on a full page — no partial
+     5th card peeking in from the edge — and left/right padding is
+     identical on every page. */
+  .tryon-mobile-model-page {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    justify-items: center;
+    gap: 12px;
+    width: 100%;
     flex-shrink: 0;
+    box-sizing: border-box;
+    padding: 16px;
+    scroll-snap-align: start;
+  }
+
+  .tryon-mobile-models-wrapper .carousel-item {
+    width: 100%;
+    max-width: 76px;
+    aspect-ratio: 1;
+    box-sizing: border-box;
     border-radius: 8px;
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    scroll-snap-align: start !important;
   }
   .tryon-mobile-models-wrapper .carousel-item.active {
     border-color: #ffffff;
@@ -5383,7 +5288,7 @@ img {
   }
   
   .mockup-logo {
-    height: 24px;
+    height: 40px;
     object-fit: contain;
   }
   
@@ -5392,6 +5297,18 @@ img {
     align-items: center;
     gap: 16px;
     color: #ffffff;
+  }
+
+  /* Icon-only Try On / 3D Configurator toggle in the mobile/tablet header */
+  .ar-mode-switch--mobile .ar-mode-btn {
+    padding: 0.5rem;
+  }
+  .ar-mode-switch--mobile .ar-mode-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+  .ar-mode-switch--mobile .ar-mode-btn span {
+    display: none;
   }
   
   .mockup-lines {
@@ -5478,5 +5395,41 @@ img {
   .tryon-mobile-controls-floating button.tryon-mobile-capture svg {
     width: 18px !important;
     height: 18px !important;
+  }
+}
+
+/* Tablet width: 5 model cards per row in the bottom sheet (phones stay at 4,
+   matching the JS chunking in ARViewPage's isTabletLayout check). */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .tryon-mobile-model-page {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .tryon-mobile-category-chip .icon-box {
+    width: 90px;
+    height: 90px;
+  }
+  .tryon-mobile-category-chip img {
+    width: 60px;
+    height: 60px;
+  }
+  .tryon-mobile-models-wrapper .carousel-item {
+    max-width: 86px;
+  }
+}
+
+/* Phone width only: the category icons and model cards above were sized up
+   for tablet — pull them back down on narrow phones. */
+@media (max-width: 640px) {
+  .tryon-mobile-category-chip .icon-box {
+    width: 54px;
+    height: 54px;
+  }
+  .tryon-mobile-category-chip img {
+    width: 34px;
+    height: 34px;
+  }
+  .tryon-mobile-models-wrapper .carousel-item {
+    max-width: 56px;
   }
 }

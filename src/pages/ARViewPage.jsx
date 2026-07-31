@@ -85,8 +85,13 @@ function useAutoScroll(stripRef, trackRef, dependencies = [], speed = 40) {
 
     const onMouseDown = (e) => onDown(e.clientX);
     const onMouseMove = (e) => onMove(e.clientX);
-    const onTouchStart = (e) => onDown(e.touches[0].clientX);
+    // Touch devices (iPad included) can fire a synthetic mouseenter on tap
+    // without a matching mouseleave, which would permanently pause the
+    // auto-scroll via `hovered`. Clear it explicitly on every touch so the
+    // marquee always resumes once the finger lifts.
+    const onTouchStart = (e) => { hovered = false; onDown(e.touches[0].clientX); };
     const onTouchMove = (e) => onMove(e.touches[0].clientX);
+    const onTouchEnd = () => { hovered = false; onUp(); };
 
     strip.addEventListener('mouseenter', onMouseEnter);
     strip.addEventListener('mouseleave', onMouseLeave);
@@ -95,7 +100,7 @@ function useAutoScroll(stripRef, trackRef, dependencies = [], speed = 40) {
     window.addEventListener('mouseup', onUp);
     strip.addEventListener('touchstart', onTouchStart, { passive: true });
     strip.addEventListener('touchmove', onTouchMove, { passive: true });
-    strip.addEventListener('touchend', onUp);
+    strip.addEventListener('touchend', onTouchEnd);
 
     return () => {
       cancelAnimationFrame(rafId);
@@ -107,7 +112,7 @@ function useAutoScroll(stripRef, trackRef, dependencies = [], speed = 40) {
       window.removeEventListener('mouseup', onUp);
       strip.removeEventListener('touchstart', onTouchStart);
       strip.removeEventListener('touchmove', onTouchMove);
-      strip.removeEventListener('touchend', onUp);
+      strip.removeEventListener('touchend', onTouchEnd);
     };
   }, dependencies);
 
@@ -172,15 +177,27 @@ export default function ARViewPage() {
   // Phone/tablet bottom sheet shows 1 row of 3 (rest via pagination);
   // desktop sidebar shows 3 rows of 3 (9 per page)
   const [isMobileLayout, setIsMobileLayout] = useState(() =>
-    typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : false
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 1024px)').matches : false
   );
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 768px)');
+    const mq = window.matchMedia('(max-width: 1024px)');
     const handler = (e) => setIsMobileLayout(e.matches);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
   const MODELS_PER_PAGE = isMobileLayout ? 3 : 16;
+
+  // Tablet width (641px–1024px) shows 5 model cards per row in the bottom
+  // sheet; phones stay at 4.
+  const [isTabletLayout, setIsTabletLayout] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 641px) and (max-width: 1024px)').matches : false
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 641px) and (max-width: 1024px)');
+    const handler = (e) => setIsTabletLayout(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   // Reset to the first page whenever the active category changes
   useEffect(() => {
@@ -200,7 +217,7 @@ export default function ARViewPage() {
 
   // Phone-only bottom sheet (models + promo) — opened by tapping a category
   // chip in the mobile bottom bar, or the bar's chevron
-  const [mobileSheetOpen, setMobileSheetOpen] = useState(true);
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
 
   const categoryStripRef = useRef(null);
   const categoryTrackRef = useRef(null);
@@ -710,25 +727,44 @@ export default function ARViewPage() {
   const renderModelGridAndPromo = () => {
     const modelsToRender = isMobileLayout ? activeCategoryModels : activeCategoryModels.slice(modelPage * MODELS_PER_PAGE, modelPage * MODELS_PER_PAGE + MODELS_PER_PAGE);
 
+    const renderCard = (model) => (
+      <div
+        key={model.id}
+        className={`carousel-item ${activeModel?.id === model.id ? 'active' : ''}`}
+        onClick={() => handleModelSelect(model)}
+        title={model.name}
+      >
+        {model.thumbnailPath ? (
+          <img src={model.thumbnailPath} alt={model.name} />
+        ) : (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#94a3b8' }}>
+            {model.name.charAt(0)}
+          </div>
+        )}
+      </div>
+    );
+
+    // Mobile/tablet: chunk into fixed pages (4 on phone, 5 on tablet) so a
+    // scroll gesture always snaps to a full page (no partial next card
+    // peeking in from the edge).
+    const mobilePages = [];
+    if (isMobileLayout) {
+      const perPage = isTabletLayout ? 5 : 4;
+      for (let i = 0; i < modelsToRender.length; i += perPage) {
+        mobilePages.push(modelsToRender.slice(i, i + perPage));
+      }
+    }
+
     return (
       <>
         <div className="carousel-track grid">
-          {modelsToRender.map(model => (
-            <div
-              key={model.id}
-              className={`carousel-item ${activeModel?.id === model.id ? 'active' : ''}`}
-              onClick={() => handleModelSelect(model)}
-              title={model.name}
-            >
-              {model.thumbnailPath ? (
-                <img src={model.thumbnailPath} alt={model.name} />
-              ) : (
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#94a3b8' }}>
-                  {model.name.charAt(0)}
+          {isMobileLayout
+            ? mobilePages.map((page, pageIdx) => (
+                <div className="tryon-mobile-model-page" key={pageIdx}>
+                  {page.map(renderCard)}
                 </div>
-              )}
-            </div>
-          ))}
+              ))
+            : modelsToRender.map(renderCard)}
         </div>
 
         {!isMobileLayout && activeCategoryModels.length > MODELS_PER_PAGE && (
@@ -783,6 +819,29 @@ export default function ARViewPage() {
                 <img src="/ENSUREAR.png" alt="EnsureAR" className="mockup-logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }} />
               </div>
               <div className="mockup-right-icons">
+                <div className="ar-mode-switch ar-mode-switch--mobile">
+                  <button
+                    className={`ar-mode-btn ${viewMode === 'tryon' ? 'active' : ''}`}
+                    onClick={() => setViewMode('tryon')}
+                    aria-label="Try On"
+                    title="Try On"
+                  >
+                    <svg viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  <button
+                    className={`ar-mode-btn ${viewMode === 'configurator' ? 'active' : ''}`}
+                    onClick={() => setViewMode('configurator')}
+                    aria-label="3D Configurator"
+                    title="3D Configurator"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2L22 12L12 22L2 12L12 2Z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -815,8 +874,8 @@ export default function ARViewPage() {
                 className={`ar-mode-btn ${viewMode === 'configurator' ? 'active' : ''}`}
                 onClick={() => setViewMode('configurator')}
               >
-                <svg viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4 2a2 2 0 00-2 2v11a3 3 0 106 0V4a2 2 0 00-2-2H4zm1 14a1 1 0 100-2 1 1 0 000 2zm5-1.757l4.9-4.9a2 2 0 000-2.828L13.485 5.1a2 2 0 00-2.828 0L10 6.515v7.728zM16.314 9.485a2 2 0 010 2.828l-4.9 4.9A2 2 0 0110 17.515v-7.728l6.314-1.302z" clipRule="evenodd" />
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2L22 12L12 22L2 12L12 2Z" />
                 </svg>
                 <span>3D Configurator</span>
               </button>
@@ -1170,7 +1229,7 @@ export default function ARViewPage() {
               style={{
                 ...(helpBtnPos.x !== null
                   ? { position: 'absolute', left: helpBtnPos.x, top: helpBtnPos.y, bottom: 'unset', right: 'unset' }
-                  : { position: 'absolute', bottom: '16px', right: '16px', left: 'unset', top: 'unset' })
+                  : { position: 'absolute', bottom: '24px', right: '24px', left: 'unset', top: 'unset' })
               }}
               onClick={(e) => {
                 // Only open help if not dragged
@@ -1238,7 +1297,7 @@ export default function ARViewPage() {
                   >
                     <div className="icon-box">
                       <div className="corner-brackets"><div className="cb-inner"></div></div>
-                      {meta.icon ? <img src={meta.icon} alt="" style={{ width: '20px', height: '20px', objectFit: 'contain' }} /> : meta.emoji}
+                      {meta.icon ? <img src={meta.icon} alt="" style={{ width: '46px', height: '46px', objectFit: 'contain' }} /> : meta.emoji}
                     </div>
                     <span>{meta.label}</span>
                   </button>
