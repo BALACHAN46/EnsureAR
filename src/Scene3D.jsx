@@ -94,7 +94,7 @@ const FullFaceMesh = ({ landmarksRef, showFaceMesh, showOccluder, sharedState, i
 
   useFrame((state) => {
     const landmarks = landmarksRef.current;
-    if (!landmarks || landmarks.length === 0 || !geometry) {
+    if (!landmarks || landmarks.length < 468 || !geometry) {
       if (meshRef.current) meshRef.current.visible = false;
       return;
     }
@@ -276,7 +276,7 @@ const HandMesh = ({ landmarksRef, showMesh }) => {
 
   useFrame((state) => {
     const landmarks = landmarksRef.current;
-    if (!landmarks || landmarks.length === 0 || !showMesh) {
+    if (!landmarks || landmarks.length < 468 || !showMesh) {
       if (pointsRef.current) pointsRef.current.visible = false;
       if (linesRef.current) linesRef.current.visible = false;
       return;
@@ -355,7 +355,7 @@ const useEarringTracker = (landmarksRef, leftGroupRef, rightGroupRef, occluderRe
 
   useFrame((state, delta) => {
     const landmarks = landmarksRef.current;
-    if (!landmarks || landmarks.length === 0 || !leftGroupRef.current || !rightGroupRef.current) {
+    if (!landmarks || landmarks.length < 468 || !leftGroupRef.current || !rightGroupRef.current) {
       if (leftGroupRef.current) leftGroupRef.current.visible = false;
       if (rightGroupRef.current) rightGroupRef.current.visible = false;
       return;
@@ -868,7 +868,7 @@ const useNosePinTracker = (landmarksRef, groupRef, leftNostrilDebugRef, rightNos
 
   useFrame((state) => {
     const landmarks = landmarksRef.current;
-    if (!landmarks || landmarks.length === 0 || !groupRef.current) {
+    if (!landmarks || landmarks.length < 468 || !groupRef.current) {
       if (groupRef.current) groupRef.current.visible = false;
       return;
     }
@@ -1267,7 +1267,7 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkl
 
   useFrame((state) => {
     const landmarks = landmarksRef.current;
-    if (!landmarks || landmarks.length === 0 || !groupRef.current) {
+    if (!landmarks || landmarks.length < 468 || !groupRef.current) {
       if (groupRef.current) groupRef.current.visible = false;
       return;
     }
@@ -1644,7 +1644,7 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRo
 
   useFrame((state) => {
     const landmarks = landmarksRef.current;
-    if (!landmarks || landmarks.length === 0 || !groupRef.current) {
+    if (!landmarks || landmarks.length < 21 || !groupRef.current) {
       if (groupRef.current) groupRef.current.visible = false;
       return;
     }
