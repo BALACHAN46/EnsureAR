@@ -2,7 +2,7 @@
   "models": [
     {
       "id": "fd62c174d37c",
-      "name": "pngneck",
+      "name": "Necklace Classic",
       "category": "necklace",
       "modelPath": "/models/necklace/fd62c174d37c.png",
       "mtlPath": "",
@@ -25,11 +25,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "gold"
     },
     {
       "id": "d9a1822e7a88",
-      "name": "Diamond Necklace 1",
+      "name": "Necklace 1",
       "category": "necklace",
       "modelPath": "/models/necklace/d9a1822e7a88.png",
       "mtlPath": "",
@@ -52,11 +53,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "diamond"
     },
     {
       "id": "ca404a5ea0ea",
-      "name": "Gold Necklace",
+      "name": "Necklace",
       "category": "necklace",
       "modelPath": "/models/necklace/ca404a5ea0ea.png",
       "mtlPath": "",
@@ -79,11 +81,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "gold"
     },
     {
       "id": "new_1dpng",
-      "name": "1d.png",
+      "name": "Necklace 2",
       "category": "necklace",
       "modelPath": "/models/necklace/1d.png",
       "mtlPath": "",
@@ -106,11 +109,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "diamond"
     },
     {
       "id": "new_2dpng",
-      "name": "2d.png",
+      "name": "Necklace 3",
       "category": "necklace",
       "modelPath": "/models/necklace/2d.png",
       "mtlPath": "",
@@ -133,11 +137,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "diamond"
     },
     {
       "id": "new_3dpng",
-      "name": "3 d.png",
+      "name": "Necklace 4",
       "category": "necklace",
       "modelPath": "/models/necklace/3 d.png",
       "mtlPath": "",
@@ -160,11 +165,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "diamond"
     },
     {
       "id": "new_4png",
-      "name": "4.png",
+      "name": "Necklace 5",
       "category": "necklace",
       "modelPath": "/models/necklace/4.png",
       "mtlPath": "",
@@ -187,11 +193,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "diamond"
     },
     {
       "id": "new_apng",
-      "name": "a.png",
+      "name": "Necklace 6",
       "category": "necklace",
       "modelPath": "/models/necklace/a.png",
       "mtlPath": "",
@@ -214,7 +221,8 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "diamond"
     },
     {
       "id": "60f4edf99880",
@@ -241,7 +249,8 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": ""
     },
     {
       "id": "6186cc04383e",
@@ -268,7 +277,8 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": ""
     },
     {
       "id": "911a064c83c7",
@@ -295,7 +305,8 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": ""
     },
     {
       "id": "afb107d68cc0",
@@ -322,7 +333,8 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": ""
     },
     {
       "id": "cd36e67a69ae",
@@ -349,7 +361,8 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": ""
     },
     {
       "id": "ef65b9c48d8b",
@@ -376,7 +389,8 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": ""
     },
     {
       "id": "c4ee0e5c386e",
@@ -403,11 +417,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": ""
     },
     {
       "id": "f2917202433f",
-      "name": "watch 1",
+      "name": "Watch 1",
       "category": "watch",
       "modelPath": "/models/watch/f2917202433f.glb",
       "mtlPath": "",
@@ -430,11 +445,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "others"
     },
     {
       "id": "89c775b55f7f",
-      "name": "wwe",
+      "name": "Watch 2",
       "category": "watch",
       "modelPath": "/models/watch/89c775b55f7f.glb",
       "mtlPath": "",
@@ -457,11 +473,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "others"
     },
     {
       "id": "b1",
-      "name": "bracelets 1",
+      "name": "Bracelet 1",
       "category": "bracelets",
       "modelPath": "/models/bracelets/b1.glb",
       "mtlPath": "",
@@ -484,11 +501,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "gold"
     },
     {
       "id": "b2",
-      "name": "bracelets 2",
+      "name": "Bracelet 2",
       "category": "bracelets",
       "modelPath": "/models/bracelets/b2.glb",
       "mtlPath": "",
@@ -511,11 +529,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "gold"
     },
     {
       "id": "b3",
-      "name": "bracelets 3",
+      "name": "Bracelet 3",
       "category": "bracelets",
       "modelPath": "/models/bracelets/bangles (1).glb",
       "mtlPath": "",
@@ -538,11 +557,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "gold"
     },
     {
       "id": "b5",
-      "name": "bracelets 5",
+      "name": "Bracelet 1",
       "category": "bracelets",
       "modelPath": "/models/bracelets/ef4a875bc934.glb",
       "mtlPath": "",
@@ -565,11 +585,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "diamond"
     },
     {
       "id": "df5c44d2927d",
-      "name": "bracelets 6",
+      "name": "Bracelet 4",
       "category": "bracelets",
       "modelPath": "/models/bracelets/df5c44d2927d.glb",
       "mtlPath": "",
@@ -592,11 +613,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "gold"
     },
     {
       "id": "1836357aad32",
-      "name": "bracelets 7",
+      "name": "Bracelet 5",
       "category": "bracelets",
       "modelPath": "/models/bracelets/1836357aad32.glb",
       "mtlPath": "",
@@ -619,11 +641,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "gold"
     },
     {
       "id": "3e6d2597c71e",
-      "name": "bracelets 8",
+      "name": "Bracelet 2",
       "category": "bracelets",
       "modelPath": "/models/bracelets/3e6d2597c71e.glb",
       "mtlPath": "",
@@ -646,11 +669,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "diamond"
     },
     {
       "id": "51W1D1NGPAA00",
-      "name": "Gold Choker Necklace",
+      "name": "Choker Necklace",
       "category": "necklace",
       "modelPath": "/models/necklace/51W1D1NGPAA00.png",
       "mtlPath": "",
@@ -673,11 +697,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "gold"
     },
     {
       "id": "gold_necklace1",
-      "name": "Gold Necklace 1",
+      "name": "Necklace 1",
       "category": "necklace",
       "modelPath": "/models/necklace/gold_necklace1.png",
       "mtlPath": "",
@@ -700,11 +725,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "gold"
     },
     {
       "id": "gold_necklace2",
-      "name": "Gold Necklace 2",
+      "name": "Necklace 2",
       "category": "necklace",
       "modelPath": "/models/necklace/gold_necklace2.png",
       "mtlPath": "",
@@ -727,11 +753,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "gold"
     },
     {
       "id": "fd27ab032085",
-      "name": "ringd",
+      "name": "Ring Classic",
       "category": "rings",
       "modelPath": "/models/rings/fd27ab032085.glb",
       "mtlPath": "",
@@ -754,11 +781,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "diamond"
     },
     {
       "id": "narya_gandalfs_ring",
-      "name": "Narya Gandalf's Ring",
+      "name": "Ring (Narya)",
       "category": "rings",
       "modelPath": "/models/rings/narya_gandalfs_ring.glb",
       "mtlPath": "",
@@ -781,11 +809,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "gold"
     },
     {
       "id": "diamond_ring",
-      "name": "Diamond Ring",
+      "name": "Ring",
       "category": "rings",
       "modelPath": "/models/rings/diamond_ring.glb",
       "mtlPath": "",
@@ -808,7 +837,8 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "diamond"
     },
     {
       "id": "ring_with_black_stone_diamond",
@@ -835,11 +865,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "diamond"
     },
     {
       "id": "3c1d189abcd123",
-      "name": "Earring",
+      "name": "Earring 4",
       "category": "earrings",
       "modelPath": "/models/earrings/3c1d189abcd123.glb",
       "mtlPath": "",
@@ -862,11 +893,12 @@
         0,
         0
       ],
-      "necklaceType": "open"
+      "necklaceType": "open",
+      "material": "diamond"
     },
     {
       "id": "diamond_earring3",
-      "name": "Diamond Earring 3",
+      "name": "Earring 3",
       "category": "earrings",
       "modelPath": "/models/earrings/new3_diamond_earring3.png",
       "mtlPath": "",
@@ -888,7 +920,8 @@
         0,
         0,
         0
-      ]
+      ],
+      "material": "diamond"
     },
     {
       "id": "new1_diamond_earring2",
@@ -914,11 +947,12 @@
         0,
         0,
         0
-      ]
+      ],
+      "material": "diamond"
     },
     {
       "id": "diamond_earring1",
-      "name": "Diamond Earring 1",
+      "name": "Earring 1",
       "category": "earrings",
       "modelPath": "/models/earrings/left_diamond_earring1.png",
       "mtlPath": "",
@@ -942,11 +976,12 @@
         0,
         0,
         0
-      ]
+      ],
+      "material": "diamond"
     },
     {
       "id": "pointy_nose_ring",
-      "name": "Pointy Nose Ring",
+      "name": "Nose Pin 1",
       "category": "nosepin",
       "modelPath": "/models/nosepin/pointy_nose_ring.glb",
       "mtlPath": "",
@@ -968,11 +1003,12 @@
         0,
         0,
         0
-      ]
+      ],
+      "material": "diamond"
     },
     {
       "id": "NosePin 1",
-      "name": "NosePin 1",
+      "name": "Nose Pin 2",
       "category": "nosepin",
       "modelPath": "/models/nosepin/NosePin1-removebg-preview.png",
       "mtlPath": "",
@@ -994,7 +1030,8 @@
         0,
         0,
         0
-      ]
+      ],
+      "material": "diamond"
     }
   ]
 }

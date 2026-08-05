@@ -641,7 +641,7 @@ const useEarringTracker = (landmarksRef, leftGroupRef, rightGroupRef, occluderRe
   });
 };
 
-const EarringGLTFMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelSparkles, sharedState, activeModel, customMaterials, showOccluder, dragResetTick }) => {
+const EarringGLTFMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelScaleY, modelSparkles, sharedState, activeModel, customMaterials, showOccluder, dragResetTick }) => {
   const leftGroupRef = useRef();
   const rightGroupRef = useRef();
   const leftSkullRef = useRef();
@@ -704,18 +704,18 @@ const EarringGLTFMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftM
         </mesh>
       </group>
       <group ref={leftGroupRef} {...leftDrag.dragHandlers}>
-        <primitive object={leftScene} rotation={leftModelRot || modelRot || [0, 0, 0]} position={[0, autoYOffset, 0]} />
+        <primitive object={leftScene} rotation={leftModelRot || modelRot || [0, 0, 0]} position={[0, autoYOffset, 0]} scale={[1, modelScaleY || 1, 1]} />
         {modelSparkles && <JewelrySparkles count={45} isPlane={false} modelScene={leftScene} />}
       </group>
       <group ref={rightGroupRef} {...rightDrag.dragHandlers}>
-        <primitive object={rightScene} rotation={modelRot || [0, 0, 0]} position={[0, autoYOffset, 0]} />
+        <primitive object={rightScene} rotation={modelRot || [0, 0, 0]} position={[0, autoYOffset, 0]} scale={[1, modelScaleY || 1, 1]} />
         {modelSparkles && <JewelrySparkles count={45} isPlane={false} modelScene={rightScene} />}
       </group>
     </group>
   );
 };
 
-const EarringImageMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelSparkles, sharedState, activeModel, showOccluder, dragResetTick }) => {
+const EarringImageMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelScaleY, modelSparkles, sharedState, activeModel, showOccluder, dragResetTick }) => {
   const leftGroupRef = useRef();
   const rightGroupRef = useRef();
   const leftSkullRef = useRef();
@@ -783,7 +783,7 @@ const EarringImageMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, left
       </group>
 
       <group ref={leftGroupRef} {...leftDrag.dragHandlers}>
-        <mesh rotation={leftModelRot || modelRot || [0, 0, 0]} position={[0, -0.25 / leftAspect, 0]}>
+        <mesh rotation={leftModelRot || modelRot || [0, 0, 0]} position={[0, -0.25 / leftAspect, 0]} scale={[1, modelScaleY || 1, 1]}>
           <planeGeometry args={[0.5, 0.5 / leftAspect]} />
           <primitive object={leftMaterial} attach="material" />
         </mesh>
@@ -791,7 +791,7 @@ const EarringImageMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, left
       </group>
 
       <group ref={rightGroupRef} {...rightDrag.dragHandlers}>
-        <mesh rotation={modelRot || [0, 0, 0]} position={[0, -0.25 / rightAspect, 0]}>
+        <mesh rotation={modelRot || [0, 0, 0]} position={[0, -0.25 / rightAspect, 0]} scale={[1, modelScaleY || 1, 1]}>
           <planeGeometry args={[0.5, 0.5 / rightAspect]} />
           <primitive object={rightMaterial} attach="material" />
         </mesh>
@@ -1048,7 +1048,7 @@ const NosePinDebugMarkers = ({ leftNostrilDebugRef, rightNostrilDebugRef, showOc
   );
 };
 
-const NosePinGLTFMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles, sharedState, activeModel, customMaterials, showOccluder }) => {
+const NosePinGLTFMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelScaleY, modelSparkles, sharedState, activeModel, customMaterials, showOccluder }) => {
   const groupRef = useRef();
   const leftNostrilDebugRef = useRef();
   const rightNostrilDebugRef = useRef();
@@ -1082,6 +1082,7 @@ const NosePinGLTFMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSp
         object={clonedScene}
         rotation={modelRot || [0, 0, 0]}
         position={modelPos || [0, 0, 0]}
+        scale={[1, modelScaleY || 1, 1]}
       />
       {modelSparkles && <JewelrySparkles count={30} isPlane={false} modelScene={clonedScene} />}
     </group>
@@ -1090,7 +1091,7 @@ const NosePinGLTFMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSp
   );
 };
 
-const NosePinOBJMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles, sharedState, activeModel, customMaterials, showOccluder }) => {
+const NosePinOBJMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelScaleY, modelSparkles, sharedState, activeModel, customMaterials, showOccluder }) => {
   const groupRef = useRef();
   const leftNostrilDebugRef = useRef();
   const rightNostrilDebugRef = useRef();
@@ -1131,6 +1132,7 @@ const NosePinOBJMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSpa
         object={clonedScene}
         rotation={modelRot || [0, 0, 0]}
         position={modelPos || [0, 0, 0]}
+        scale={[1, modelScaleY || 1, 1]}
       />
       {modelSparkles && <JewelrySparkles count={30} isPlane={false} modelScene={clonedScene} />}
     </group>
@@ -1139,7 +1141,7 @@ const NosePinOBJMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSpa
   );
 };
 
-const NosePinImageMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles, sharedState, activeModel, customMaterials, showOccluder }) => {
+const NosePinImageMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelScaleY, modelSparkles, sharedState, activeModel, customMaterials, showOccluder }) => {
   const groupRef = useRef();
   const [meshObj, setMeshObj] = useState(null);
   const leftNostrilDebugRef = useRef();
@@ -1172,7 +1174,7 @@ const NosePinImageMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelS
   return (
     <group>
       <group ref={groupRef}>
-        <mesh ref={setMeshObj} rotation={modelRot || [0, 0, 0]} position={modelPos || [0, 0, 0]} renderOrder={100}>
+        <mesh ref={setMeshObj} rotation={modelRot || [0, 0, 0]} position={modelPos || [0, 0, 0]} renderOrder={100} scale={[1, modelScaleY || 1, 1]}>
           <planeGeometry args={[0.05, 0.05 / aspect]} />
           <primitive object={material} attach="material" />
         </mesh>
@@ -1193,7 +1195,7 @@ const NosePinMesh = (props) => {
   return isObj ? <NosePinOBJMesh {...props} /> : <NosePinGLTFMesh {...props} />;
 };
 
-const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkles, sharedState, activeModel, customMaterials }) => {
+const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelScaleY, modelSparkles, sharedState, activeModel, customMaterials }) => {
   const groupRef = useRef();
 
   // Custom uniforms for dynamic temple fade-out
@@ -1381,6 +1383,7 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkl
         object={clonedScene}
         rotation={modelRot || [-Math.PI / 2, 0, Math.PI]}
         position={modelPos || [0, 0.5, 1.0]}
+        scale={[1, modelScaleY || 1, 1]}
       />
       {modelSparkles && <JewelrySparkles count={30} isPlane={false} modelScene={clonedScene} />}
     </group>
@@ -1393,7 +1396,7 @@ const EyewearMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelSparkl
 //   - posY  → up/down position in viewport units (negative = lower)
 //   - posZ  → depth only (layering)
 // -------------------------------------------------------------------
-const JewelryMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel, category, customMaterials }) => {
+const JewelryMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelScaleY, activeModel, category, customMaterials }) => {
   const groupRef = useRef();
   const gltfPath = activeModel?.glbPath || activeModel?.modelPath;
   if (!gltfPath) return null;
@@ -1405,13 +1408,14 @@ const JewelryMesh = ({ landmarksRef, modelPos, modelRot, modelScale, activeModel
       modelPos={modelPos}
       modelRot={modelRot}
       modelScale={modelScale}
+      modelScaleY={modelScaleY}
       gltfPath={gltfPath}
       customMaterials={customMaterials}
     />
   );
 };
 
-const JewelryMeshInner = ({ groupRef, landmarksRef, modelPos, modelRot, modelScale, gltfPath, customMaterials }) => {
+const JewelryMeshInner = ({ groupRef, landmarksRef, modelPos, modelRot, modelScale, modelScaleY, gltfPath, customMaterials }) => {
   const { scene } = useGLTF(gltfPath);
 
   const { clonedScene } = React.useMemo(() => {
@@ -1456,7 +1460,7 @@ const JewelryMeshInner = ({ groupRef, landmarksRef, modelPos, modelRot, modelSca
 
   return (
     <group ref={groupRef}>
-      <primitive object={clonedScene} />
+      <primitive object={clonedScene} scale={[1, modelScaleY || 1, 1]} />
     </group>
   );
 };
@@ -1631,7 +1635,7 @@ const TrackingStatus = ({ landmarksRef, isHandTracking, category, sharedState })
   );
 };
 
-const WristMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelSparkles, activeModel, showMesh, customMaterials }) => {
+const WristMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelScaleY, modelSparkles, activeModel, showMesh, customMaterials }) => {
   const groupRef = useRef();
   const innerGroupRef = useRef();
 
@@ -1783,7 +1787,7 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRo
         </mesh>
       )}
 
-      <group ref={innerGroupRef} scale={[modelScale || 1, modelScale || 1, modelScale || 1]}>
+      <group ref={innerGroupRef} scale={[modelScale || 1, (modelScale || 1) * (modelScaleY || 1), modelScale || 1]}>
         <primitive object={clonedScene} />
         {modelSparkles && <JewelrySparkles count={60} isPlane={false} modelScene={clonedScene} />}
       </group>
@@ -1928,7 +1932,7 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRo
 //   );
 // };
 
-const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, showOccluder, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelSparkles, activeModel, isHandTracking, category, customMaterials, ringTuning, dragResetTick }) => {
+const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, showOccluder, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelScaleY, modelNecklaceBlur, modelSparkles, activeModel, isHandTracking, category, customMaterials, ringTuning, dragResetTick }) => {
   // Shared state ensures the face mask and the glasses always use the EXACT same tracking speed!
   const sharedState = useRef({ adaptiveLerp: 0.5 });
   const isEyewear = FACE_AR_CATEGORIES.includes(category);
@@ -1970,6 +1974,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                     leftModelPos={leftModelPos}
                     leftModelRot={leftModelRot}
                     modelScale={modelScale}
+                    modelScaleY={modelScaleY}
                     modelSparkles={modelSparkles}
                     activeModel={activeModel}
                     showMesh={showFaceMesh}
@@ -1985,6 +1990,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                     leftModelPos={leftModelPos}
                     leftModelRot={leftModelRot}
                     modelScale={modelScale}
+                    modelScaleY={modelScaleY}
                     modelSparkles={modelSparkles}
                     activeModel={activeModel}
                     showMesh={showFaceMesh}
@@ -2018,6 +2024,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                     leftModelPos={leftModelPos}
                     leftModelRot={leftModelRot}
                     modelScale={modelScale}
+                    modelScaleY={modelScaleY}
                     modelSparkles={modelSparkles}
                     sharedState={sharedState}
                     activeModel={activeModel}
@@ -2032,6 +2039,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                     modelPos={modelPos}
                     modelRot={modelRot}
                     modelScale={modelScale}
+                    modelScaleY={modelScaleY}
                     modelSparkles={modelSparkles}
                     sharedState={sharedState}
                     activeModel={activeModel}
@@ -2045,6 +2053,7 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                     modelPos={modelPos}
                     modelRot={modelRot}
                     modelScale={modelScale}
+                    modelScaleY={modelScaleY}
                     modelSparkles={modelSparkles}
                     sharedState={sharedState}
                     activeModel={activeModel}
@@ -2058,6 +2067,8 @@ const Scene3D = ({ landmarksRef, poseLandmarksRef, videoFrameRef, showFaceMesh, 
                     modelPos={modelPos}
                     modelRot={modelRot}
                     modelScale={modelScale}
+                    modelScaleY={modelScaleY}
+                    modelNecklaceBlur={modelNecklaceBlur}
                     modelSparkles={modelSparkles}
                     activeModel={activeModel}
                     showFaceMesh={showFaceMesh}

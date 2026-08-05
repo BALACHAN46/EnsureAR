@@ -6,7 +6,7 @@ import { applyAndExtractMaterials } from '../../utils/materialHelper';
 import { useDragOffset } from '../../utils/useDragOffset';
 
 const getAdaptiveFactor = (vel, scale, base = 0.08) => {
-  const dampBase = base * 0.2; 
+  const dampBase = base * 0.2;
   const dampScale = scale * 0.5;
   return Math.min(1.0, dampBase + Math.pow(vel * dampScale, 2));
 };
@@ -19,7 +19,7 @@ const getSparkleTexture = () => {
   canvas.width = 128;
   canvas.height = 128;
   const ctx = canvas.getContext('2d');
-  
+
   const cx = 64;
   const cy = 64;
 
@@ -79,7 +79,7 @@ export const JewelrySparkles = ({ count = 25, isPlane = false, imagePath = null,
       img.onload = () => {
         if (!active) return;
         const canvas = document.createElement('canvas');
-        const W = 128; 
+        const W = 128;
         const H = 128;
         canvas.width = W;
         canvas.height = H;
@@ -102,21 +102,21 @@ export const JewelrySparkles = ({ count = 25, isPlane = false, imagePath = null,
         if (points.length > 0) setValidPoints(points);
       };
     } else if (!isPlane && modelScene) {
-       modelScene.updateMatrixWorld(true);
-       const rootInverse = new THREE.Matrix4().copy(modelScene.matrixWorld).invert();
-       const points = [];
-       modelScene.traverse((child) => {
-         if (child.isMesh && child.geometry && child.geometry.attributes.position) {
-           const pos = child.geometry.attributes.position;
-           for (let i = 0; i < pos.count; i += 7) {
-             const vec = new THREE.Vector3().fromBufferAttribute(pos, i);
-             vec.applyMatrix4(child.matrixWorld);
-             vec.applyMatrix4(rootInverse);
-             points.push({ x: vec.x, y: vec.y, z: vec.z + 0.01 });
-           }
-         }
-       });
-       if (points.length > 0) setValidPoints(points);
+      modelScene.updateMatrixWorld(true);
+      const rootInverse = new THREE.Matrix4().copy(modelScene.matrixWorld).invert();
+      const points = [];
+      modelScene.traverse((child) => {
+        if (child.isMesh && child.geometry && child.geometry.attributes.position) {
+          const pos = child.geometry.attributes.position;
+          for (let i = 0; i < pos.count; i += 7) {
+            const vec = new THREE.Vector3().fromBufferAttribute(pos, i);
+            vec.applyMatrix4(child.matrixWorld);
+            vec.applyMatrix4(rootInverse);
+            points.push({ x: vec.x, y: vec.y, z: vec.z + 0.01 });
+          }
+        }
+      });
+      if (points.length > 0) setValidPoints(points);
     }
     return () => { active = false; };
   }, [isPlane, imagePath, modelScene]);
@@ -125,7 +125,7 @@ export const JewelrySparkles = ({ count = 25, isPlane = false, imagePath = null,
     if (!validPoints) return [];
     return Array.from({ length: count }).map(() => {
       const pt = validPoints[Math.floor(Math.random() * validPoints.length)];
-      
+
       // We still use width for scale reference if 3D, but for now we just use a small base scale
       const is3D = !isPlane && modelScene;
       // In 3D, models can be huge (e.g. 100 units wide). We need the scale to adapt to the bounding box if possible, or just stay small relative to the points.
@@ -141,7 +141,7 @@ export const JewelrySparkles = ({ count = 25, isPlane = false, imagePath = null,
         });
         width = Math.max(0.1, maxX - minX);
       }
-      
+
       const scatterX = (Math.random() - 0.5) * 0.02 * width;
       const scatterY = (Math.random() - 0.5) * 0.02 * width;
 
@@ -160,7 +160,7 @@ export const JewelrySparkles = ({ count = 25, isPlane = false, imagePath = null,
       if (sprite) {
         const data = sparklesData[i];
         const sine = Math.sin(now * data.speed + data.phase);
-        
+
         sprite.material.opacity = sine * 0.5 + 0.5;
         const currentScale = data.baseScale * (sine * 0.3 + 0.7);
         sprite.scale.set(currentScale, currentScale, currentScale);
@@ -377,7 +377,7 @@ export function computeCollarbone(faceLandmarks, poseLandmarks, viewport, offset
       const dx = rsVP.x - lsVP.x;
       const dy = rsVP.y - lsVP.y;
       const dz = rsVP.z - lsVP.z;
-      shoulderWidth = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      shoulderWidth = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
       // X (left/right) gets its own higher floor: the jaw-corner midpoint used for the
       // face-side X reading isn't symmetric under perspective once the head yaws — the
@@ -427,7 +427,7 @@ export function computeCollarbone(faceLandmarks, poseLandmarks, viewport, offset
 
 
 // ── NecklaceMesh ─────────────────────────────────────────────────────
-export default function NecklaceMesh({ landmarksRef, poseLandmarksRef, activeModel, modelPos, modelRot, modelScale, modelSparkles, customMaterials, showFaceMesh, dragResetTick }) {
+export default function NecklaceMesh({ landmarksRef, poseLandmarksRef, activeModel, modelPos, modelRot, modelScale, modelScaleY, modelNecklaceBlur, modelSparkles, customMaterials, showFaceMesh, dragResetTick }) {
   const groupRef = useRef();
   const boxHeightRef = useRef(0);
   const boxWidthRef = useRef(1);
@@ -446,6 +446,8 @@ export default function NecklaceMesh({ landmarksRef, poseLandmarksRef, activeMod
         modelPos={modelPos}
         modelRot={modelRot}
         modelScale={modelScale}
+        modelScaleY={modelScaleY}
+        modelNecklaceBlur={modelNecklaceBlur}
         modelSparkles={modelSparkles}
         imagePath={modelPath}
         showFaceMesh={showFaceMesh}
@@ -463,17 +465,21 @@ export default function NecklaceMesh({ landmarksRef, poseLandmarksRef, activeMod
       modelPos={modelPos}
       modelRot={modelRot}
       modelScale={modelScale}
+      modelScaleY={modelScaleY}
+      modelNecklaceBlur={modelNecklaceBlur}
       modelSparkles={modelSparkles}
+      activeModel={activeModel}
       gltfPath={modelPath}
       showFaceMesh={showFaceMesh}
       customMaterials={customMaterials}
       dragOffsetRef={drag.offsetRef}
       dragHandlers={drag.dragHandlers}
+      dragResetTick={dragResetTick}
     />
   );
 };
 
-const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos, modelRot, modelScale, modelSparkles, gltfPath, showFaceMesh, customMaterials, dragOffsetRef, dragHandlers }) => {
+const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos, modelRot, modelScale, modelScaleY, modelNecklaceBlur, modelSparkles, gltfPath, showFaceMesh, customMaterials, dragOffsetRef, dragHandlers }) => {
   const { scene } = useGLTF(gltfPath);
 
   const { clonedScene } = React.useMemo(() => {
@@ -550,9 +556,11 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
                // clamp distFromTop to 0 to avoid artifacts if a vertex somehow goes above the anchor
                distFromTop = max(0.0, distFromTop);
                float fadeAlphaTip = smoothstep(0.0, uFadeDistTip, distFromTop);
-               
                // Combine depth fade and tip blur
-               float fadeAlpha = fadeAlphaDepth * fadeAlphaTip;
+               // We apply a power curve (2.5) to the tip blur to make the fade "stronger" 
+               // and drop to transparency much faster.
+               float strongTipFade = pow(fadeAlphaTip, 2.5);
+               float fadeAlpha = fadeAlphaDepth * strongTipFade;
                
                gl_FragColor = vec4(gl_FragColor.rgb, gl_FragColor.a * fadeAlpha);`
             );
@@ -613,9 +621,9 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
     boxWidthRef.current = width > 0 ? width : 1; // Prevent division by zero
   }, [clonedScene]);
 
-  const propsRef = useRef({ modelPos, modelRot, modelScale });
+  const propsRef = useRef({ modelPos, modelRot, modelScale, modelScaleY, modelNecklaceBlur });
   React.useEffect(() => {
-    propsRef.current = { modelPos, modelRot, modelScale };
+    propsRef.current = { modelPos, modelRot, modelScale, modelScaleY, modelNecklaceBlur };
   });
 
   useFrame((state) => {
@@ -637,7 +645,7 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
     }
 
     const { viewport } = state;
-    const { modelPos: mp, modelScale: ms } = propsRef.current;
+    const { modelPos: mp, modelScale: ms, modelScaleY: msY } = propsRef.current;
     const offsetX = mp ? (mp[0] ?? 0) : 0;
     const offsetY = mp ? (mp[1] ?? 0) : 0;
     const offsetZ = mp ? (mp[2] ?? 0) : 0;
@@ -758,7 +766,7 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
     if (!hasInitializedRef.current) {
       groupRef.current.position.copy(targetPos);
       groupRef.current.quaternion.copy(targetQuat);
-      groupRef.current.scale.set(finalScale, finalScale, finalScale);
+      groupRef.current.scale.set(finalScale, finalScale * (msY || 1), finalScale);
       groupRef.current.visible = true;
       hasInitializedRef.current = true;
     } else {
@@ -772,7 +780,7 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
       groupRef.current.quaternion.slerp(targetQuat, rotLerp);
 
       groupRef.current.scale.lerp(
-        new THREE.Vector3(finalScale, finalScale, finalScale),
+        new THREE.Vector3(finalScale, finalScale * (msY || 1), finalScale),
         posLerp
       );
     }
@@ -800,7 +808,8 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
 
     // 3. Tip Blur: Pass the absolute highest point of the necklace in world space
     uniformsRef.current.uNecklaceTopY.value = anchoredY;
-    uniformsRef.current.uFadeDistTip.value = (boxHeightRef.current || 0) * finalScale * 0.22; // Blur top 22%
+    const blurPct = (propsRef.current.modelNecklaceBlur ?? 18) / 100.0;
+    uniformsRef.current.uFadeDistTip.value = (boxHeightRef.current || 0) * finalScale * blurPct;
   });
 
   if (!clonedScene) return null;
@@ -816,7 +825,7 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
   );
 };
 
-const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos, modelRot, modelScale, modelSparkles, imagePath, showFaceMesh, dragOffsetRef, dragHandlers }) => {
+const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos, modelRot, modelScale, modelScaleY, modelNecklaceBlur, modelSparkles, imagePath, showFaceMesh, dragOffsetRef, dragHandlers }) => {
   const texture = useTexture(imagePath);
 
   React.useEffect(() => {
@@ -839,10 +848,9 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
     // run through the same tone curve as the rest of the scene.
     mat.toneMapped = false;
     mat.onBeforeCompile = (shader) => {
-      // Start fading halfway up (0.53) and fully disappear by 0.93, 
-      // ensuring the top tips are fully invisible to look like they go behind the neck
-      shader.uniforms.uFadeStart = { value: 0.53 };
-      shader.uniforms.uFadeEnd = { value: 0.93 };
+      // Use dynamic uniform for blur amount
+      shader.uniforms.uBlurAmount = { value: 18.0 };
+
 
       // Declare our own varying rather than relying on the built-in vUv/vMapUv
       // (its name/availability differs across three.js versions).
@@ -861,24 +869,35 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
         '#include <common>',
         `#include <common>
          varying vec2 vFadeUv;
-         uniform float uFadeStart;
-         uniform float uFadeEnd;`
+         uniform float uBlurAmount;`
       );
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <dithering_fragment>',
         `#include <dithering_fragment>
-         // Fade the top portion of the plane to transparent (blur effect) so the chain
-         // appears to disappear completely behind the neck instead of sitting on top.
-         float topFade = 1.0 - smoothstep(uFadeStart, uFadeEnd, vFadeUv.y);
+         float blurPct = clamp(uBlurAmount / 100.0, 0.0, 1.0);
+         // start fading at (1.0 - blurPct) from the top, fully disappeared at the very top (1.0)
+         float startF = 1.0 - blurPct;
+         float endF = 1.0;
+         float topFade = 1.0 - smoothstep(startF, endF, vFadeUv.y);
+         
+         // Fix: If blurPct is 0, completely disable the fade so it doesn't accidentally blur the top pixel
+         if (blurPct == 0.0) {
+             topFade = 1.0;
+         } else {
+             // Apply a power curve to make the fade drop off much stronger/faster
+             topFade = pow(topFade, 2.5);
+         }
+         
          gl_FragColor.a *= topFade;`
       );
+      mat.userData.shader = shader;
     };
     return mat;
   }, [texture]);
 
-  const propsRef = useRef({ modelPos, modelRot, modelScale });
+  const propsRef = useRef({ modelPos, modelRot, modelScale, modelScaleY, modelNecklaceBlur });
   React.useEffect(() => {
-    propsRef.current = { modelPos, modelRot, modelScale };
+    propsRef.current = { modelPos, modelRot, modelScale, modelScaleY, modelNecklaceBlur };
   });
 
   // Low-pass filter for the raw per-frame anchor — see NecklaceMeshInner for why.
@@ -916,7 +935,7 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
     }
 
     const { viewport } = state;
-    const { modelPos: mp, modelScale: ms } = propsRef.current;
+    const { modelPos: mp, modelScale: ms, modelScaleY: msY } = propsRef.current;
     const offsetX = mp ? (mp[0] ?? 0) : 0;
     const offsetY = mp ? (mp[1] ?? 0) : 0;
     const offsetZ = mp ? (mp[2] ?? 0) : 0;
@@ -991,7 +1010,7 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
     if (!hasInitializedRef.current) {
       groupRef.current.position.copy(targetPos);
       groupRef.current.quaternion.copy(adminQuat);
-      groupRef.current.scale.set(finalScale * aspect, finalScale, finalScale);
+      groupRef.current.scale.set(finalScale * aspect, finalScale * (msY || 1), finalScale);
       groupRef.current.visible = true;
       hasInitializedRef.current = true;
     } else {
@@ -1002,9 +1021,13 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
 
       groupRef.current.quaternion.slerp(adminQuat, lerpF);
       groupRef.current.scale.lerp(
-        new THREE.Vector3(finalScale * aspect, finalScale, finalScale),
+        new THREE.Vector3(finalScale * aspect, finalScale * (msY || 1), finalScale),
         lerpF
       );
+    }
+    
+    if (material.userData.shader) {
+      material.userData.shader.uniforms.uBlurAmount.value = propsRef.current.modelNecklaceBlur ?? 18;
     }
   });
 

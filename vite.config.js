@@ -90,6 +90,7 @@ const mockUploadPlugin = () => ({
                id,
                name: data.name,
                category: data.category,
+               material: data.material || "",
                modelPath: modelUrl,
                mtlPath: "",
                texturePath: "",
@@ -144,6 +145,30 @@ const mockUploadPlugin = () => ({
             const modelIndex = catalog.models.findIndex(m => m.id === id);
             if (modelIndex > -1) {
               catalog.models[modelIndex].deleted = deleted;
+              fs.writeFileSync(catFilePath, JSON.stringify(catalog, null, 2));
+              res.statusCode = 200;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: true }));
+            } else {
+              res.statusCode = 404;
+              res.end(JSON.stringify({ success: false, message: 'Model not found' }));
+            }
+          } catch (e) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ success: false, message: e.message }));
+          }
+        });
+      } else if (req.url === '/api/update-catalog-material' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+          try {
+            const { id, material } = JSON.parse(body);
+            const catFilePath = path.resolve(__dirname, 'public/models/catalog.json');
+            const catalog = JSON.parse(fs.readFileSync(catFilePath, 'utf-8'));
+            const modelIndex = catalog.models.findIndex(m => m.id === id);
+            if (modelIndex > -1) {
+              catalog.models[modelIndex].material = material;
               fs.writeFileSync(catFilePath, JSON.stringify(catalog, null, 2));
               res.statusCode = 200;
               res.setHeader('Content-Type', 'application/json');

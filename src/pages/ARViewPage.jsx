@@ -4,7 +4,7 @@ import FaceTracker from '../FaceTracker';
 import HandTracker from '../HandTracker';
 import Scene3D from '../Scene3D';
 import ProductConfigurator from '../components/ar/ProductConfigurator';
-import { getModelConfig, saveModelConfig, resetModelConfig, configToPosition, configToRotation, configToScale, configToLeftPosition, configToLeftRotation } from '../utils/modelConfig';
+import { getModelConfig, saveModelConfig, resetModelConfig, configToPosition, configToRotation, configToScale, configToScaleY, configToNecklaceBlur, configToLeftPosition, configToLeftRotation } from '../utils/modelConfig';
 import { getCategoryMeta, orderCategories } from '../constants/categoryMeta';
 import ARGuideModal from '../components/ar/ARGuideModal';
 import { loadARGuideConfig } from '../utils/arGuideConfig';
@@ -141,6 +141,8 @@ export default function ARViewPage() {
   const [leftModelRot, setLeftModelRot] = useState([0, 0, 0]);
   const [tuningHand, setTuningHand] = useState('right');
   const [modelScale, setModelScale] = useState(1);
+  const [modelScaleY, setModelScaleY] = useState(1);
+  const [modelNecklaceBlur, setModelNecklaceBlur] = useState(18);
   const [modelSparkles, setModelSparkles] = useState(false);
   const [ringTuning, setRingTuning] = useState({
     rightHandFrontOffset: -0.05,
@@ -174,6 +176,9 @@ export default function ARViewPage() {
   // Which page of the model grid is showing (paginated)
   const [modelPage, setModelPage] = useState(0);
 
+  // Material filter for the current category (e.g. "Gold", "Diamond")
+  const [materialFilter, setMaterialFilter] = useState('all');
+
   // Phone/tablet bottom sheet shows 1 row of 3 (rest via pagination);
   // desktop sidebar shows 3 rows of 3 (9 per page)
   const [isMobileLayout, setIsMobileLayout] = useState(() =>
@@ -202,6 +207,7 @@ export default function ARViewPage() {
   // Reset to the first page whenever the active category changes
   useEffect(() => {
     setModelPage(0);
+    setMaterialFilter('all'); // Reset material filter on category change
   }, [category]);
 
   // Also reset to the first page if the layout switches between mobile/desktop
@@ -349,6 +355,8 @@ export default function ARViewPage() {
     setLeftModelPos(configToLeftPosition(cfg));
     setLeftModelRot(configToLeftRotation(cfg));
     setModelScale(configToScale(cfg));
+    setModelScaleY(configToScaleY(cfg));
+    setModelNecklaceBlur(configToNecklaceBlur(cfg));
     setModelSparkles(!!cfg.enableSparkles);
   };
 
@@ -384,6 +392,8 @@ export default function ARViewPage() {
       leftRotY: leftModelRot[1],
       leftRotZ: leftModelRot[2],
       scale: modelScale,
+      scaleY: modelScaleY,
+      necklaceBlur: modelNecklaceBlur,
       enableSparkles: modelSparkles,
       category: activeModel.category,
     });
@@ -404,6 +414,8 @@ export default function ARViewPage() {
     setLeftModelPos([0, 0, 0]);
     setLeftModelRot([0, 0, 0]);
     setModelScale(1);
+    setModelScaleY(1);
+    setModelNecklaceBlur(18);
     setSaved('Reset!');
     setTimeout(() => setSaved(false), 2000);
   };
@@ -413,6 +425,59 @@ export default function ARViewPage() {
 
   const availableCategories = [...new Set(catalog.map(m => m.category))];
   const orderedCategories = orderCategories(availableCategories);
+
+  // Detect material types present in the current category's models
+  const GoldIcon = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="#fbbf24" style={{marginRight: '6px', filter: 'drop-shadow(0 0 2px rgba(251,191,36,0.5))'}}>
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+    </svg>
+  );
+  
+  const DiamondIcon = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="#60a5fa" style={{marginRight: '6px', filter: 'drop-shadow(0 0 2px rgba(96,165,250,0.5))'}}>
+      <path d="M12 2L2 9l10 13L22 9l-10-7zM2.8 9.5l4-5h10.4l4 5L12 20.3 2.8 9.5z" stroke="#60a5fa" strokeWidth="1" />
+      <path d="M12 2l4 7h-8zM7.5 9h9L12 21z" fill="#60a5fa" opacity="0.8"/>
+    </svg>
+  );
+
+  const OthersIcon = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="#94a3b8" style={{marginRight: '6px'}}>
+      <circle cx="5" cy="12" r="2.5" />
+      <circle cx="12" cy="12" r="2.5" />
+      <circle cx="19" cy="12" r="2.5" />
+    </svg>
+  );
+
+  const MATERIAL_TAGS = [
+    { key: 'gold', label: <span style={{display:'flex', alignItems:'center'}}><GoldIcon /> Gold</span>, keywords: ['gold'] },
+    { key: 'diamond', label: <span style={{display:'flex', alignItems:'center'}}><DiamondIcon /> Diamond</span>, keywords: ['diamond'] },
+    { key: 'others', label: <span style={{display:'flex', alignItems:'center'}}><OthersIcon /> Others</span>, keywords: ['others'] },
+  ];
+
+  const availableMaterialFilters = useMemo(() => {
+    // Per-category: which chips to always show (even if no models match)
+    const categoryAlwaysShow = {
+      watch: new Set(['gold', 'diamond', 'others']),
+      eyewear: new Set(),  // no always-show chips for eyewear
+    };
+    const alwaysShow = categoryAlwaysShow[category] ?? new Set(['gold', 'diamond']);
+    const tags = MATERIAL_TAGS.filter(tag =>
+      alwaysShow.has(tag.key) ||
+      activeCategoryModels.some(m =>
+        (m.material === tag.key) || (!m.material && tag.keywords.some(kw => m.name?.toLowerCase().includes(kw)))
+      )
+    );
+    return tags;
+  }, [activeCategoryModels, category]);
+
+  const filteredModels = useMemo(() => {
+    if (materialFilter === 'all') return activeCategoryModels;
+    const tag = MATERIAL_TAGS.find(t => t.key === materialFilter);
+    if (!tag) return activeCategoryModels;
+    return activeCategoryModels.filter(m =>
+      (m.material === tag.key) || (!m.material && tag.keywords.some(kw => m.name?.toLowerCase().includes(kw)))
+    );
+  }, [activeCategoryModels, materialFilter]);
 
   const railTop = headerHeight + 12;
 
@@ -725,7 +790,7 @@ export default function ARViewPage() {
 
   // Shared between the desktop sidebar and the phone bottom sheet
   const renderModelGridAndPromo = () => {
-    const modelsToRender = isMobileLayout ? activeCategoryModels : activeCategoryModels.slice(modelPage * MODELS_PER_PAGE, modelPage * MODELS_PER_PAGE + MODELS_PER_PAGE);
+    const modelsToRender = isMobileLayout ? filteredModels : filteredModels.slice(modelPage * MODELS_PER_PAGE, modelPage * MODELS_PER_PAGE + MODELS_PER_PAGE);
 
     const renderCard = (model) => (
       <div
@@ -767,7 +832,7 @@ export default function ARViewPage() {
             : modelsToRender.map(renderCard)}
         </div>
 
-        {!isMobileLayout && activeCategoryModels.length > MODELS_PER_PAGE && (
+        {!isMobileLayout && filteredModels.length > MODELS_PER_PAGE && (
           <div className="tryon-pagination">
             <button
               type="button"
@@ -777,11 +842,11 @@ export default function ARViewPage() {
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
             </button>
-            <span>{modelPage + 1} / {Math.ceil(activeCategoryModels.length / MODELS_PER_PAGE)}</span>
+            <span>{modelPage + 1} / {Math.ceil(filteredModels.length / MODELS_PER_PAGE)}</span>
             <button
               type="button"
-              onClick={() => setModelPage(p => Math.min(Math.ceil(activeCategoryModels.length / MODELS_PER_PAGE) - 1, p + 1))}
-              disabled={modelPage >= Math.ceil(activeCategoryModels.length / MODELS_PER_PAGE) - 1}
+              onClick={() => setModelPage(p => Math.min(Math.ceil(filteredModels.length / MODELS_PER_PAGE) - 1, p + 1))}
+              disabled={modelPage >= Math.ceil(filteredModels.length / MODELS_PER_PAGE) - 1}
               aria-label="Next models"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
@@ -1104,6 +1169,20 @@ export default function ARViewPage() {
                 onChange={e => setModelScale(parseFloat(e.target.value))} />
             </label>
 
+            <label className="ar-tuning-label">
+              <span>Height Scale (Y): <strong>{parseFloat(modelScaleY).toFixed(2)}x</strong></span>
+              <input type="range" min="0.01" max="10" step="0.01" value={modelScaleY}
+                onChange={e => setModelScaleY(parseFloat(e.target.value))} />
+            </label>
+
+            {category === 'necklace' && (
+              <label className="ar-tuning-label">
+                <span>Top Blur: <strong>{parseInt(modelNecklaceBlur)}%</strong></span>
+                <input type="range" min="0" max="100" step="1" value={modelNecklaceBlur}
+                  onChange={e => setModelNecklaceBlur(parseFloat(e.target.value))} />
+              </label>
+            )}
+
             <label className="ar-tuning-label" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.5rem' }}>
               <span>✨ Sparkling Effect</span>
               <input type="checkbox" checked={modelSparkles} onChange={e => setModelSparkles(e.target.checked)} style={{ width: '18px', height: '18px', accentColor: '#fbbf24', cursor: 'pointer' }} />
@@ -1211,6 +1290,8 @@ export default function ARViewPage() {
               leftModelPos={leftModelPos}
               leftModelRot={leftModelRot}
               modelScale={modelScale}
+              modelScaleY={modelScaleY}
+              modelNecklaceBlur={modelNecklaceBlur}
               modelSparkles={modelSparkles}
               activeModel={activeModel}
               isHandTracking={isHandTracking}
@@ -1304,6 +1385,27 @@ export default function ARViewPage() {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* Material Filter Chips (only shown when models with known materials exist in current category) */}
+        {availableMaterialFilters.length > 0 && (
+          <div className="material-filter-row">
+            <button
+              className={`material-filter-chip ${materialFilter === 'all' ? 'active' : ''}`}
+              onClick={() => { setMaterialFilter('all'); setModelPage(0); }}
+            >
+              All
+            </button>
+            {availableMaterialFilters.map(tag => (
+              <button
+                key={tag.key}
+                className={`material-filter-chip ${materialFilter === tag.key ? 'active' : ''}`}
+                onClick={() => { setMaterialFilter(tag.key); setModelPage(0); }}
+              >
+                {tag.label}
+              </button>
+            ))}
           </div>
         )}
 

@@ -22,7 +22,7 @@ export function getModelConfig(modelId, defaults = {}) {
     return { ...defaults[modelId] };
   }
   // Hardcoded fallback
-  return { posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1 };
+  return { posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1, scaleY: 1 };
 }
 
 /**
@@ -44,6 +44,25 @@ export async function saveModelConfig(modelId, config) {
     return json;
   } catch (err) {
     console.warn('Could not save to model-defaults.json. Make sure the Vite dev server is running.', err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Update the material tag for a model in catalog.json
+ * @param {string} modelId
+ * @param {string} material
+ */
+export async function updateModelMaterial(modelId, material) {
+  try {
+    const res = await fetch('/api/update-catalog-material', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: modelId, material })
+    });
+    return await res.json();
+  } catch (err) {
+    console.warn('Could not update material in catalog.', err);
     return { success: false, error: err.message };
   }
 }
@@ -107,4 +126,18 @@ export function configToLeftRotation(config) {
  */
 export function configToScale(config) {
   return config.scale ?? 1;
+}
+
+/**
+ * Get the Y-axis scale value for Three.js (height scaling)
+ */
+export function configToScaleY(config) {
+  return config.scaleY ?? 1;
+}
+
+/**
+ * Get necklace top blur amount (0-100, default 18)
+ */
+export function configToNecklaceBlur(config) {
+  return config.necklaceBlur ?? 18;
 }

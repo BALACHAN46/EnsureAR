@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getModelConfig, saveModelConfig, resetModelConfig, hasCustomConfig } from '../utils/modelConfig';
+import { getModelConfig, saveModelConfig, resetModelConfig, hasCustomConfig, updateModelMaterial } from '../utils/modelConfig';
 
 const SLIDER_CONFIG = [
   {
@@ -65,13 +65,23 @@ const SLIDER_CONFIG = [
   },
   {
     key: 'scale',
-    label: 'Scale (Size)',
+    label: 'Scale (Overall Size)',
     min: 0.1,
     max: 5,
     step: 0.01,
     unit: 'x',
     format: v => parseFloat(v).toFixed(2),
     color: '#06b6d4',
+  },
+  {
+    key: 'scaleY',
+    label: 'Scale Y (Height / Length)',
+    min: 0.1,
+    max: 5,
+    step: 0.01,
+    unit: 'x',
+    format: v => parseFloat(v).toFixed(2),
+    color: '#0ea5e9',
   },
 ];
 
@@ -82,11 +92,12 @@ export default function ModelEditPage() {
 
   const [model, setModel] = useState(null);
   const [defaults, setDefaults] = useState({});
-  const [config, setConfig] = useState({ posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1, enableSparkles: false });
+  const [config, setConfig] = useState({ posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1, scaleY: 1, enableSparkles: false });
   const [originalDefaults, setOriginalDefaults] = useState(null);
   const [saved, setSaved] = useState(false);
   const [isCustomized, setIsCustomized] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [materialTag, setMaterialTag] = useState('');
 
   // Auth guard
   useEffect(() => {
@@ -106,11 +117,14 @@ export default function ModelEditPage() {
     ]).then(([catalogData, defaultsData]) => {
       const found = catalogData.models?.find(m => m.id === modelId);
       setModel(found || null);
+      if (found) {
+        setMaterialTag(found.material || '');
+      }
 
       const defs = defaultsData.modelDefaults || {};
       setDefaults(defs);
 
-      const jsonDefault = defs[modelId] || { posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1 };
+      const jsonDefault = defs[modelId] || { posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1, scaleY: 1 };
       setOriginalDefaults(jsonDefault);
 
       // Load current config (localStorage override or JSON default)
@@ -136,7 +150,7 @@ export default function ModelEditPage() {
   const handleReset = () => {
     if (originalDefaults) {
       resetModelConfig(modelId);
-      setConfig({ posX: originalDefaults.posX ?? 0, ...originalDefaults, scale: originalDefaults.scale ?? 1 });
+      setConfig({ posX: originalDefaults.posX ?? 0, ...originalDefaults, scale: originalDefaults.scale ?? 1, scaleY: originalDefaults.scaleY ?? 1 });
       setIsCustomized(false);
       setSaved(false);
     }
@@ -212,6 +226,25 @@ export default function ModelEditPage() {
               <h3>{model.name}</h3>
               <span className="edit-model-category">{model.category}</span>
               <p className="edit-model-id">ID: {model.id}</p>
+              
+              <div style={{ marginTop: '12px', marginBottom: '12px' }}>
+                <label style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Material Tag</label>
+                <select 
+                  value={materialTag} 
+                  onChange={async (e) => {
+                    const newMat = e.target.value;
+                    setMaterialTag(newMat);
+                    await updateModelMaterial(model.id, newMat);
+                  }}
+                  style={{ width: '100%', padding: '6px', borderRadius: '4px', background: '#1e293b', border: '1px solid #334155', color: 'white', outline: 'none' }}
+                >
+                  <option value="">(None)</option>
+                  <option value="gold">Gold</option>
+                  <option value="diamond">Diamond</option>
+                  <option value="others">Others</option>
+                </select>
+              </div>
+
               {isCustomized ? (
                 <div className="edit-status-badge edit-status-badge--custom">
                   <svg viewBox="0 0 12 12" fill="currentColor">
@@ -286,19 +319,19 @@ export default function ModelEditPage() {
                 </React.Fragment>
               );
             })}
-          </div>
-
-          <div className="tuning-slider-row" style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div className="tuning-slider-label">
-              <span className="tuning-slider-dot" style={{ background: '#fbbf24' }} />
-              <span className="tuning-slider-name">✨ Sparkling Effect</span>
+            
+            <div className="tuning-slider-row" style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="tuning-slider-label">
+                <span className="tuning-slider-dot" style={{ background: '#fbbf24' }} />
+                <span className="tuning-slider-name">✨ Sparkling Effect</span>
+              </div>
+              <input 
+                type="checkbox" 
+                checked={!!config.enableSparkles} 
+                onChange={e => setConfig(prev => ({ ...prev, enableSparkles: e.target.checked }))} 
+                style={{ width: '20px', height: '20px', accentColor: '#fbbf24', cursor: 'pointer' }}
+              />
             </div>
-            <input 
-              type="checkbox" 
-              checked={!!config.enableSparkles} 
-              onChange={e => setConfig(prev => ({ ...prev, enableSparkles: e.target.checked }))} 
-              style={{ width: '20px', height: '20px', accentColor: '#fbbf24', cursor: 'pointer' }}
-            />
           </div>
 
           <div className="tuning-actions">

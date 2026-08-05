@@ -26,7 +26,7 @@ const FINGER_KEYS = ['index', 'middle', 'ring', 'pinky'];
  * - Precision Occlusion: An invisible cylinder precisely centered hides the back-band when viewing the palm, and hides the gem when viewing the back of the hand, without side-clipping.
  * ─────────────────────────────────────────────────────────────────────
  */
-const RingMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelSparkles, activeModel, showMesh, customMaterials, ringTuning }) => {
+const RingMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRot, modelScale, modelScaleY, modelSparkles, activeModel, showMesh, customMaterials, ringTuning }) => {
   const { scene } = useGLTF(activeModel?.glbPath || '');
   const groupRef = useRef();
   const innerGroupRef = useRef();
@@ -243,7 +243,7 @@ const RingMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRot
         )}
 
         {/* The 3D Ring */}
-        <group scale={[modelScale || 1, modelScale || 1, modelScale || 1]}>
+        <group scale={[modelScale || 1, (modelScale || 1) * (modelScaleY || 1), modelScale || 1]}>
           <Center>
             <primitive object={clonedScene} />
             {modelSparkles && <JewelrySparkles count={50} isPlane={false} modelScene={clonedScene} />}

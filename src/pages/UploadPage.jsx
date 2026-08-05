@@ -65,6 +65,7 @@ export default function UploadPage() {
   const [thumbFile, setThumbFile]       = useState(null);
   const [name, setName]                 = useState('');
   const [category, setCategory]         = useState('necklace');
+  const [materialTag, setMaterialTag]   = useState('');
   const [scaleX, setScaleX]             = useState(1);
   const [scaleY, setScaleY]             = useState(1);
   const [scaleZ, setScaleZ]             = useState(1);
@@ -403,6 +404,7 @@ export default function UploadPage() {
       const payload = {
         name,
         category,
+        material: materialTag ? materialTag.toLowerCase() : '',
         scale: [scaleX, scaleY, scaleZ],
         offset: [offsetX, offsetY, offsetZ],
         rotationOffset: [rotX, rotY, rotZ]
@@ -654,6 +656,16 @@ export default function UploadPage() {
                 </select>
               </div>
 
+              <div className="upload-form-group">
+                <label htmlFor="upload-material">Material Tag (Optional)</label>
+                <select id="upload-material" value={materialTag} onChange={e => setMaterialTag(e.target.value)}>
+                  <option value="">(None)</option>
+                  <option value="Gold">Gold</option>
+                  <option value="Diamond">Diamond</option>
+                  <option value="Others">Others</option>
+                </select>
+              </div>
+
 
               <div className="upload-form-group upload-form-full">
                 <label>Material File (.mtl) <span style={{ color: 'rgba(255,255,255,0.35)' }}>(optional, for .obj models)</span></label>
@@ -762,6 +774,15 @@ export default function UploadPage() {
                   <label>Category *</label>
                   <select value={category} onChange={e => setCategory(e.target.value)}>
                     {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                </div>
+                <div className="upload-form-group">
+                  <label>Material Tag (Optional)</label>
+                  <select value={materialTag} onChange={e => setMaterialTag(e.target.value)}>
+                    <option value="">(None)</option>
+                    <option value="Gold">Gold</option>
+                    <option value="Diamond">Diamond</option>
+                    <option value="Others">Others</option>
                   </select>
                 </div>
               </div>

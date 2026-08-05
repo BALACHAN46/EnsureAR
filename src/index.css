@@ -3283,6 +3283,47 @@ img {
   text-align: center;
 }
 
+/* ── Material Filter Chips ─────────────────────────────────── */
+.material-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem 0.6rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  background: rgba(0,0,0,0.2);
+}
+
+.material-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  color: var(--text-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.material-filter-chip:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.2);
+  color: var(--text-1);
+}
+
+.material-filter-chip.active {
+  background: linear-gradient(135deg, rgba(245,185,20,0.2), rgba(220,140,5,0.3));
+  border-color: rgba(245,185,20,0.6);
+  color: #f5d020;
+  box-shadow: 0 0 10px rgba(245,185,20,0.15);
+}
+
+
+
 .tryon-sidebar-promo {
   padding: 1.25rem 1.25rem 1.5rem;
 }
@@ -4037,10 +4078,11 @@ img {
   background: rgba(255, 255, 255, 0.028);
   border: 1px solid rgba(255, 255, 255, 0.065);
   border-radius: 14px;
-  padding: 1rem 0.9rem;
+  padding: 0.85rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.85rem;
   transition: border-color 0.2s, background 0.2s;
 }
 
@@ -4053,6 +4095,7 @@ img {
   position: relative;
   width: 56px;
   height: 56px;
+  flex-shrink: 0;
 }
 
 .wgm-step-svg {
@@ -4175,17 +4218,6 @@ img {
 
   .wgm-steps {
     grid-template-columns: 1fr;
-  }
-
-  .wgm-step {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 0.85rem;
-    padding: 0.85rem;
-  }
-
-  .wgm-step-icon-wrap {
-    flex-shrink: 0;
   }
 
   .wgm-cta-btn {
@@ -5381,16 +5413,20 @@ img {
   }
   .tryon-mobile-controls-floating button.ar-ctrl-btn {
     pointer-events: auto;
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    justify-content: center;
   }
   .tryon-mobile-controls-floating button.ar-ctrl-btn svg {
     width: 14px !important;
     height: 14px !important;
   }
   .tryon-mobile-controls-floating button.tryon-mobile-capture {
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    justify-content: center;
   }
   .tryon-mobile-controls-floating button.tryon-mobile-capture svg {
     width: 18px !important;

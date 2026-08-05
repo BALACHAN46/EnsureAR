@@ -1,4 +1,4 @@
-import React, { Suspense, useMemo, useEffect, useState } from 'react';
+import React, { Suspense, useMemo, useEffect, useState, useRef } from 'react';
 import { Canvas, useLoader, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment, Center, Bounds, useGLTF, useTexture, Html, useProgress } from '@react-three/drei';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
@@ -103,14 +103,26 @@ function ModelSwitch({ activeModel, customMaterials, onMeshesLoaded }) {
 function CameraRig({ cameraView }) {
   const { camera, controls } = useThree();
   const [targetPos, setTargetPos] = useState(null);
+  const initialPosRef = useRef(null);
+  const isLerping = useRef(false);
+
+  useEffect(() => {
+    // Capture the initial position slightly after mount (allows Bounds to settle)
+    const timer = setTimeout(() => {
+      if (!initialPosRef.current && camera) {
+        initialPosRef.current = camera.position.clone();
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [camera]);
 
   useEffect(() => {
     if (!cameraView || !controls) {
       setTargetPos(null);
+      isLerping.current = false;
       return;
     }
     
-    // Determine distance based on the CURRENT camera position (fitted by Bounds)
     const d = camera.position.distanceTo(controls.target);
     const newPos = new THREE.Vector3();
     
@@ -120,20 +132,29 @@ function CameraRig({ cameraView }) {
       case 'left': newPos.set(-d, 0, 0); break;
       case 'right': newPos.set(d, 0, 0); break;
       case 'top': newPos.set(0, d, 0.1); break; // 0.1 to avoid gimbal lock
-      case 'reset': newPos.set(d * 0.7, d * 0.5, d * 0.7); break;
+      case 'reset': 
+        if (initialPosRef.current) {
+          newPos.copy(initialPosRef.current).sub(controls.target);
+        } else {
+          newPos.set(d * 0.7, d * 0.5, d * 0.7);
+        }
+        break;
       default: newPos.set(0, 0, d); break;
     }
     
     // Add the target offset in case OrbitControls is looking away from origin
     newPos.add(controls.target);
     setTargetPos(newPos);
+    isLerping.current = true; // Start lerping to new target
   }, [cameraView, camera, controls]);
 
   useFrame(() => {
-    if (targetPos && controls) {
+    if (isLerping.current && targetPos && controls) {
       if (camera.position.distanceTo(targetPos) > 0.05) {
         camera.position.lerp(targetPos, 0.08);
         controls.update();
+      } else {
+        isLerping.current = false; // Stop lerping once we reach target
       }
     }
   });
