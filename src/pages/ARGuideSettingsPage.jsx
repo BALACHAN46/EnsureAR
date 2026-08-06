@@ -158,12 +158,18 @@ export default function ARGuideSettingsPage() {
             <span className="admin-model-count-badge" style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8', borderColor: 'rgba(99,102,241,0.3)' }}>Configuration</span>
           </div>
           <div className="admin-topbar-right">
-            {isDirty && (
+            {isDirty && hasActualOverrides(activeCategory) && (
               <button
-                onClick={handleReset}
+                onClick={() => {
+                  setConfig(prev => {
+                    const overrides = { ...prev.categoryOverrides };
+                    delete overrides[activeCategory];
+                    return { ...prev, categoryOverrides: overrides };
+                  });
+                }}
                 style={{ padding: '0.4rem 1rem', borderRadius: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
               >
-                Reset Defaults
+                ↩ Clear {catMeta.label} overrides
               </button>
             )}
             <button
@@ -330,21 +336,7 @@ export default function ARGuideSettingsPage() {
                   );
                 })}
 
-                {/* Clear override for this category */}
-                {isDirty && hasActualOverrides(activeCategory) && (
-                  <button
-                    onClick={() => {
-                      setConfig(prev => {
-                        const overrides = { ...prev.categoryOverrides };
-                        delete overrides[activeCategory];
-                        return { ...prev, categoryOverrides: overrides };
-                      });
-                    }}
-                    style={{ marginTop: '1rem', padding: '0.35rem 0.9rem', borderRadius: 8, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
-                  >
-                    ↩ Clear {catMeta.label} overrides
-                  </button>
-                )}
+                {/* Removed clear override button from here */}
               </div>
             </div>
           </div>

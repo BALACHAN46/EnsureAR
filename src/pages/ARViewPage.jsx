@@ -795,7 +795,7 @@ export default function ARViewPage() {
     const renderCard = (model) => (
       <div
         key={model.id}
-        className={`carousel-item ${activeModel?.id === model.id ? 'active' : ''}`}
+        className={`ar-carousel-item ${activeModel?.id === model.id ? 'active' : ''}`}
         onClick={() => handleModelSelect(model)}
         title={model.name}
       >

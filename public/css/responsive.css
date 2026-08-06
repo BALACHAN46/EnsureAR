@@ -1,0 +1,454 @@
+@media screen and (max-width: 1400px) {
+    .blog-details.blog-details-box {
+        padding: 100px 30px;
+    }
+
+    .ens-padding {
+        padding: 0px 30px;
+    }
+}
+
+
+@media screen and (max-width: 1199px) {
+    .ens-padding {
+        padding: 0px;
+    }
+
+    .ens-slider.style20 {
+        height: auto;
+    }
+
+    .ens-slider .ytvideo-bg {
+        padding-bottom: 52.25%;
+    }
+
+    .grid_lines {
+        display: none;
+    }
+
+    .sidebar .ens-testimonial1 .ens-item--inner {
+        padding: 30px 40px;
+    }
+
+    .ens-testimonial-one .ens-swiper-navigation.style1 {
+        display: none;
+    }
+
+    .ens-marquee {
+        padding-bottom: 90px;
+    }
+
+    .ens-text-marquee1 .ens-item--text {
+        font-size: 60px;
+        line-height: 50px;
+    }
+
+    .ens-counter1 .ens-item--holder {
+        gap: 10px;
+    }
+
+    .ens-counter1.mr-bottom-100 {
+        margin-bottom: 30px;
+    }
+
+}
+
+@media screen and (max-width: 991px) {
+    .laptop-img {
+        position: absolute;
+        z-index: 9;
+        width: fit-content;
+        bottom: 0px;
+        left: 0;
+        right: 0;
+        margin-inline: auto;
+    }
+
+    .section,
+    section,
+    .ens-about-two {
+        padding: 90px 0px;
+    }
+
+    .h1,
+    h1 {
+        font-size: var(--fs-42);
+        line-height: 1.3em;
+    }
+
+    .blog-details .post-header .post-title,
+    .h2,
+    h2 {
+        font-size: var(--fs-30);
+        line-height: 1.2em;
+    }
+
+    .h3,
+    h3 {
+        font-size: var(--fs-24);
+        line-height: 1.4em;
+    }
+
+    .h4,
+    h4 {
+        font-size: var(--fs-22);
+        line-height: 1.6em;
+    }
+
+    .h5,
+    h5 {
+        font-size: var(--fs-20);
+        line-height: 1.6em;
+    }
+
+    .h6,
+    h6 {
+        font-size: var(--fs-17);
+        line-height: 1.6em;
+    }
+
+    .aside_info_wrapper {
+        padding: 30px 30px;
+    }
+
+    .ens-image-box1,
+    .ens-image-box3 {
+        margin-bottom: 30px;
+    }
+
+    .ens-about-company-one .ens-image-single .ens-item--image {
+        padding-left: 30px;
+        padding-right: 30px;
+    }
+
+    .ens-office-address .widget {
+        padding-left: 30px;
+        padding-right: 15px;
+    }
+
+    .ens-appointment-form-one .ens-form--wrapper {
+        position: relative;
+    }
+
+    .blog-details ul.point-order li {
+        font-size: 18px;
+        line-height: 28px;
+    }
+
+    .ens-team-ci-wrap .team-ci--title {
+        font-size: 30px;
+    }
+
+    .blog-details .blog-details-inner .widget-title {
+        font-size: 22px;
+    }
+
+    .ens-testimonial-one .ens-swiper-navigation.style1 {
+        right: 15px;
+        bottom: 15px;
+    }
+
+    .blog-details.blog-details-box {
+        padding: 100px 15px;
+    }
+
+    .ens-album-one {
+        padding-left: 50px;
+        padding-right: 50px;
+        padding-top: 30px;
+        padding-bottom: 200px;
+    }
+
+    .portfolio-filters-content .filters-button-group .button {
+        padding: 0px 20px 35px 20px;
+    }
+
+    .ens-counter1 .ens-item--value {
+        font-size: 50px;
+        line-height: 1.3em;
+    }
+
+    .swiper-gallery-two .ens-swiper-navigation.style2 {
+        width: 95%;
+    }
+
+    .ens-team-one .ens-swiper-navigation.style1 {
+        position: relative;
+    }
+
+    .ens-slider.style19 .ens-heading {
+        display: none;
+    }
+}
+
+@media screen and (max-width: 767px) {
+
+    .h1,
+    h1 {
+        font-size: var(--fs-42);
+    }
+
+    .h2,
+    h2 {
+        font-size: var(--fs-30);
+    }
+
+    .h3,
+    h3 {
+        font-size: var(--fs-24);
+    }
+
+    .h4,
+    h4 {
+        font-size: var(--fs-22);
+    }
+
+    .h5,
+    h5 {
+        font-size: var(--fs-20);
+    }
+
+    .h6,
+    h6 {
+        font-size: var(--fs-18);
+    }
+
+    .footer .footer-bottom .footer-bottom-inner {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-flow: row wrap;
+        color: var(--color-two-fixed);
+        text-align: center;
+    }
+
+    #camera-container.camera-default {
+        width: 100%;
+        height: 55vh !important;
+    }
+
+    #camera-container.camera-wrist {
+        width: 100%;
+        height: 55vh !important;
+    }
+
+    .ens-counter1 .ens-item--value {
+        font-size: 40px;
+        line-height: 1.3em;
+    }
+
+    .ens-counter1 .ens-item--text {
+        font-size: 16px;
+        line-height: 1.3em;
+    }
+
+    .ens-service-one {
+        padding-bottom: 0px;
+    }
+
+    .ens-appointment-form-one .ens-form--wrapper {
+        padding: 30px;
+    }
+
+    .ens-header--cart {
+        margin-right: 35px;
+    }
+
+    .ens-instagram--gallery .ens-item {
+        max-width: 150px;
+    }
+
+    .ens-about-one .ens-item-layer-one {
+        left: -3%;
+        bottom: 35%;
+    }
+
+    br {
+        display: none;
+    }
+
+    .ens-gallery-holder {
+        padding: 30px 60px;
+    }
+
+    .portfolio-filters-content .filters-button-group .button {
+        padding: 0px 10px 15px 10px;
+        margin-bottom: 10px;
+        font-size: 12px;
+        font-weight: var(--fw-normal);
+    }
+}
+
+@media screen and (max-width: 650px) {
+    .swiper-slide .grid-item .ens-item--holder {
+        padding: 20px;
+    }
+
+    .ens-slider:not(.style11) {
+        padding-left: 0px !important;
+        padding-right: 0px !important;
+    }
+
+    .ens-slider:not(.style11) .ens-left-pane,
+    .ens-slider:not(.style11) .ens-right-pane {
+        display: none;
+    }
+
+    .ens-slider.style7 {
+        padding: 0px 0px;
+    }
+
+    .ens-slider.style8 {
+        padding: 30px 0px;
+    }
+
+    .ens-slider.style7 .ens-swiper-slider-seven .ens-slider--item {
+        padding: 0px;
+        height: 100vh;
+    }
+
+    .ens-slider.style8 .ens-slider--item {
+        padding: 0px;
+        height: calc(100vh - 215px);
+    }
+
+    .ens-slider.style7 .ens-slider--image {
+        border-radius: 0px;
+    }
+
+    .ens-slider.style8 .ens-slider--image {
+        height: 100%;
+    }
+
+    .ens-slider.style8 .ens-slider--inner {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1;
+    }
+
+    .mobile-img {
+        position: absolute;
+        z-index: 9;
+        width: fit-content;
+        bottom: 0px;
+        left: 0;
+        right: 0;
+        margin-inline: auto;
+    }
+
+    .ipad-img {
+        position: absolute;
+        z-index: 9;
+        width: fit-content;
+        bottom: 0px;
+        left: 0;
+        right: 0;
+        margin-inline: auto;
+    }
+
+    .laptop-img {
+        position: absolute;
+        z-index: 9;
+        width: fit-content;
+        bottom: 0px;
+        left: 0;
+        right: 0;
+        margin-inline: auto;
+    }
+}
+
+@media screen and (max-width: 575px) {
+
+    .h1,
+    h1 {
+        font-size: var(--fs-36);
+    }
+
+    .h2,
+    h2 {
+        font-size: var(--fs-26);
+    }
+
+    .h3,
+    h3 {
+        font-size: var(--fs-22);
+    }
+
+    .h4,
+    h4 {
+        font-size: var(--fs-20);
+    }
+
+    .h5,
+    h5 {
+        font-size: var(--fs-18);
+    }
+
+    .h6,
+    h6 {
+        font-size: var(--fs-17);
+    }
+
+    .header .aside_open {
+        display: none;
+    }
+
+    .header .header_right_part .ens-element+.header_search.ens-element::before {
+        display: none !important;
+
+    }
+
+    .header .header_right_part {
+        margin-left: 30px;
+    }
+
+    .ens-partner--image2 {
+        width: 100%;
+    }
+
+    .ens-contact-page-wrapper {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .preloader-inner .loading-text {
+        font-size: 30px;
+        line-height: 30px;
+    }
+
+    .ens-agency-experience .ens-heading .ens-item--description {
+        padding-right: 0px;
+    }
+
+}
+
+@media screen and (max-width: 450px) {
+    .ens-contact-page-wrapper {
+        padding-left: 0px;
+        padding-right: 0px;
+    }
+
+    .header .header_right_part .ens-element+.ens-element {
+        position: relative;
+        margin-left: 5px;
+        padding-left: 5px;
+    }
+
+}
+
+
+
+.ens-credential #countdown ul {
+    gap: 20px;
+}
+
+.ens-credential #countdown ul li {
+    font-size: 14px;
+}
+
+.ens-credential #countdown ul li span {
+    font-size: 36px;
+    margin-bottom: 0px;
+}

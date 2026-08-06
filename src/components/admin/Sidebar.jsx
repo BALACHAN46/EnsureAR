@@ -60,6 +60,30 @@ export default function Sidebar({ activeNav, categories, activeCategory, modelCo
               </span>
               <span className="sidebar-item-label">AR Guide Settings</span>
             </button>
+
+            <button
+              className={`sidebar-item ${activeNav === 'site-settings' ? 'active' : ''}`}
+              onClick={() => navigate('/admin/site-settings')}
+            >
+              <span className="sidebar-item-icon" style={{ background: 'rgba(236,72,153,0.14)', color: '#f472b6' }}>
+                <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+              </span>
+              <span className="sidebar-item-label">Site Settings</span>
+            </button>
+
+            <button
+              className={`sidebar-item ${activeNav === 'menu-settings' ? 'active' : ''}`}
+              onClick={() => navigate('/admin/menu-settings')}
+            >
+              <span className="sidebar-item-icon" style={{ background: 'rgba(59,130,246,0.14)', color: '#3b82f6' }}>
+                <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
+                  <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                </svg>
+              </span>
+              <span className="sidebar-item-label">Menu Settings</span>
+            </button>
           </div>
 
           <div className="sidebar-nav-divider" />

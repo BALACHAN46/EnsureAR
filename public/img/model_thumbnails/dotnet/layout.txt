@@ -1,0 +1,412 @@
+
+<!DOCTYPE html>
+<html lang="zxx">
+<head>
+    <!-- Meta Tags -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    @* <meta name="description" content="ENSUREAR">
+
+    <meta name="author" content=""> *@
+    <meta name="description" content="@ViewBag.MetaDescription" />
+    <meta name="keywords" content="@ViewBag.MetaKeywords" />
+    <meta name="author" content="" />
+    <!-- Favicon and touch Icons -->
+    <link href="~/img/favicon.png" rel="shortcut icon" type="image/png">
+
+
+    <!-- Page Title -->
+    @* <title>ENSUREAR</title> *@
+    <title>@ViewBag.Title</title>
+
+    <script type="application/ld+json">
+        {
+          "@@context": "https://schema.org",
+          "@@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@@type": "Question",
+              "name": "What is AR try-on technology?",
+              "acceptedAnswer": {
+                "@@type": "Answer",
+                "text": "AR try-on technology uses augmented reality to let customers virtually try jewellery, watches, or eyewear online before purchasing."
+              }
+            },
+            {
+              "@@type": "Question",
+              "name": "Can retailers integrate AR try-on into their online store?",
+              "acceptedAnswer": {
+                "@@type": "Answer",
+                "text": "Yes, retailers can integrate AR try-on through plugins and APIs for platforms like Shopify, WooCommerce, and Magento."
+              }
+            },
+            {
+              "@@type": "Question",
+              "name": "Does AR try-on increase sales?",
+              "acceptedAnswer": {
+                "@@type": "Answer",
+                "text": "Yes, studies show AR try-on can improve customer engagement, reduce returns, and increase conversions by up to 30%."
+              }
+            }
+          ]
+        }
+    </script>
+   
+    <!-- Styles Include -->
+    <link rel="stylesheet" href="~/css/main.css">
+    <script src="~/js/jquery-3.6.0.min.js"></script>
+
+</head>
+
+
+<body>
+
+    <!-- Preloader -->
+    <div id="preloader">
+        <div class="preloader-inner">
+            <img src="~/img/ENSUREAR.png" alt="img">
+        </div>
+    </div>
+
+    <!-- pointer start -->
+    <div class="pointer bnz-pointer" id="bnz-pointer"></div>
+
+
+
+    <!-- Main Header -->
+    <header class="header color-fixed">
+        <!-- Lower Bar -->
+        <div class="header-inner">
+            <div class="container-fluid pe-0">
+                <div class="d-flex align-items-center justify-content-between">
+                    <!-- Left Part -->
+                    <div class="header_left_part d-flex align-items-center">
+                        <div class="logo">
+                            <a asp-controller="home" asp-action="Index" class="light_logo"><img src="~/img/ENSUREAR.png" alt="logo"></a>
+                            <a asp-controller="home" asp-action="Index" class="dark_logo"><img src="~/img/EnsureAR_dark.png" alt="logo"></a>
+                        </div>
+                    </div>
+
+                    <!-- Center Part -->
+                    <div class="header_center_part d-none d-xl-block">
+                        <div class="mainnav">
+                            <ul class="main-menu">
+                                <li class="menu-item"><a asp-action="Index">Home</a></li>
+                                <li class="menu-item"><a asp-controller="home" asp-action="AboutUs">About Us</a></li>
+                                <li class="menu-item menu-item-has-children">
+                                    <a href="#">Virtual Try-On</a>
+                                    <ul class="sub-menu" data-lenis-prevent>
+                                        <li class="menu-item menu-item-has-children">
+                                            <a href="#">Diamond Jewellery</a>
+                                            <ul class="sub-menu" data-lenis-prevent>
+                                                <li class="menu-item"><a asp-controller="home" asp-action="TryOn"  asp-route-Item="Necklaces">Necklaces</a></li>
+                                                <li class="menu-item"><a asp-controller="home" asp-action="TryOn" asp-route-Item="Chains">Chains</a></li>
+                                                <li class="menu-item"><a asp-controller="home" asp-action="TryOn"  asp-route-Item="Earring">Earrings</a></li>
+                                                <li class="menu-item"><a asp-controller="home" asp-action="TryOn"  asp-route-Item="NosePin">NosePin</a></li>
+                                                <li class="menu-item"><a asp-controller="home" asp-action="TryOn"  asp-route-Item="Sets">Sets</a></li>
+                                                <li class="menu-item"><a asp-controller="home" asp-action="TryOn"  asp-route-Item="Bracelets">Bracelets</a></li>
+                                                <li class="menu-item"><a asp-controller="home" asp-action="TryOn"  asp-route-Item="Rings">Rings</a></li>
+                                            </ul>
+                                        </li>
+                                         <!-- Gold Jewellery (NEW) -->
+        <li class="menu-item menu-item-has-children">
+            <a href="#">Gold Jewellery</a>
+            <ul class="sub-menu" data-lenis-prevent>
+                <li class="menu-item">
+                    <a asp-controller="home" asp-action="TryOn" asp-route-Item="Gold_Necklaces">Necklaces</a>
+                </li>
+                <li class="menu-item">
+                <a asp-controller="home" asp-action="TryOn" asp-route-Item="Gold_Chains">Chains</a>
+                </li>
+                <li class="menu-item">
+                    <a asp-controller="home" asp-action="TryOn" asp-route-Item="Gold_Earring">Earrings</a>
+                </li>
+                <li class="menu-item">
+                    <a asp-controller="home" asp-action="TryOn" asp-route-Item="Gold_NosePin">NosePin</a>
+                </li>
+                <li class="menu-item">
+                    <a asp-controller="home" asp-action="TryOn" asp-route-Item="Gold_Sets">Sets</a>
+                </li>
+                <li class="menu-item">
+                    <a asp-controller="home" asp-action="TryOn" asp-route-Item="Gold_Bracelets">Bracelets</a>
+                </li>
+                <li class="menu-item">
+                    <a asp-controller="home" asp-action="TryOn" asp-route-Item="Gold_Rings">Rings</a>
+                </li>
+            </ul>
+        </li>
+                                        <li class="menu-item"><a asp-controller="home" asp-action="TryOn" asp-route-Item="Eyewear">Eyewears</a></li>
+                                        <li class="menu-item"><a asp-controller="home" asp-action="TryOn" asp-route-Item="Watches">Watches</a></li>
+
+                                    </ul>
+                                </li>
+                                <li class="menu-item"><a asp-controller="home" asp-action="ContactUs">Contact Us</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Right Part -->
+                    <div class="header_right_part d-flex align-items-center">
+                        <div class="aside_open ens-element">
+                            <div class="aside-open--inner">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+
+                        <div class="header_search ens-element">
+                            <a asp-controller="home" asp-action="TryOn" asp-route-Item="Necklaces"><img src="~/img/try-on.png" alt="img"></a>
+                        </div>
+
+                        <button type="button" class="mr_menu_toggle ens-element d-xl-none">
+                            <i class="bi bi-list"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- End Main Header -->
+    <!-- Mobile Responsive Menu -->
+    <div class="mr_menu" data-lenis-prevent>
+        <button type="button" class="mr_menu_close"><i class="bi bi-x-lg"></i></button>
+        <div class="logo"></div> <!-- Keep this div empty. Logo will come here by JavaScript -->
+
+        <h6>Menu</h6>
+        <div class="mr_navmenu"></div> <!-- Keep this div empty. Menu will come here by JavaScript -->
+
+
+    </div>
+
+    <div class="aside_info_wrapper" data-lenis-prevent>
+        <button class="aside_close">Close <i class="bi bi-x-lg"></i></button>
+
+        <div class="aside_logo logo">
+            <a asp-controller="home" asp-action="Index" class="light_logo"><img src="~/img/EnsureAR.png" alt="logo"></a>
+            <a asp-controller="home" asp-action="Index" class="dark_logo"><img src="~/img/EnsureAR_dark.png" alt="logo"></a>
+        </div>
+
+        <div class="aside_info_inner">
+
+
+
+
+
+            <div class="ens-icon-box1 style2">
+                <div class="ens-item--inner flex-start">
+                    <div class="ens-item--icon"><i class="bi bi-envelope"></i></div>
+                    <div class="ens-item--holder">
+                        <p class="ens-item--description"><a href="mailto:info@ensurear.com">info@ensurear.com</a></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ens-icon-box1 style2">
+                <div class="ens-item--inner flex-start">
+                    <div class="ens-item--icon"><i class="bi bi-geo-alt"></i></div>
+                    <div class="ens-item--holder">
+                        <p class="ens-item--description"><a href="#">4555 Mansell Road, Suite #300, Alpharetta, GA - 30022, USA</a></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ens-icon-box1 style2">
+                <div class="ens-item--inner flex-start">
+                    <div class="ens-item--icon"><i class="bi bi-envelope"></i></div>
+                    <div class="ens-item--holder">
+                        <p class="ens-item--description"><a href="tel:+17624223803">+1 (762) 422 3803</a></p>
+                    </div>
+                </div>
+            </div>
+
+            <h6>Follow Us</h6>
+            <div class="social-box style-square">
+                <ul>
+                    <li><a href="https://www.facebook.com/EnsureAR/"><i class="bi bi-facebook"></i></a></li>
+                    <li><a href="https://www.instagram.com/ensure_ar/"><i class="bi bi-instagram"></i></a></li>
+                    <li><a href="https://www.linkedin.com/in/ensure-ar"><i class="bi bi-linkedin"></i></a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="formMessageContact"></div>
+
+    <!-- Main Wrapper-->
+    <main class="wrapper">
+
+        @RenderBody()
+
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer style1 bg-image-2" style="background-image: url('img/background/bg-5.png');">
+
+
+        <!-- Footer Bottom Part -->
+        <div class="footer-bottom">
+            <div class="container">
+                <div class="footer-bottom-inner">
+                    <div class="copyright">
+                        <p>© Copyright @DateTime.Now.Year. All Rights Reserved by <a href="https://ensurear.com/">ENSUREAR</a> | <a asp-controller="home" asp-action="Privacy">Privacy Policy</a></p>
+                    </div>
+                    <div class="social-box style-oval">
+                        <ul>
+                            <li><a href="https://www.facebook.com/EnsureAR/" class="bi bi-facebook"></a></li>
+                            <li><a href="https://www.instagram.com/ensure_ar/" class="bi bi-instagram"></a></li>
+                            <li><a href="https://www.linkedin.com/in/ensure-ar" class="bi bi-linkedin"></a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <div class="totop">
+        <a href="#"><i class="bi bi-chevron-up"></i></a>
+    </div>
+
+
+
+    <!-- Core JS -->
+
+    <!-- Framework -->
+    <script src="~/js/bootstrap.min.js"></script>
+
+    <!-- WOW Scroll Effect -->
+    <script src="~/js/wow.min.js"></script>
+
+    <!-- Swiper Slider -->
+    <script src="~/js/swiper-bundle.min.js"></script>
+    <script src="~/js/swiper-gl.min.js"></script>
+
+    <!-- Odometer Counter -->
+    <script src="~/js/appear.js"></script>
+    <script src="~/js/odometer.js"></script>
+
+    <!-- Projects -->
+    <script src="~/js/isotope.pkgd.min.js"></script>
+    <script src="~/js/imagesloaded.pkgd.min.js"></script>
+    <script src="~/js/jquery.hoverdir.js"></script>
+    <script src="~/js/tilt.jquery.js"></script>
+    <script src="~/js/isotope-init.js"></script>
+
+    <!-- Fancybox -->
+    <script src="~/js/jquery.fancybox.min.js"></script>
+
+    <!-- Flatpickr -->
+    <script src="~/js/flatpickr.min.js"></script>
+
+    <!-- Nice Select -->
+    <script src="~/js/jquery.nice-select.min.js"></script>
+
+    <!-- Cursor Effect -->
+    <script src="~/js/cursor-effect.js"></script>
+
+    <!-- Theme Custom JS -->
+    <script src="~/js/theme.js"></script>
+    <script src="~/js/Contact_JS.js"></script>
+
+    @* <script>
+        $(document).ready(function () {
+
+            $("input, textarea").on("input change", function () {
+                $(this).removeClass("inputValidation-error");
+            });
+
+            $("#sendEmail").on("click", function (e) {
+                e.preventDefault(); // prevent page refresh
+                let $msg = $("#formMessage"); // message div
+                $msg.text("");
+                let $btn = $(this); // store button reference
+                $btn.prop("disabled", true).text("Sending...").css({ "color": "White" }); // disable + change text
+
+                // Clear old errors
+                $("input, textarea").removeClass("inputValidation-error");
+
+                let name = $("input[name='name']").val().trim();
+                let email = $("input[name='email']").val().trim();
+                let subject = $("input[name='subject']").val().trim();
+                let message = $("textarea[name='message']").val().trim();
+
+                let hasError = false;
+
+                // Simple validation
+                if (!name) {
+                    $("input[name='name']").addClass("inputValidation-error").focus();
+                    hasError = true;
+                }
+
+                if (!email) {
+                    $("input[name='email']").addClass("inputValidation-error");
+                    if (!hasError) $("input[name='email']").focus();
+                    hasError = true;
+                }
+
+                // Basic email regex check
+                // let emailPattern = `/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/``;
+                // if (email && !emailPattern.test(email)) {
+                //     $("input[name='email']").addClass("inputValidation-error").focus();
+                //     hasError = true;
+                // }
+
+                if (hasError) {
+                    $btn.prop("disabled", false).text("Send Mail").css({ "background-color": "", "color": "" });
+
+                    return;
+                }
+
+                // Prepare data
+                let formData = {
+                    Name: name,
+                    ToEmail: email,
+                    Subject: subject,
+                    Body: message
+                };
+
+                fetch("/Home/SendEmailOnFormSubmit", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData)
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        $("input[name='name']").val("");
+                        $("input[name='email']").val("");
+                        $("input[name='subject']").val("");
+                        $("textarea[name='message']").val("");
+                        $msg.text("✅ Sent successfully!").fadeIn();
+
+                        setTimeout(() => {
+                            $msg.fadeOut();
+                        }, 2000);
+
+                        console.log("Success:", data)
+                    })
+                    .catch(err => {
+                        console.error("Error:", err);
+                        $msg.text("❌ Something went wrong. Please try again.").fadeIn();
+                        ; setTimeout(() => {
+                            $msg.fadeOut();
+                        }, 2000);
+                    })
+                    .finally(() => {
+                        $btn.prop("disabled", false).text("Send Mail").css({ "background-color": "", "color": "" });
+                    });
+            });
+
+
+        });
+    </script> *@
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+
+</body>
+</html>
+
+

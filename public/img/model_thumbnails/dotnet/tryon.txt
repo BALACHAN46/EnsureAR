@@ -1,0 +1,577 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/camera-styles.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
+<section class="try-on">
+    <div class="container">
+        <div class="row">
+            <div class="col-xl-8 col-lg-8">
+                <div id="camera-container" class="camera-default">
+                    <div class="poweredbysnap-logo">
+                        <img src="~/img/snaplogo.png" alt="Powered by Snap" />
+                    </div>
+                    <canvas id="canvas" class="camera-default"></canvas>
+                </div>
+            </div>
+            <div class="col-xl-4 col-lg-4">
+                <div class="swiper-container swiper-team">
+                    <div class="swiper-wrapper">
+                        <!-- Navigation Icons -->
+                        
+                        <!-- Necklaces -->
+                        <div class="swiper-slide">
+                            <div class="ens-team-grid1">
+                                <div class="ens-item--inner">
+                                    <div class="ens-item--image" onclick="handleCategoryClick('Necklaces')" style="cursor:pointer;">
+                                        <img src="~/img/models/necklace.jpg" alt="img">
+                                        <div class="slide-text"><span>Necklace</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- NEW CHAINS SLIDE -->
+                        <div class="swiper-slide">
+                            <div class="ens-team-grid1">
+                                <div class="ens-item--inner">
+                                    <!-- Ensure you have a 'chains.jpg' image, or use necklace.jpg as placeholder -->
+                                    <div class="ens-item--image" onclick="handleCategoryClick('Chains')" style="cursor:pointer;">
+                                        <img src="~/img/models/necklace.jpg" alt="img"> 
+                                        <div class="slide-text"><span>Chains</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Earrings -->
+                        <div class="swiper-slide">
+                            <div class="ens-team-grid1">
+                                <div class="ens-item--inner">
+                                    <div class="ens-item--image" onclick="handleCategoryClick('Earring')" style="cursor:pointer;">
+                                        <img src="~/img/models/earrings.jpg" alt="img">
+                                        <div class="slide-text"><span>Earrings</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- NosePin -->
+                        <div class="swiper-slide">
+                            <div class="ens-team-grid1">
+                                <div class="ens-item--inner">
+                                    <div class="ens-item--image" onclick="handleCategoryClick('NosePin')" style="cursor:pointer;">
+                                        <img src="~/img/models/nosepin.jpg" alt="img">
+                                        <div class="slide-text"><span>Nosepin</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sets -->
+                        <div class="swiper-slide">
+                            <div class="ens-team-grid1">
+                                <div class="ens-item--inner" onclick="handleCategoryClick('Sets')" style="cursor:pointer;">
+                                    <div class="ens-item--image">
+                                        <img src="~/img/models/set.jpg" alt="img">
+                                        <div class="slide-text"><span>Sets</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Eyewear -->
+                        <div class="swiper-slide">
+                            <div class="ens-team-grid1">
+                                <div class="ens-item--inner" onclick="handleCategoryClick('Eyewear')" style="cursor:pointer;">
+                                    <div class="ens-item--image">
+                                        <img src="~/img/models/eyewear.jpg" alt="img">
+                                        <div class="slide-text"><span>Eyewear</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Bracelets -->
+                         <div class="swiper-slide">
+                            <div class="ens-team-grid1">
+                                <div class="ens-item--inner" onclick="handleCategoryClick('Bracelets')" style="cursor:pointer;">
+                                    <div class="ens-item--image">
+                                        <img src="~/img/models/bracelets.jpg" alt="img">
+                                        <div class="slide-text"><span>Bracelets</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rings -->
+                        <div class="swiper-slide">
+                            <div class="ens-team-grid1">
+                                <div class="ens-item--inner" onclick="handleCategoryClick('Rings')" style="cursor:pointer;">
+                                    <div class="ens-item--image">
+                                        <img src="~/img/models/rings.jpg" alt="img">
+                                        <div class="slide-text"><span>Rings</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Watches -->
+                        <div class="swiper-slide">
+                            <div class="ens-team-grid1">
+                                <div class="ens-item--inner">
+                                    <div class="ens-item--image" onclick="handleCategoryClick('Watches')" style="cursor:pointer;">
+                                        <img src="~/img/models/watch.jpg" alt="img">
+                                        <div class="slide-text"><span>Watches</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <!-- ============================================= -->
+                    <!-- DIAMOND SECTION -->
+                    <!-- ============================================= -->
+
+                    <!-- Diamond Necklaces -->
+                    <div class="Necklaces owl-carousel" id="div-necklace">
+                        <div class="ur-product-card position-relative" data-lens-id="53fc9d0d-607a-4c3e-ab20-250605bf0e24" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/diamond_necklace1.png" class="img-fluid"></a>
+                                <div class="product-overlay position-absolute"><div class="pointer"><a href="javascript:void(0);"><i class="fa-regular fa-eye"></i></a></div></div>
+                            </div>
+                        </div>
+
+                        <div class="ur-product-card position-relative" data-lens-id="d84a1960-00c0-4e1e-8f14-dc0af094da12" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/diamond_necklace2.png" class="img-fluid"></a>
+                                <div class="product-overlay position-absolute"><div class="pointer"><a href="javascript:void(0);"><i class="fa-regular fa-eye"></i></a></div></div>
+                            </div>
+                        </div>
+
+                        <div class="ur-product-card position-relative" data-lens-id="05127081-ae8c-45b2-a108-d508631c9718" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/diamond_necklace3.png" class="img-fluid"></a>
+                                <div class="product-overlay position-absolute"><div class="pointer"><a href="javascript:void(0);"><i class="fa-regular fa-eye"></i></a></div></div>
+                            </div>
+                        </div>
+
+                        <div class="ur-product-card position-relative" data-lens-id="415832ba-5de0-4460-99c2-026954424f27" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/diamond_necklace4.png" class="img-fluid"></a>
+                                <div class="product-overlay position-absolute"><div class="pointer"><a href="javascript:void(0);"><i class="fa-regular fa-eye"></i></a></div></div>
+                            </div>
+                        </div>
+
+                        <div class="ur-product-card position-relative" data-lens-id="f6bd4c60-4172-4aca-844a-e1c0f1b4f072" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/diamond_necklace5.png" class="img-fluid"></a>
+                                <div class="product-overlay position-absolute"><div class="pointer"><a href="javascript:void(0);"><i class="fa-regular fa-eye"></i></a></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- NEW DIAMOND CHAINS CONTAINER -->
+                    <div class="Chains owl-carousel" id="divChains" style="display:none;">
+                         <div class="ur-product-card position-relative" data-lens-id="ba919008-50d2-4a37-a181-8b556caa502d" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/d_chain1.png" class="img-fluid" alt="Placeholder"></a>
+                            </div>
+                        </div>
+
+                         <div class="ur-product-card position-relative" data-lens-id="f8f49fda-ee43-49de-b957-6d1357a31ad7" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/d_chain2.png" class="img-fluid" alt="Placeholder"></a>
+                            </div>
+                        </div>
+
+                        <div class="ur-product-card position-relative" data-lens-id="351e9511-467c-4dc8-9f9c-3f7e4f199f19" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/d_chain3.png" class="img-fluid" alt="Placeholder"></a>
+                            </div>
+                        </div>
+                        
+                    </div>
+
+                    <!-- Diamond Earrings -->
+                    <div class="Earring owl-carousel" id="divEaring" style="display:none;">
+                         <div class="ur-product-card position-relative" data-lens-id="04cdf2c9-c998-434e-8ec1-76e79cde74fa" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/diamond_earring1.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+                        <div class="ur-product-card position-relative" data-lens-id="b76b2de5-01fe-474b-a024-0d7642f749db" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/diamond_earring2.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+                        <div class="ur-product-card position-relative" data-lens-id="6fbabe57-4e1f-47da-b5f0-d87c51a7f5f0" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/diamond_earring3.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+                        <div class="ur-product-card position-relative" data-lens-id="dd210953-8188-47d0-9972-59de928bbee9" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/diamond_earring4.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+                         <div class="ur-product-card position-relative" data-lens-id="cc6344e0-d631-4510-82a7-6640f7374170" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/diamond_earring5.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+                         <div class="ur-product-card position-relative" data-lens-id="45e267eb-9258-4b91-80ab-10d619f0e67f" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/diamond_earring6.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Diamond NosePin -->
+                    <div class="NosePin owl-carousel" id="divNosePin" style="display:none;">
+                        <div class="ur-product-card position-relative" data-lens-id="4369ea69-e6d5-456f-be72-b17a8503e47a" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/NosePin1.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Diamond Sets -->
+                    <div class="Sets owl-carousel" id="divSets" style="display:none;">
+                         <div class="ur-product-card position-relative" data-lens-id="90e7641d-f099-4a29-9274-ad500719e4de" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/dia_blue_set.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+
+                        <div class="ur-product-card position-relative" data-lens-id="90e7641d-f099-4a29-9274-ad500719e4de" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/dia_blue_set.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Diamond Bracelets -->
+                    <div class="Bracelets owl-carousel" id="divBracelets" style="display:none;">
+                         <div class="ur-product-card position-relative" data-lens-id="0a0272ac-b9c3-4169-a79a-6c52a5176dac" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/rosebrace1.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Diamond Rings -->
+                    <div class="Rings owl-carousel" id="divRings" style="display:none;">
+                         <div class="ur-product-card position-relative" data-lens-id="3dc5b0f0-1437-4483-a5cc-e6bfff71af99" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/ri1.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Eyewear and Watches -->
+                    <div class="Eyewear owl-carousel" id="divEyewear" style="display:none;">
+                         <div class="ur-product-card position-relative" data-lens-id="1a6c1dc1-05fc-491b-860a-939813ab9b8d" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/08.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+
+                        <div class="ur-product-card position-relative" data-lens-id="97a08e4a-a480-460e-a7b7-12409b73c521" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/e3.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+
+                        <div class="ur-product-card position-relative" data-lens-id="21749b6c-3d7a-4c0a-be99-68859d7db0df" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/e2.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                     <div class="Watches owl-carousel" id="divWatches" style="display:none;">
+                        <div class="ur-product-card position-relative" data-lens-id="ed6c23a4-0d6e-4251-9596-594345740fb0" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/wat1.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+
+                        <div class="ur-product-card position-relative" data-lens-id="e3befb3a-620a-4f43-a73e-291950ff7e48" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/wat2.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+
+                        <div class="ur-product-card position-relative" data-lens-id="5bc0ddd0-4bdc-4393-8af3-94a797b7ab05" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/wat3.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+
+                        <div class="ur-product-card position-relative" data-lens-id="0ae7b65b-5b03-419f-827a-1c04fc90cd95" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/wat4.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- ============================================= -->
+                    <!-- GOLD SECTION -->
+                    <!-- ============================================= -->
+                    
+                    <!-- GOLD Necklaces -->
+                    <div class="GoldNecklaces owl-carousel" id="div-gold-necklace" style="display:none;">
+                        <div class="ur-product-card position-relative" data-lens-id="9a839857-cea2-43f4-b411-1c914ec95ec5" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/gold_necklace1.png" class="img-fluid"></a>
+                                <div class="product-overlay position-absolute"><div class="pointer"><a href="javascript:void(0);"><i class="fa-regular fa-eye"></i></a></div></div>
+                            </div>
+                        </div>
+                        <div class="ur-product-card position-relative" data-lens-id="219e1e57-9b35-4fb7-a00e-9d874f75ef9e" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/gold_necklace2.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- NEW GOLD CHAINS CONTAINER -->
+                    <div class="GoldChains owl-carousel" id="div-gold-chains" style="display:none;">
+                         <div class="ur-product-card position-relative" data-lens-id="f2ae88d4-b46c-4e2b-a2cb-d64ac81a695b" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/g_chain1.png" class="img-fluid" alt="Placeholder"></a>
+                            </div>
+                        </div>
+
+                         <div class="ur-product-card position-relative" data-lens-id="b9e04449-14c6-455b-a8ae-1bf567d71e8d" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/g_chain2.png" class="img-fluid" alt="Placeholder"></a>
+                            </div>
+                        </div>
+
+                         <div class="ur-product-card position-relative" data-lens-id="REPLACE_WITH_GOLD_CHAIN_LENS_ID_1" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/g_chain3.png" class="img-fluid" alt="Placeholder"></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- GOLD Earrings -->
+                    <div class="GoldEarring owl-carousel" id="div-gold-earring" style="display:none;">
+                        <div class="ur-product-card position-relative" data-lens-id="ba1c2863-3fca-4f5c-b6e3-7806d92ec276" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/gold_earring1.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+
+                        <div class="ur-product-card position-relative" data-lens-id="0be7481b-3b79-4afa-b2f8-183d01709d5a" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/gold_earring2.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+
+                        <div class="ur-product-card position-relative" data-lens-id="7e37b272-8ce7-4e9c-a7ff-20f4dbfca0d6" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/gold_earring3.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+
+                        <div class="ur-product-card position-relative" data-lens-id="c289e6c4-e0eb-40ad-a691-c1e37477c71d" onclick="applyLens(this)" style="width: 100px;">
+                            <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/gold_earring4.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+
+
+                    </div>
+
+                    <!-- GOLD NosePin -->
+                    <div class="GoldNosePin owl-carousel" id="div-gold-nosepin" style="display:none;">
+                        <div class="ur-product-card position-relative" data-lens-id="66061da4-e9e8-4ac5-b52d-57b32e2e6a78" onclick="applyLens(this)" style="width: 100px;">
+                             <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/NosePin2.png" class="img-fluid"></a>
+                            </div>
+
+                            <div class="ur-product-card position-relative" data-lens-id="4fed005c-902d-47f9-97e8-e9db5c3c8ba4" onclick="applyLens(this)" style="width: 100px;">
+                             <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/n1.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+
+                    <!-- GOLD Sets -->
+                    <div class="GoldSets owl-carousel" id="div-gold-sets" style="display:none;">
+                        <div class="ur-product-card position-relative" data-lens-id="REPLACE_WITH_GOLD_SET_LENS_ID" onclick="applyLens(this)" style="width: 100px;">
+                             <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/gold_set1.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- GOLD Bracelets -->
+                    <div class="GoldBracelets owl-carousel" id="div-gold-bracelets" style="display:none;">
+                        <div class="ur-product-card position-relative" data-lens-id="REPLACE_WITH_GOLD_BRACELET_LENS_ID" onclick="applyLens(this)" style="width: 100px;">
+                             <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/gold_bracelet1.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                     <!-- GOLD Rings -->
+                    <div class="GoldRings owl-carousel" id="div-gold-rings" style="display:none;">
+                        <div class="ur-product-card position-relative" data-lens-id="REPLACE_WITH_GOLD_RING_LENS_ID" onclick="applyLens(this)" style="width: 100px;">
+                             <div class="feature-image category-image option-image d-flex align-items-center white-bg position-relative">
+                                <a href="javascript:void(0);"><img src="~/img/model_thumbnails/gold_ring1.png" class="img-fluid"></a>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+
+                <div class="camera-content">
+                    <h6 class="ens-item--subtitle">Try before you buy — virtually</h6>
+                    <p class="ens-item--description">
+                        A seamless blend of technology and style — see how your favorite pieces look on you instantly.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    // Variable to track the current Material Mode ('Diamond' or 'Gold')
+    var currentMaterialMode = 'Diamond'; // Default
+
+    // Function to handle clicks from Swiper side menu (Icons)
+    function handleCategoryClick(baseCategory) {
+        // Construct the full ID based on mode + base category
+        let finalCategory = baseCategory;
+
+        if (currentMaterialMode === 'Gold') {
+            // Map the generic base name to the Gold specific key
+            switch (baseCategory) {
+                case 'Necklaces': finalCategory = 'Gold_Necklaces'; break;
+                case 'Chains':    finalCategory = 'Gold_Chains'; break; // New Case
+                case 'Earring':   finalCategory = 'Gold_Earring'; break;
+                case 'NosePin':   finalCategory = 'Gold_NosePin'; break;
+                case 'Sets':      finalCategory = 'Gold_Sets'; break;
+                case 'Bracelets': finalCategory = 'Gold_Bracelets'; break;
+                case 'Rings':     finalCategory = 'Gold_Rings'; break;
+            }
+        }
+        
+        showHideImages(finalCategory);
+    }
+
+    async function showHideImages(category) {
+        // Defines items that require WRIST camera logic
+        const wristHandItems = ['Watches', 'Bangles', 'Rings', 'Bracelets', 'Gold_Bracelets', 'Gold_Rings'];
+        
+        // Define all carousel IDs including the new Chains and Gold Chains
+        var productCarousels = $('#div-necklace, #divChains, #divEaring, #divNosePin, #divSets, #divBracelets, #divRings, #divEyewear, #divWatches, #divBangles, #div-gold-necklace, #div-gold-chains, #div-gold-earring, #div-gold-nosepin, #div-gold-sets, #div-gold-bracelets, #div-gold-rings');
+        var canvasElement = document.getElementById('canvas');
+
+        // Hide all carousels first
+        productCarousels.css('display', 'none'); 
+
+        // Select the specific carousel based on Category string
+        var selectedCarousel;
+        
+        // --- DIAMOND MAPPINGS ---
+        if (category === 'Necklaces') selectedCarousel = $('#div-necklace');
+        else if (category === 'Chains') selectedCarousel = $('#divChains'); // New
+        else if (category === 'Earring') selectedCarousel = $('#divEaring');
+        else if (category === 'NosePin') selectedCarousel = $('#divNosePin');
+        else if (category === 'Sets') selectedCarousel = $('#divSets');
+        else if (category === 'Bracelets') selectedCarousel = $('#divBracelets');
+        else if (category === 'Rings') selectedCarousel = $('#divRings');
+        
+        // --- GOLD MAPPINGS ---
+        else if (category === 'Gold_Necklaces') selectedCarousel = $('#div-gold-necklace');
+        else if (category === 'Gold_Chains') selectedCarousel = $('#div-gold-chains'); // New
+        else if (category === 'Gold_Earring') selectedCarousel = $('#div-gold-earring');
+        else if (category === 'Gold_NosePin') selectedCarousel = $('#div-gold-nosepin');
+        else if (category === 'Gold_Sets') selectedCarousel = $('#div-gold-sets');
+        else if (category === 'Gold_Bracelets') selectedCarousel = $('#div-gold-bracelets');
+        else if (category === 'Gold_Rings') selectedCarousel = $('#div-gold-rings');
+        
+        // --- COMMON ---
+        else if (category === 'Eyewear') selectedCarousel = $('#divEyewear');
+        else if (category === 'Watches') selectedCarousel = $('#divWatches');
+        else if (category === 'Bangles') selectedCarousel = $('#divBangles');
+
+        // Display and Init Carousel
+        if (selectedCarousel && selectedCarousel.length > 0) {
+            selectedCarousel.css('display', 'block'); 
+            if (selectedCarousel.hasClass('owl-loaded')) {
+                await Sleepms(50);
+                selectedCarousel.trigger('refresh.owl.carousel');
+            } else {
+                selectedCarousel.owlCarousel({
+                    items: 3, loop: false, autoWidth: false, nav: false, dots: false, margin: 10, autoplay: false,
+                    responsiveClass: true, responsive: { 0: { items: 3, nav: false }, 400: { items: 4, nav: false }, 600: { items: 5, nav: false }, 992: { items: 3, nav: false } },
+                });
+            }
+        } 
+
+        // Camera positioning Logic (Face vs Wrist)
+        if (canvasElement) {
+            const container = document.getElementById('camera-container');
+            if (wristHandItems.includes(category)) {
+                canvasElement.classList.remove('camera-default');
+                canvasElement.classList.add('camera-wrist');
+                container?.classList.remove('camera-default');
+                container?.classList.add('camera-wrist');
+            } else {
+                canvasElement.classList.remove('camera-wrist');
+                canvasElement.classList.add('camera-default');
+                container?.classList.remove('camera-wrist');
+                container?.classList.add('camera-default');
+            }
+            setTimeout(() => {
+                if (window.cameraKitSession?.resize) {
+                    window.cameraKitSession.resize();
+                }
+            }, 100);
+        }
+
+        $('#modalCenter').modal('show'); 
+    }
+
+    function Sleepms(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    $(document).ready(function () {
+        $('#canvas').addClass('camera-default');
+
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        const product = urlParams.get('Item'); 
+
+        // Determine Mode based on URL Parameter
+        if (product && product.includes('Gold_')) {
+            currentMaterialMode = 'Gold';
+        } else {
+            currentMaterialMode = 'Diamond';
+        }
+
+        console.log("Current Mode: " + currentMaterialMode);
+
+        if(product) {
+            showHideImages(product);
+        } else {
+            // Default if nothing passed
+            showHideImages('Necklaces');
+        }
+    });
+</script>
+<script src="~/js/camera.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>

@@ -1,0 +1,41 @@
+
+/*--------------------------------------------------------------
+>>> TABLE OF CONTENTS:
+----------------------------------------------------------------
+1. Fonts, Icons and Other Styles Import
+2. Reset
+  2-1. Body, Font, Container, Space
+  2-2. Placeholder Customize
+  2-3. Social Icons Color
+  2-4. Input, Textarea (All forms field) customization
+  2-5. Button Styling
+ 
+
+-----------------------------------------------------------------*/
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Sora:wght@100..800&display=swap');
+@import url("bootstrap-icons.css");
+@import url("bootstrap.min.css");
+@import url("jquery_ui_style.css");
+@import url("animation.css");
+@import url("animate.css");
+@import url("swiper-bundle.min.css");
+@import url("swiper-gl.min.css");
+@import url("odometer-theme-default.css");
+@import url("jquery.fancybox.css");
+@import url("flatpickr.css");
+@import url("nice-select.css");
+@import url("cursor-effect.css");
+
+@import url("global.css");
+@import url("header.css");
+@import url("footer.css");
+@import url("preloader.css");
+@import url("shop.css");
+@import url("components.css");
+@import url("contact.css");
+@import url("blog.css");
+@import url("sidebar.css");
+@import url("portfolio.css");
+@import url("style.css");
+@import url("responsive.css");
+@import url("light.css");
