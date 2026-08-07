@@ -1258,16 +1258,15 @@
         
 
         // Totop Button
-        $('.totop a').on('click', function(e) {
+        $('.totop a').off('click').on('click', function(e) {
             e.preventDefault();
-            $('html, body').animate({scrollTop: 0}, '300');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
 
         // Day-Night Mode Switcher
         var icon = document.getElementById("mode_switcher");
 
         // if (localStorage.getItem("theme") === "null"){
-        //     localStorage.setItem("theme", "light");
         // }
 
         // let localData = localStorage.getItem("theme");
@@ -1318,30 +1317,4 @@
     };      
 })(jQuery);
 
-// Hide header on scroll down
-const nav = document.querySelector(".header");
-const scrollUp = "top-up";
-let lastScroll = 800;
-
-if (nav) {
-    window.addEventListener("scroll", () => {
-        const currentScroll = window.pageYOffset;
-        if (currentScroll <= 800) {
-            nav.classList.remove(scrollUp);
-            $('.totop').removeClass('show');
-            return;
-        }
-
-        if (currentScroll > lastScroll) {
-            // down
-            nav.classList.add(scrollUp);
-            $('.totop').addClass('show');
-        } else if (currentScroll < lastScroll) {
-            // up
-            nav.classList.remove(scrollUp);
-            $('.totop').removeClass('show');
-        }
-        lastScroll = currentScroll;
-    });
-}
-
+// Removed broken global scroll listener. Handled in Layout.jsx now.

@@ -28,7 +28,6 @@ const PREDEFINED_JEWELS = [
 ];
 
 function useAutoScroll(stripRef, trackRef, dependencies = [], speed = 40) {
-  const offsetRef = useRef(0);
   const dragRef = useRef({ isDown: false, startX: 0, startOffset: 0, moved: false });
 
   useEffect(() => {
@@ -36,38 +35,54 @@ function useAutoScroll(stripRef, trackRef, dependencies = [], speed = 40) {
     const track = trackRef.current;
     if (!strip || !track) return;
 
-    let rafId;
-    let lastTime = null;
-    let hovered = false;
+    // The idle glide runs as a real CSS animation (compositor thread) instead
+    // of a JS requestAnimationFrame loop. This page also runs FaceTracker/
+    // HandTracker landmark detection and a Three.js render loop every frame
+    // on the *same* main JS thread — a rAF-driven translateX update competes
+    // with that work for frame budget and visibly stutters whenever the
+    // tracking pipeline spikes. A CSS animation keeps gliding smoothly
+    // regardless of what the main thread is doing.
     let halfWidth = track.scrollWidth / 2;
 
-    const applyOffset = () => {
-      track.style.transform = `translateX(${-offsetRef.current}px)`;
+    // Reads the track's current on-screen X translation, whether it's
+    // presently coming from the running CSS animation or a manual drag
+    // transform — lets pause/resume/drag hand off without a visible jump.
+    const currentOffset = () => {
+      const m = new DOMMatrixReadOnly(getComputedStyle(track).transform);
+      return -m.m41;
     };
-    applyOffset();
 
-    const tick = (time) => {
-      if (lastTime === null) lastTime = time;
-      const dt = (time - lastTime) / 1000;
-      lastTime = time;
-
-      if (!hovered && !dragRef.current.isDown && halfWidth > 0) {
-        offsetRef.current += speed * dt;
-        if (offsetRef.current >= halfWidth) offsetRef.current -= halfWidth;
-        applyOffset();
-      }
-      rafId = requestAnimationFrame(tick);
+    const applySize = () => {
+      halfWidth = track.scrollWidth / 2;
+      const duration = halfWidth > 0 ? halfWidth / speed : 0;
+      track.style.setProperty('--tryon-marquee-distance', `${halfWidth}px`);
+      track.style.setProperty('--tryon-marquee-duration', `${duration}s`);
     };
-    rafId = requestAnimationFrame(tick);
+    applySize();
+    track.classList.add('tryon-category-track--auto');
 
-    const ro = new ResizeObserver(() => { halfWidth = track.scrollWidth / 2; });
+    const ro = new ResizeObserver(applySize);
     ro.observe(track);
 
-    const onMouseEnter = () => { hovered = true; };
-    const onMouseLeave = () => { hovered = false; };
+    const pause = () => { track.style.animationPlayState = 'paused'; };
+    const resume = () => {
+      if (dragRef.current.isDown || halfWidth <= 0) return;
+      const offset = ((currentOffset() % halfWidth) + halfWidth) % halfWidth;
+      // A negative animation-delay scrubs the keyframe timeline to `offset`
+      // so playback picks up exactly where the pause/drag left off.
+      track.style.animationDelay = `-${(offset / speed).toFixed(3)}s`;
+      track.style.transform = '';
+      track.style.animationPlayState = 'running';
+    };
+
+    const onMouseEnter = () => pause();
+    const onMouseLeave = () => resume();
 
     const onDown = (clientX) => {
-      dragRef.current = { isDown: true, startX: clientX, startOffset: offsetRef.current, moved: false };
+      const offset = currentOffset();
+      pause();
+      track.style.transform = `translateX(${-offset}px)`;
+      dragRef.current = { isDown: true, startX: clientX, startOffset: offset, moved: false };
     };
     const onMove = (clientX) => {
       const drag = dragRef.current;
@@ -76,22 +91,19 @@ function useAutoScroll(stripRef, trackRef, dependencies = [], speed = 40) {
       if (Math.abs(dx) > 4) drag.moved = true;
       let next = drag.startOffset - dx;
       if (halfWidth > 0) next = ((next % halfWidth) + halfWidth) % halfWidth;
-      offsetRef.current = next;
-      applyOffset();
+      track.style.transform = `translateX(${-next}px)`;
     };
     const onUp = () => {
+      if (!dragRef.current.isDown) return;
       dragRef.current.isDown = false;
+      resume();
     };
 
     const onMouseDown = (e) => onDown(e.clientX);
     const onMouseMove = (e) => onMove(e.clientX);
-    // Touch devices (iPad included) can fire a synthetic mouseenter on tap
-    // without a matching mouseleave, which would permanently pause the
-    // auto-scroll via `hovered`. Clear it explicitly on every touch so the
-    // marquee always resumes once the finger lifts.
-    const onTouchStart = (e) => { hovered = false; onDown(e.touches[0].clientX); };
+    const onTouchStart = (e) => onDown(e.touches[0].clientX);
     const onTouchMove = (e) => onMove(e.touches[0].clientX);
-    const onTouchEnd = () => { hovered = false; onUp(); };
+    const onTouchEnd = () => onUp();
 
     strip.addEventListener('mouseenter', onMouseEnter);
     strip.addEventListener('mouseleave', onMouseLeave);
@@ -103,8 +115,10 @@ function useAutoScroll(stripRef, trackRef, dependencies = [], speed = 40) {
     strip.addEventListener('touchend', onTouchEnd);
 
     return () => {
-      cancelAnimationFrame(rafId);
       ro.disconnect();
+      track.classList.remove('tryon-category-track--auto');
+      track.style.animationDelay = '';
+      track.style.transform = '';
       strip.removeEventListener('mouseenter', onMouseEnter);
       strip.removeEventListener('mouseleave', onMouseLeave);
       strip.removeEventListener('mousedown', onMouseDown);
@@ -154,9 +168,18 @@ export default function ARViewPage() {
     selectedFinger: 2, // 0=index, 1=middle, 2=ring, 3=pinky
   });
   const [showTuning, setShowTuning] = useState(false);
+  const [showRingTuning, setShowRingTuning] = useState(true);
+  useEffect(() => {
+    if (showTuning) setShowRingTuning(true);
+  }, [showTuning]);
   const [saved, setSaved] = useState(false);
   const [dragResetTick, setDragResetTick] = useState(0);
   const [viewMode, setViewMode] = useState('tryon'); // 'tryon' | 'configurator'
+
+  // 3D Configurator only makes sense for real 3D models — 2D/flat uploads
+  // (catalog entries whose modelPath is a .png, not .glb/.gltf) have no mesh
+  // to recolor or view from other camera angles.
+  const isActiveModel3D = /\.(glb|gltf)$/i.test(activeModel?.modelPath || activeModel?.glbPath || '');
   const [autoRotate, setAutoRotate] = useState(true);
   const [resetTick, setResetTick] = useState(0);
   const [headerHeight, setHeaderHeight] = useState(112);
@@ -172,6 +195,9 @@ export default function ARViewPage() {
 
   // Whether the sidebar's category strip / model grid / promo content is expanded
   const [categoryStripOpen, setCategoryStripOpen] = useState(true);
+
+  // Whether the whole right-side category/model sidebar is collapsed (desktop only) — lets the camera view go full width
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Which page of the model grid is showing (paginated)
   const [modelPage, setModelPage] = useState(0);
@@ -227,7 +253,7 @@ export default function ARViewPage() {
 
   const categoryStripRef = useRef(null);
   const categoryTrackRef = useRef(null);
-  const categoryDragRef = useAutoScroll(categoryStripRef, categoryTrackRef, [categoryStripOpen, isMobileLayout, viewMode], 25);
+  const categoryDragRef = useAutoScroll(categoryStripRef, categoryTrackRef, [categoryStripOpen, isMobileLayout, viewMode, sidebarCollapsed], 25);
 
   // Mobile categories auto-scroll refs
   const mobileCategoryStripRef = useRef(null);
@@ -284,6 +310,13 @@ export default function ARViewPage() {
       }
     }).catch(console.error);
   }, [category, modelId]);
+
+  // If the selected model isn't a 3D one (or none is selected yet), the
+  // Configurator tab is hidden — bounce back to Try On if it was left open
+  // from a previous 3D model.
+  useEffect(() => {
+    if (viewMode === 'configurator' && !isActiveModel3D) setViewMode('tryon');
+  }, [viewMode, isActiveModel3D]);
 
   // Show AR guide modal every time category changes (respects SuperAdmin config)
   useEffect(() => {
@@ -455,9 +488,12 @@ export default function ARViewPage() {
   ];
 
   const availableMaterialFilters = useMemo(() => {
+    if (category === 'watch') {
+      return [];
+    }
+
     // Per-category: which chips to always show (even if no models match)
     const categoryAlwaysShow = {
-      watch: new Set(['gold', 'diamond', 'others']),
       eyewear: new Set(),  // no always-show chips for eyewear
     };
     const alwaysShow = categoryAlwaysShow[category] ?? new Set(['gold', 'diamond']);
@@ -806,6 +842,11 @@ export default function ARViewPage() {
             {model.name.charAt(0)}
           </div>
         )}
+        {activeModel?.id === model.id && (
+          <span className="ar-carousel-item-check">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.704 5.29a1 1 0 010 1.415l-7.5 7.5a1 1 0 01-1.415 0l-3.5-3.5a1 1 0 111.415-1.414L8.5 12.086l6.79-6.796a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+          </span>
+        )}
       </div>
     );
 
@@ -874,7 +915,13 @@ export default function ARViewPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <button
                   className="ar-ctrl-btn ar-back-btn"
-                  onClick={() => { if (isAdmin) navigate('/admin/models'); else navigate('/'); }}
+                  onClick={() => {
+                    if (window.history.state && window.history.state.idx > 0) {
+                      navigate(-1);
+                    } else {
+                      navigate(isAdmin ? '/admin/models' : '/');
+                    }
+                  }}
                   style={{ padding: '6px', background: 'transparent', border: 'none', color: '#fff' }}
                 >
                   <svg style={{ width: '20px', height: '20px' }} viewBox="0 0 20 20" fill="currentColor">
@@ -896,16 +943,18 @@ export default function ARViewPage() {
                       <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                     </svg>
                   </button>
-                  <button
-                    className={`ar-mode-btn ${viewMode === 'configurator' ? 'active' : ''}`}
-                    onClick={() => setViewMode('configurator')}
-                    aria-label="3D Configurator"
-                    title="3D Configurator"
-                  >
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2L22 12L12 22L2 12L12 2Z" />
-                    </svg>
-                  </button>
+                  {isActiveModel3D && (
+                    <button
+                      className={`ar-mode-btn ${viewMode === 'configurator' ? 'active' : ''}`}
+                      onClick={() => setViewMode('configurator')}
+                      aria-label="3D Configurator"
+                      title="3D Configurator"
+                    >
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L22 12L12 22L2 12L12 2Z" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -915,12 +964,18 @@ export default function ARViewPage() {
             <div className="ar-topbar-left" style={{ flex: '1 0 auto', display: 'flex', justifyContent: 'flex-start' }}>
               <button
                 className="ar-ctrl-btn ar-back-btn"
-                onClick={() => { if (isAdmin) navigate('/admin/models'); else navigate('/'); }}
+                onClick={() => {
+                  if (window.history.state && window.history.state.idx > 0) {
+                    navigate(-1);
+                  } else {
+                    navigate(isAdmin ? '/admin/models' : '/');
+                  }
+                }}
               >
                 <svg viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
                 </svg>
-                <span>{isAdmin ? 'Models' : 'Home'}</span>
+                <span>Back</span>
               </button>
             </div>
 
@@ -935,15 +990,17 @@ export default function ARViewPage() {
                 </svg>
                 <span>Try On</span>
               </button>
-              <button
-                className={`ar-mode-btn ${viewMode === 'configurator' ? 'active' : ''}`}
-                onClick={() => setViewMode('configurator')}
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2L22 12L12 22L2 12L12 2Z" />
-                </svg>
-                <span>3D Configurator</span>
-              </button>
+              {isActiveModel3D && (
+                <button
+                  className={`ar-mode-btn ${viewMode === 'configurator' ? 'active' : ''}`}
+                  onClick={() => setViewMode('configurator')}
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L22 12L12 22L2 12L12 2Z" />
+                  </svg>
+                  <span>3D Configurator</span>
+                </button>
+              )}
             </div>
 
             <div className="ar-topbar-right" style={{ flex: '1 0 auto', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
@@ -970,6 +1027,15 @@ export default function ARViewPage() {
         {/* ── Vertical control stack: zoom/reset/admin toggles below, expand chevron at bottom ── */}
         {viewMode === 'tryon' && (
           <div className="ar-vertical-controls">
+            <button
+              className="ar-ctrl-btn"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.6rem', borderRadius: '50%' }}
+              onClick={() => setSidebarCollapsed(c => !c)}
+              title={sidebarCollapsed ? 'Show category panel' : 'Hide category panel'}
+            >
+              <svg style={{ width: 16, height: 16, transform: sidebarCollapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+            </button>
+
             <button
               className="ar-ctrl-btn"
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.6rem', borderRadius: '50%' }}
@@ -1094,98 +1160,78 @@ export default function ARViewPage() {
               <button className="ar-tuning-close" onClick={() => setShowTuning(false)}>✕</button>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', background: 'rgba(0,0,0,0.2)', padding: '4px', borderRadius: '8px' }}>
+            <div style={{ display: 'flex', gap: '0.3rem', marginBottom: '0.6rem', background: 'rgba(0,0,0,0.2)', padding: '3px', borderRadius: '6px' }}>
               <button
-                style={{ flex: 1, padding: '4px 8px', borderRadius: '6px', background: tuningHand === 'right' ? '#3b82f6' : 'transparent', color: tuningHand === 'right' ? '#fff' : '#94a3b8', border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
+                style={{ flex: 1, padding: '3px 6px', borderRadius: '5px', background: tuningHand === 'right' ? '#3b82f6' : 'transparent', color: tuningHand === 'right' ? '#fff' : '#94a3b8', border: 'none', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 600 }}
                 onClick={() => setTuningHand('right')}
               >
                 {category === 'earrings' ? 'Left Ear' : 'Left Hand'}
               </button>
               <button
-                style={{ flex: 1, padding: '4px 8px', borderRadius: '6px', background: tuningHand === 'left' ? '#3b82f6' : 'transparent', color: tuningHand === 'left' ? '#fff' : '#94a3b8', border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
+                style={{ flex: 1, padding: '3px 6px', borderRadius: '5px', background: tuningHand === 'left' ? '#3b82f6' : 'transparent', color: tuningHand === 'left' ? '#fff' : '#94a3b8', border: 'none', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 600 }}
                 onClick={() => setTuningHand('left')}
               >
                 {category === 'earrings' ? 'Right Ear' : 'Right Hand'}
               </button>
             </div>
 
-            <label className="ar-tuning-label">
-              <span>Pos X (Left/Right): <strong>{(tuningHand === 'right' ? modelPos[0] : leftModelPos[0]).toFixed(2)}</strong></span>
-              <input type="range" min={category === 'nosepin' ? -0.5 : -20} max={category === 'nosepin' ? 0.5 : 20} step="0.01" value={tuningHand === 'right' ? modelPos[0] : leftModelPos[0]}
-                onChange={e => {
-                  const val = parseFloat(e.target.value);
-                  tuningHand === 'right' ? setModelPos([val, modelPos[1], modelPos[2]]) : setLeftModelPos([val, leftModelPos[1], leftModelPos[2]]);
-                }} />
-            </label>
-            <label className="ar-tuning-label">
-              <span>Pos Y (Up/Down): <strong>{(tuningHand === 'right' ? modelPos[1] : leftModelPos[1]).toFixed(2)}</strong></span>
-              <input type="range" min={category === 'nosepin' ? -0.5 : -20} max={category === 'nosepin' ? 0.5 : 20} step="0.01" value={tuningHand === 'right' ? modelPos[1] : leftModelPos[1]}
-                onChange={e => {
-                  const val = parseFloat(e.target.value);
-                  tuningHand === 'right' ? setModelPos([modelPos[0], val, modelPos[2]]) : setLeftModelPos([leftModelPos[0], val, leftModelPos[2]]);
-                }} />
-            </label>
-            <label className="ar-tuning-label">
-              <span>Pos Z (Forward/Back): <strong>{(tuningHand === 'right' ? modelPos[2] : leftModelPos[2]).toFixed(2)}</strong></span>
-              <input type="range" min={category === 'nosepin' ? -0.5 : -20} max={category === 'nosepin' ? 0.5 : 20} step="0.01" value={tuningHand === 'right' ? modelPos[2] : leftModelPos[2]}
-                onChange={e => {
-                  const val = parseFloat(e.target.value);
-                  tuningHand === 'right' ? setModelPos([modelPos[0], modelPos[1], val]) : setLeftModelPos([leftModelPos[0], leftModelPos[1], val]);
-                }} />
-            </label>
-
-            <div className="ar-tuning-divider" />
-
-            <label className="ar-tuning-label">
-              <span>Rot X (Pitch/Tilt): <strong>{((tuningHand === 'right' ? modelRot[0] : leftModelRot[0]) * (180 / Math.PI)).toFixed(0)}°</strong></span>
-              <input type="range" min="-3.14159" max="3.14159" step="0.01" value={tuningHand === 'right' ? modelRot[0] : leftModelRot[0]}
-                onChange={e => {
-                  const val = parseFloat(e.target.value);
-                  tuningHand === 'right' ? setModelRot([val, modelRot[1], modelRot[2]]) : setLeftModelRot([val, leftModelRot[1], leftModelRot[2]]);
-                }} />
-            </label>
-            <label className="ar-tuning-label">
-              <span>Rot Y (Yaw/Turn): <strong>{((tuningHand === 'right' ? modelRot[1] : leftModelRot[1]) * (180 / Math.PI)).toFixed(0)}°</strong></span>
-              <input type="range" min="-3.14159" max="3.14159" step="0.01" value={tuningHand === 'right' ? modelRot[1] : leftModelRot[1]}
-                onChange={e => {
-                  const val = parseFloat(e.target.value);
-                  tuningHand === 'right' ? setModelRot([modelRot[0], val, modelRot[2]]) : setLeftModelRot([leftModelRot[0], val, leftModelRot[2]]);
-                }} />
-            </label>
-            <label className="ar-tuning-label">
-              <span>Rot Z (Roll/Upside Down): <strong>{((tuningHand === 'right' ? modelRot[2] : leftModelRot[2]) * (180 / Math.PI)).toFixed(0)}°</strong></span>
-              <input type="range" min="-3.14159" max="3.14159" step="0.01" value={tuningHand === 'right' ? modelRot[2] : leftModelRot[2]}
-                onChange={e => {
-                  const val = parseFloat(e.target.value);
-                  tuningHand === 'right' ? setModelRot([modelRot[0], modelRot[1], val]) : setLeftModelRot([leftModelRot[0], leftModelRot[1], val]);
-                }} />
-            </label>
-
-            <div className="ar-tuning-divider" />
-
-            <label className="ar-tuning-label">
-              <span>Scale (Size): <strong>{parseFloat(modelScale).toFixed(2)}x</strong></span>
-              <input type="range" min="-20" max="20" step="0.01" value={modelScale}
-                onChange={e => setModelScale(parseFloat(e.target.value))} />
-            </label>
-
-            <label className="ar-tuning-label">
-              <span>Height Scale (Y): <strong>{parseFloat(modelScaleY).toFixed(2)}x</strong></span>
-              <input type="range" min="0.01" max="10" step="0.01" value={modelScaleY}
-                onChange={e => setModelScaleY(parseFloat(e.target.value))} />
-            </label>
-
-            {category === 'necklace' && (
-              <label className="ar-tuning-label">
-                <span>Top Blur: <strong>{parseInt(modelNecklaceBlur)}%</strong></span>
-                <input type="range" min="0" max="100" step="1" value={modelNecklaceBlur}
-                  onChange={e => setModelNecklaceBlur(parseFloat(e.target.value))} />
-              </label>
+            {category === 'rings' && !showRingTuning && (
+              <button 
+                onClick={() => setShowRingTuning(true)}
+                style={{ width: '100%', padding: '6px', marginBottom: '0.6rem', borderRadius: '5px', background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}
+              >
+                ⚙️ Open Ring Fit Tuning
+              </button>
             )}
 
-            <label className="ar-tuning-label" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.5rem' }}>
+            {(() => {
+              const posMin = category === 'nosepin' ? -0.5 : -20;
+              const posMax = category === 'nosepin' ? 0.5 : 20;
+              const curPos = tuningHand === 'right' ? modelPos : leftModelPos;
+              const setCurPos = tuningHand === 'right' ? setModelPos : setLeftModelPos;
+              const curRot = tuningHand === 'right' ? modelRot : leftModelRot;
+              const setCurRot = tuningHand === 'right' ? setModelRot : setLeftModelRot;
+              const toDeg = v => (v * (180 / Math.PI)).toFixed(0) + '°';
+
+              const rows = [
+                { group: 'pos', key: 'posX', label: 'Pos X (Left/Right)', value: curPos[0], min: posMin, max: posMax, format: v => v.toFixed(2), onChange: v => setCurPos([v, curPos[1], curPos[2]]) },
+                { group: 'pos', key: 'posY', label: 'Pos Y (Up/Down)', value: curPos[1], min: posMin, max: posMax, format: v => v.toFixed(2), onChange: v => setCurPos([curPos[0], v, curPos[2]]) },
+                { group: 'pos', key: 'posZ', label: 'Pos Z (Forward/Back)', value: curPos[2], min: posMin, max: posMax, format: v => v.toFixed(2), onChange: v => setCurPos([curPos[0], curPos[1], v]) },
+                { group: 'rot', key: 'rotX', label: 'Rot X (Pitch/Tilt)', value: curRot[0], min: -3.14159, max: 3.14159, format: toDeg, onChange: v => setCurRot([v, curRot[1], curRot[2]]) },
+                { group: 'rot', key: 'rotY', label: 'Rot Y (Yaw/Turn)', value: curRot[1], min: -3.14159, max: 3.14159, format: toDeg, onChange: v => setCurRot([curRot[0], v, curRot[2]]) },
+                { group: 'rot', key: 'rotZ', label: 'Rot Z (Roll/Upside Down)', value: curRot[2], min: -3.14159, max: 3.14159, format: toDeg, onChange: v => setCurRot([curRot[0], curRot[1], v]) },
+                { group: 'scale', key: 'scale', label: 'Scale (Size)', value: modelScale, min: -20, max: 20, format: v => v.toFixed(2) + 'x', onChange: v => setModelScale(v) },
+                { group: 'scale', key: 'scaleY', label: 'Height Scale (Y)', value: modelScaleY, min: 0.01, max: 10, format: v => v.toFixed(2) + 'x', onChange: v => setModelScaleY(v) },
+                ...(category === 'necklace' ? [{ group: 'scale', key: 'blur', label: 'Top Blur', value: modelNecklaceBlur, min: 0, max: 100, format: v => parseInt(v) + '%', onChange: v => setModelNecklaceBlur(v) }] : []),
+              ];
+
+              return rows.map((r, idx) => {
+                const showDivider = r.group !== rows[idx - 1]?.group && idx > 0;
+                const pct = ((r.value - r.min) / (r.max - r.min)) * 100;
+                return (
+                  <React.Fragment key={r.key}>
+                    {showDivider && <div className="ar-tuning-divider" />}
+                    <label className="ar-tuning-label">
+                      <span>{r.label}: <strong>{r.format(r.value)}</strong></span>
+                      <input
+                        type="range"
+                        min={r.min}
+                        max={r.max}
+                        step="0.01"
+                        value={r.value}
+                        className="ar-tuning-slider"
+                        style={{ '--slider-pct': `${pct}%` }}
+                        onChange={e => r.onChange(parseFloat(e.target.value))}
+                      />
+                    </label>
+                  </React.Fragment>
+                );
+              });
+            })()}
+
+            <label className="ar-tuning-label" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.35rem' }}>
               <span>✨ Sparkling Effect</span>
-              <input type="checkbox" checked={modelSparkles} onChange={e => setModelSparkles(e.target.checked)} style={{ width: '18px', height: '18px', accentColor: '#fbbf24', cursor: 'pointer' }} />
+              <input type="checkbox" checked={modelSparkles} onChange={e => setModelSparkles(e.target.checked)} style={{ width: '14px', height: '14px', accentColor: '#fbbf24', cursor: 'pointer' }} />
             </label>
 
             <div className="ar-tuning-actions">
@@ -1206,30 +1252,39 @@ export default function ARViewPage() {
         )}
 
         {/* Ring Tuning Panel (Admin only, Try On mode only) */}
-        {viewMode === 'tryon' && isAdmin && showTuning && category === 'rings' && (
+        {viewMode === 'tryon' && isAdmin && showTuning && showRingTuning && category === 'rings' && (
           <div className="ar-tuning-panel" style={{ top: railTop, right: '340px' }}>
             <div className="ar-tuning-header">
               <h4>Ring Fit Tuning</h4>
+              <button className="ar-tuning-close" onClick={() => setShowRingTuning(false)}>✕</button>
             </div>
 
             <label className="ar-tuning-label">
               <span>Right Hand (Palm Offset): <strong>{ringTuning.rightHandFrontOffset.toFixed(2)}</strong></span>
               <input type="range" min="-0.15" max="0.15" step="0.01" value={ringTuning.rightHandFrontOffset}
+                className="ar-tuning-slider"
+                style={{ '--slider-pct': `${((ringTuning.rightHandFrontOffset + 0.15) / 0.3) * 100}%` }}
                 onChange={e => setRingTuning({ ...ringTuning, rightHandFrontOffset: parseFloat(e.target.value) })} />
             </label>
             <label className="ar-tuning-label">
               <span>Right Hand (Back Offset): <strong>{ringTuning.rightHandBackOffset.toFixed(2)}</strong></span>
               <input type="range" min="-0.15" max="0.15" step="0.01" value={ringTuning.rightHandBackOffset}
+                className="ar-tuning-slider"
+                style={{ '--slider-pct': `${((ringTuning.rightHandBackOffset + 0.15) / 0.3) * 100}%` }}
                 onChange={e => setRingTuning({ ...ringTuning, rightHandBackOffset: parseFloat(e.target.value) })} />
             </label>
             <label className="ar-tuning-label">
               <span>Left Hand (Palm Offset): <strong>{ringTuning.leftHandFrontOffset.toFixed(2)}</strong></span>
               <input type="range" min="-0.15" max="0.15" step="0.01" value={ringTuning.leftHandFrontOffset}
+                className="ar-tuning-slider"
+                style={{ '--slider-pct': `${((ringTuning.leftHandFrontOffset + 0.15) / 0.3) * 100}%` }}
                 onChange={e => setRingTuning({ ...ringTuning, leftHandFrontOffset: parseFloat(e.target.value) })} />
             </label>
             <label className="ar-tuning-label">
               <span>Left Hand (Back Offset): <strong>{ringTuning.leftHandBackOffset.toFixed(2)}</strong></span>
               <input type="range" min="-0.15" max="0.15" step="0.01" value={ringTuning.leftHandBackOffset}
+                className="ar-tuning-slider"
+                style={{ '--slider-pct': `${((ringTuning.leftHandBackOffset + 0.15) / 0.3) * 100}%` }}
                 onChange={e => setRingTuning({ ...ringTuning, leftHandBackOffset: parseFloat(e.target.value) })} />
             </label>
 
@@ -1238,11 +1293,15 @@ export default function ARViewPage() {
             <label className="ar-tuning-label">
               <span>Size (Palm side): <strong>{ringTuning.frontScale.toFixed(2)}</strong></span>
               <input type="range" min="0.1" max="0.4" step="0.01" value={ringTuning.frontScale}
+                className="ar-tuning-slider"
+                style={{ '--slider-pct': `${((ringTuning.frontScale - 0.1) / 0.3) * 100}%` }}
                 onChange={e => setRingTuning({ ...ringTuning, frontScale: parseFloat(e.target.value) })} />
             </label>
             <label className="ar-tuning-label">
               <span>Size (Back side): <strong>{ringTuning.backScale.toFixed(2)}</strong></span>
               <input type="range" min="0.1" max="0.4" step="0.01" value={ringTuning.backScale}
+                className="ar-tuning-slider"
+                style={{ '--slider-pct': `${((ringTuning.backScale - 0.1) / 0.3) * 100}%` }}
                 onChange={e => setRingTuning({ ...ringTuning, backScale: parseFloat(e.target.value) })} />
             </label>
           </div>
@@ -1347,7 +1406,8 @@ export default function ARViewPage() {
         </div>
       </div>{/* /tryon-camera-pane */}
 
-      {/* ── Sidebar: category strip + models in category ── */}
+      {/* ── Sidebar: category strip + models in category (hidden when collapsed via the vertical control rail) ── */}
+      {!sidebarCollapsed && (
       <div className="tryon-sidebar">
         <button
           type="button"
@@ -1411,6 +1471,7 @@ export default function ARViewPage() {
 
         {renderModelGridAndPromo()}
       </div>
+      )}
 
       {/* ── Phone-only floating camera controls ── */}
       {viewMode === 'tryon' && isMobileLayout && (

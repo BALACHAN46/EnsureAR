@@ -697,6 +697,58 @@
       "scale": 1,
       "enableSparkles": true,
       "category": "necklace"
+    },
+    "gtvjd9qn0d": {
+      "posX": 0,
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "enableSparkles": true,
+      "category": "rings"
+    },
+    "6937y05mhmc": {
+      "posX": 0,
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "enableSparkles": true,
+      "category": "rings"
+    },
+    "pgww9k15o9": {
+      "posX": 0,
+      "posY": 0,
+      "posZ": 0,
+      "rotX": 0,
+      "rotY": 0,
+      "rotZ": 0,
+      "scale": 1,
+      "enableSparkles": true,
+      "category": "rings"
+    },
+    "ojeh4xji98g": {
+      "posX": 0.19,
+      "posY": 1.56,
+      "posZ": 0,
+      "rotX": 0.29841,
+      "rotY": 0.00841,
+      "rotZ": 0.10841,
+      "leftPosX": 0.16,
+      "leftPosY": 1.56,
+      "leftPosZ": 0,
+      "leftRotX": 0.43841,
+      "leftRotY": 0,
+      "leftRotZ": 0,
+      "scale": 2.89,
+      "scaleY": 1,
+      "necklaceBlur": 18,
+      "enableSparkles": true,
+      "category": "rings"
     }
   }
 }

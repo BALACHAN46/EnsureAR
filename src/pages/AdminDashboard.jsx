@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '../components/admin/Sidebar';
 import ModelCard from '../components/admin/ModelCard';
+import { orderCategories } from '../constants/categoryMeta';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ export default function AdminDashboard() {
       .then(data => {
         if (data?.models) {
           setCatalog(data.models);
-          const cats = [...new Set(data.models.map(m => m.category))];
+          const cats = orderCategories([...new Set(data.models.map(m => m.category))]);
           setCategories(cats);
           // Arriving from the Overview page's "browse by category" links
           // preselects that category via the /admin/models/:category route.
@@ -113,19 +114,6 @@ export default function AdminDashboard() {
             </span>
           </div>
           <div className="admin-topbar-right">
-            <div className="admin-search-wrapper">
-              <svg className="admin-search-icon" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"/>
-              </svg>
-              <input
-                id="admin-search-input"
-                type="text"
-                className="admin-search-input"
-                placeholder="Search models..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-              />
-            </div>
             <div className="admin-stats-chip">
               <svg viewBox="0 0 20 20" fill="currentColor">
                 <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>

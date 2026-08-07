@@ -9,10 +9,11 @@ export default function AdminSiteSettingsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [config, setConfig] = useState(null);
   const [savedConfigStr, setSavedConfigStr] = useState('');
+  const [catalog, setCatalog] = useState([]);
 
   useEffect(() => {
     if (sessionStorage.getItem('sa_auth') !== 'true') {
-      navigate('/admin/login');
+      navigate('/admin');
       return;
     }
     const initial = loadSiteContentConfig();
@@ -20,9 +21,21 @@ export default function AdminSiteSettingsPage() {
     setSavedConfigStr(JSON.stringify(initial));
   }, [navigate]);
 
+  useEffect(() => {
+    fetch('/models/catalog.json')
+      .then(r => r.json())
+      .then(d => { if (d?.models) setCatalog(d.models); })
+      .catch(() => {});
+  }, []);
+
+  const modelCounts = CATEGORIES.reduce((acc, cat) => {
+    acc[cat] = catalog.filter(m => m.category === cat).length;
+    return acc;
+  }, {});
+
   const handleLogout = () => {
     sessionStorage.removeItem('sa_auth');
-    navigate('/admin/login');
+    navigate('/admin');
   };
 
   const handleSave = () => {
@@ -94,7 +107,7 @@ export default function AdminSiteSettingsPage() {
         activeNav="site-settings"
         categories={CATEGORIES}
         activeCategory={null}
-        modelCounts={{}}
+        modelCounts={modelCounts}
         onCategorySelect={(cat) => navigate('/admin/models/' + cat)}
         onLogout={handleLogout}
         isOpen={sidebarOpen}

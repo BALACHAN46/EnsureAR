@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/admin/Sidebar';
 import { loadARGuideConfig, saveARGuideConfig, resetARGuideConfig } from '../utils/arGuideConfig';
-import { CATEGORY_META, CATEGORY_ORDER, getCategoryMeta } from '../constants/categoryMeta';
+import { CATEGORY_META, CATEGORY_ORDER, getCategoryMeta, orderCategories } from '../constants/categoryMeta';
 import ARGuideModal, { CATEGORY_GUIDES, FALLBACK_GUIDE } from '../components/ar/ARGuideModal';
 
 // Default step titles/descs imported from guide data (mirrors ARGuideModal's CATEGORY_GUIDES)
@@ -34,7 +34,7 @@ export default function ARGuideSettingsPage() {
       .then(d => {
         if (d?.models) {
           setCatalog(d.models);
-          setCategories([...new Set(d.models.map(m => m.category))]);
+          setCategories(orderCategories([...new Set(d.models.map(m => m.category))]));
         }
       })
       .catch(() => { });

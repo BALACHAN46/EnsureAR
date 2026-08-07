@@ -7,6 +7,8 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { orderCategories } from '../constants/categoryMeta';
+import { loadSiteContentConfig } from '../utils/siteContentConfig';
 
 // ─── Categories ────────────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -45,7 +47,7 @@ export default function UploadPage() {
   // ── Sidebar data ──────────────────────────────────────────────────────────
   const [catalog, setCatalog] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const categories = [...new Set(catalog.map(m => m.category))];
+  const categories = orderCategories([...new Set(catalog.map(m => m.category))]);
   const modelCounts = categories.reduce((acc, cat) => {
     acc[cat] = catalog.filter(m => m.category === cat).length;
     return acc;
@@ -58,6 +60,13 @@ export default function UploadPage() {
       .catch(() => {});
   }, []);
 
+  // ── Menu Settings (Parent / Child Category) ───────────────────────────────
+  const [menuConfig, setMenuConfig] = useState(null);
+  useEffect(() => {
+    setMenuConfig(loadSiteContentConfig());
+  }, []);
+  const menuTree = menuConfig?.virtualTryOnMenu || [];
+
   // ── Form state ────────────────────────────────────────────────────────────
   const [modelFile, setModelFile]       = useState(null);
   const [mtlFile, setMtlFile]           = useState(null);
@@ -65,6 +74,8 @@ export default function UploadPage() {
   const [thumbFile, setThumbFile]       = useState(null);
   const [name, setName]                 = useState('');
   const [category, setCategory]         = useState('necklace');
+  const [parentCategoryId, setParentCategoryId] = useState('');
+  const [childCategoryId, setChildCategoryId]   = useState('');
   const [materialTag, setMaterialTag]   = useState('');
   const [scaleX, setScaleX]             = useState(1);
   const [scaleY, setScaleY]             = useState(1);
@@ -77,6 +88,28 @@ export default function UploadPage() {
   const [rotZ, setRotZ]                 = useState(0);
   const [dragOver, setDragOver]         = useState(false);
 
+  // ── Parent / Child Category derived data & handlers ───────────────────────
+  const selectedParent = menuTree.find(p => p.id === parentCategoryId) || null;
+  const childOptions   = selectedParent?.children || [];
+  const selectedChild  = childOptions.find(c => c.id === childCategoryId) || null;
+
+  const handleParentChange = useCallback((id) => {
+    setParentCategoryId(id);
+    setChildCategoryId('');
+    const parent = menuTree.find(p => p.id === id);
+    if (parent && (!parent.children || parent.children.length === 0) && parent.targetCategory) {
+      setCategory(parent.targetCategory);
+    }
+  }, [menuTree]);
+
+  const handleChildChange = useCallback((id) => {
+    setChildCategoryId(id);
+    const child = selectedParent?.children?.find(c => c.id === id);
+    if (child && child.targetCategory) {
+      setCategory(child.targetCategory);
+    }
+  }, [selectedParent]);
+
   // ── Modal / pipeline state ────────────────────────────────────────────────
   const [showModal, setShowModal]           = useState(false);
   const [uploading, setUploading]           = useState(false);
@@ -85,6 +118,7 @@ export default function UploadPage() {
   const [checks, setChecks]                 = useState({});
   const [confirmReady, setConfirmReady]     = useState(false);
   const [toast, setToast]                   = useState({ msg: '', type: '', show: false });
+  const [thumbPreviewUrl, setThumbPreviewUrl] = useState(null);
 
   // ── Three.js refs ─────────────────────────────────────────────────────────
   const canvasRef           = useRef(null);
@@ -95,6 +129,7 @@ export default function UploadPage() {
   const modelObjectRef      = useRef(null);
   const animFrameRef        = useRef(null);
   const is3DModeRef         = useRef(false);
+  const dummyObjectRef      = useRef(null);
 
   // ── Toast helper ──────────────────────────────────────────────────────────
   const showToast = useCallback((msg, type = 'success') => {
@@ -363,7 +398,7 @@ export default function UploadPage() {
         const maxDim = Math.max(size.x, size.y, size.z);
         let cZ = Math.abs(maxDim / 2 / Math.tan(thumbCamera.fov * (Math.PI / 180) / 2)) * 1.5 || 3;
         if (['rings', 'bracelets', 'watch'].includes(cat)) {
-          thumbCamera.position.set(0, 0, -cZ);
+          thumbCamera.position.set(0, cZ * 0.5, cZ);
         } else {
           thumbCamera.position.set(0, 0, cZ);
         }
@@ -383,6 +418,61 @@ export default function UploadPage() {
       }
     });
   }, []);
+
+  // ── Generate Thumbnail Preview ──────────────────────────────────────────────
+  const generateThumbPreview = useCallback(async () => {
+    if (!modelObjectRef.current) return;
+    try {
+      const newRoot = new THREE.Group();
+      const meshes = [];
+      modelObjectRef.current.traverse(child => { if (child.isMesh) meshes.push(child); });
+      modelObjectRef.current.updateMatrixWorld(true);
+
+      meshes.forEach(child => {
+        const geom = child.geometry.clone();
+        geom.applyMatrix4(child.matrixWorld);
+        if (geom.attributes.normal) geom.normalizeNormals();
+        newRoot.add(new THREE.Mesh(geom, child.material));
+      });
+
+      const exportScene = new THREE.Scene();
+      exportScene.add(newRoot);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 256; canvas.height = 256;
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, preserveDrawingBuffer: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      const envScene = new THREE.Scene();
+      envScene.background = new THREE.Color(0xe0e0e0);
+      const envLight = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 10), new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.BackSide }));
+      envScene.add(envLight);
+      const pmremGen = new THREE.PMREMGenerator(renderer);
+      exportScene.environment = pmremGen.fromScene(envScene).texture;
+      exportScene.add(new THREE.AmbientLight(0xffffff, 1.5));
+      const dl = new THREE.DirectionalLight(0xffffff, 2);
+      dl.position.set(2, 3, 4);
+      exportScene.add(dl);
+
+      const thumbCamera = new THREE.PerspectiveCamera(45, 1, 0.01, 100);
+      const box = new THREE.Box3().setFromObject(newRoot);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const maxDim = Math.max(size.x, size.y, size.z);
+      let cZ = Math.abs(maxDim / 2 / Math.tan(thumbCamera.fov * (Math.PI / 180) / 2)) * 1.5 || 3;
+      if (['rings', 'bracelets', 'watch'].includes(category)) {
+        thumbCamera.position.set(0, cZ * 0.5, cZ);
+      } else {
+        thumbCamera.position.set(0, 0, cZ);
+      }
+      thumbCamera.lookAt(0, 0, 0);
+      renderer.render(exportScene, thumbCamera);
+      
+      setThumbPreviewUrl(canvas.toDataURL('image/png'));
+    } catch (e) {
+      console.error(e);
+      showToast('Failed to generate preview', 'error');
+    }
+  }, [category, showToast]);
 
   // ── Perform actual upload (same logic as MVC) ─────────────────────────────
   const performUpload = useCallback(async () => {
@@ -404,6 +494,10 @@ export default function UploadPage() {
       const payload = {
         name,
         category,
+        parentCategoryId: parentCategoryId || null,
+        parentCategory: selectedParent?.label || '',
+        childCategoryId: childCategoryId || null,
+        childCategory: selectedChild?.label || '',
         material: materialTag ? materialTag.toLowerCase() : '',
         scale: [scaleX, scaleY, scaleZ],
         offset: [offsetX, offsetY, offsetZ],
@@ -464,11 +558,13 @@ export default function UploadPage() {
     } finally {
       setTimeout(() => { setUploading(false); setProgress(0); }, 1500);
     }
-  }, [name, category, modelFile, mtlFile, textureFiles, thumbFile, scaleX, scaleY, scaleZ, offsetX, offsetY, offsetZ, rotX, rotY, rotZ, exportCurrentModel, showToast, navigate]);
+  }, [name, category, parentCategoryId, childCategoryId, selectedParent, selectedChild, modelFile, mtlFile, textureFiles, thumbFile, scaleX, scaleY, scaleZ, offsetX, offsetY, offsetZ, rotX, rotY, rotZ, exportCurrentModel, showToast, navigate]);
 
   // ── "Continue to Alignment" button ────────────────────────────────────────
   const handleContinue = useCallback(async () => {
     if (!name.trim()) { showToast('Please enter a model name.', 'error'); return; }
+    if (!parentCategoryId) { showToast('Please select a Parent Category.', 'error'); return; }
+    if (childOptions.length > 0 && !childCategoryId) { showToast('Please select a Child Category.', 'error'); return; }
     if (!modelFile)   { showToast('Please select a 3D model file first.', 'error'); return; }
 
     const ext = modelFile.name.split('.').pop().toLowerCase();
@@ -485,13 +581,15 @@ export default function UploadPage() {
       // PNG — direct upload without 3D preview
       await performUpload();
     }
-  }, [name, modelFile, mtlFile, textureFiles, initPreview, loadModelToPreview, performUpload, showToast]);
+  }, [name, parentCategoryId, childCategoryId, childOptions, modelFile, mtlFile, textureFiles, initPreview, loadModelToPreview, performUpload, showToast]);
 
   // ── Modal confirm ──────────────────────────────────────────────────────────
   const handleConfirm = useCallback(async () => {
     if (!name.trim()) { showToast('Model name is required.', 'error'); return; }
+    if (!parentCategoryId) { showToast('Please select a Parent Category.', 'error'); return; }
+    if (childOptions.length > 0 && !childCategoryId) { showToast('Please select a Child Category.', 'error'); return; }
     await performUpload();
-  }, [name, performUpload, showToast]);
+  }, [name, parentCategoryId, childCategoryId, childOptions, performUpload, showToast]);
 
   // ── Modal cancel ──────────────────────────────────────────────────────────
   const handleCancelModal = useCallback(() => {
@@ -650,7 +748,28 @@ export default function UploadPage() {
                 />
               </div>
               <div className="upload-form-group">
-                <label htmlFor="upload-category">Category *</label>
+                <label htmlFor="upload-parent-category">Parent Category *</label>
+                <select id="upload-parent-category" value={parentCategoryId} onChange={e => handleParentChange(e.target.value)}>
+                  <option value="">Select Parent Category…</option>
+                  {menuTree.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+                </select>
+              </div>
+
+              <div className="upload-form-group">
+                <label htmlFor="upload-child-category">Child Category {childOptions.length > 0 ? '*' : ''}</label>
+                <select
+                  id="upload-child-category"
+                  value={childCategoryId}
+                  onChange={e => handleChildChange(e.target.value)}
+                  disabled={!selectedParent || childOptions.length === 0}
+                >
+                  <option value="">{childOptions.length ? 'Select Child Category…' : '(No sub-categories)'}</option>
+                  {childOptions.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                </select>
+              </div>
+
+              <div className="upload-form-group">
+                <label htmlFor="upload-category">Category * <span style={{ color: 'rgba(255,255,255,0.35)', fontWeight: 400 }}>(auto-set from Child Category)</span></label>
                 <select id="upload-category" value={category} onChange={e => setCategory(e.target.value)}>
                   {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
@@ -771,7 +890,25 @@ export default function UploadPage() {
                   <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Diamond Necklace 1" required />
                 </div>
                 <div className="upload-form-group">
-                  <label>Category *</label>
+                  <label>Parent Category *</label>
+                  <select value={parentCategoryId} onChange={e => handleParentChange(e.target.value)}>
+                    <option value="">Select Parent Category…</option>
+                    {menuTree.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+                  </select>
+                </div>
+                <div className="upload-form-group">
+                  <label>Child Category {childOptions.length > 0 ? '*' : ''}</label>
+                  <select
+                    value={childCategoryId}
+                    onChange={e => handleChildChange(e.target.value)}
+                    disabled={!selectedParent || childOptions.length === 0}
+                  >
+                    <option value="">{childOptions.length ? 'Select Child Category…' : '(No sub-categories)'}</option>
+                    {childOptions.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                  </select>
+                </div>
+                <div className="upload-form-group">
+                  <label>Category * <span style={{ color: 'rgba(255,255,255,0.35)', fontWeight: 400 }}>(auto)</span></label>
                   <select value={category} onChange={e => setCategory(e.target.value)}>
                     {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                   </select>
@@ -862,15 +999,22 @@ export default function UploadPage() {
                 <span>Confirm scale, rotation, and alignment.</span>
               </div>
 
-              <div className="upload-preview-container">
+              <div className="upload-preview-container" style={{ position: 'relative' }}>
                 <canvas ref={canvasRef} className="upload-preview-canvas" />
+
+                {thumbPreviewUrl && (
+                  <div style={{ position: 'absolute', bottom: 10, right: 10, zIndex: 10, background: 'rgba(0,0,0,0.8)', border: '1px solid #fff', borderRadius: '4px', padding: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <span style={{ fontSize: '10px', color: '#fff', marginBottom: '4px' }}>Thumbnail Preview</span>
+                    <img src={thumbPreviewUrl} alt="Thumbnail Preview" style={{ width: '80px', height: '80px', background: '#e0e0e0' }} />
+                    <button onClick={() => setThumbPreviewUrl(null)} style={{ position: 'absolute', top: -8, right: -8, background: 'red', color: 'white', borderRadius: '50%', width: '20px', height: '20px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontSize: '12px' }}>✕</button>
+                  </div>
+                )}
 
                 {/* Left Toolbar */}
                 <div className="upload-toolbar-left">
                   {[
                     { label: 'Toggle Wireframe', action: () => {
-                      if (!modelObjectRef.current || !threeRef.current) return;
-                      const { THREE } = threeRef.current;
+                      if (!modelObjectRef.current) return;
                       modelObjectRef.current.traverse(c => {
                         if (c.isMesh && c.material) {
                           const toggle = m => { m.wireframe = !m.wireframe; };
@@ -878,22 +1022,42 @@ export default function UploadPage() {
                         }
                       });
                     }},
+                    { label: 'Toggle Reference', action: () => {
+                      if (!sceneRef.current) return;
+                      const scene = sceneRef.current;
+                      if (dummyObjectRef.current) {
+                        scene.remove(dummyObjectRef.current);
+                        dummyObjectRef.current.geometry?.dispose();
+                        dummyObjectRef.current.material?.dispose();
+                        dummyObjectRef.current = null;
+                        return;
+                      }
+                      
+                      let geom;
+                      if (['rings', 'bracelets', 'watch'].includes(category)) {
+                        const radius = category === 'rings' ? 0.35 : 0.8;
+                        geom = new THREE.CylinderGeometry(radius, radius, 4, 32);
+                        geom.rotateX(Math.PI / 2); 
+                      } else if (category === 'necklace') {
+                        geom = new THREE.CylinderGeometry(0.8, 1.4, 3, 32);
+                        geom.translate(0, -1.5, 0); 
+                      } else if (category === 'eyewear') {
+                        geom = new THREE.SphereGeometry(1.2, 32, 32);
+                      } else {
+                        geom = new THREE.SphereGeometry(1.0, 32, 32);
+                      }
+                      const mat = new THREE.MeshBasicMaterial({ color: 0x00aaff, wireframe: true, transparent: true, opacity: 0.4 });
+                      const mesh = new THREE.Mesh(geom, mat);
+                      scene.add(mesh);
+                      dummyObjectRef.current = mesh;
+                    }},
+                    { label: 'Preview Thumbnail', action: generateThumbPreview },
                   ].map(({ label, action }) => (
                     <button key={label} className="upload-toolbar-btn" onClick={action}>{label}</button>
                   ))}
                 </div>
 
-                {/* Right Toolbar */}
-                <div className="upload-toolbar-right">
-                  {[
-                    { label: 'Auto Center', action: handleAutoCenter },
-                    { label: 'Scale to 1.0', action: handleScaleTo1 },
-                    { label: 'Mirror X', action: handleMirrorX },
-                    { label: 'Flip Axis Z', action: handleFlipZ },
-                  ].map(({ label, action }) => (
-                    <button key={label} className="upload-toolbar-btn" onClick={action}>{label}</button>
-                  ))}
-                </div>
+                {/* Right Toolbar removed */}
 
                 <div className="upload-preview-hint">
                   Interactive Preview (Drag to rotate, Scroll to zoom)<br />

@@ -57,11 +57,17 @@
     .laptop-img {
         position: absolute;
         z-index: 9;
-        width: fit-content;
+        width: 95%;
+        max-width: 800px;
         bottom: 0px;
         left: 0;
         right: 0;
         margin-inline: auto;
+    }
+    
+    .laptop-img img {
+        width: 100%;
+        height: auto;
     }
 
     .section,
@@ -331,7 +337,8 @@
     .mobile-img {
         position: absolute;
         z-index: 9;
-        width: fit-content;
+        width: 80%;
+        max-width: 300px;
         bottom: 0px;
         left: 0;
         right: 0;
@@ -341,7 +348,8 @@
     .ipad-img {
         position: absolute;
         z-index: 9;
-        width: fit-content;
+        width: 90%;
+        max-width: 400px;
         bottom: 0px;
         left: 0;
         right: 0;
@@ -351,11 +359,17 @@
     .laptop-img {
         position: absolute;
         z-index: 9;
-        width: fit-content;
+        width: 95%;
+        max-width: 800px;
         bottom: 0px;
         left: 0;
         right: 0;
         margin-inline: auto;
+    }
+    
+    .mobile-img img, .ipad-img img, .laptop-img img {
+        width: 100%;
+        height: auto;
     }
 }
 
