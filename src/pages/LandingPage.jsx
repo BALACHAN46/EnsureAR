@@ -1,6 +1,7 @@
 import React from 'react';
 import Layout from '../components/layout/Layout';
 import { loadSiteContentConfig } from '../utils/siteContentConfig';
+import ReactMarkdown from 'react-markdown';
 
 export default function LandingPage() {
   const config = loadSiteContentConfig();
@@ -253,8 +254,12 @@ export default function LandingPage() {
                 <div className="ens-about--text ps-md-5">
                     <h3>{config.aboutEnsureAR.title}</h3>
                     <p className="ens-about--text-one">{config.aboutEnsureAR.landingSubtitle}</p>
-                    <p>{config.aboutEnsureAR.text1}</p>
-                    <p>{config.aboutEnsureAR.text2}</p>
+                    <div className="ens-about--text">
+                        <ReactMarkdown>{config.aboutEnsureAR.text1}</ReactMarkdown>
+                    </div>
+                    <div className="ens-about--text">
+                        <ReactMarkdown>{config.aboutEnsureAR.text2}</ReactMarkdown>
+                    </div>
                 </div>
             </div>
         </div>

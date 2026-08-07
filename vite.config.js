@@ -1,3 +1,4 @@
+// Force Vite to clear optimize dep cache
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import fs from 'fs'

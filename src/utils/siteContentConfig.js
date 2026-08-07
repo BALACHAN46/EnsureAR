@@ -16,11 +16,26 @@ export const DEFAULT_CONFIG = {
   vision: "To be the world's leader in immersive augmented reality solutions that empower individuals and businesses to visualize, interact, and transform their ideas into reality.",
   mission: "EnsureAR delivers cutting-edge AR experiences through state-of-the-art technology, creative design, and seamless integration - enabling clients to enhance engagement, improve understanding, and drive innovation in every interaction.",
   whyChooseUs: "Cutting-Edge AR Technology - Advanced and realistic virtual try-on solutions for jewellery, watches, and eyewear.<br/><br/>Enhanced Customer Experience - Helps shoppers make confident purchase decisions with immersive product visualization.<br/><br/>Boost Conversions - Proven to increase customer engagement and sales for brands.<br/><br/>Seamless Integration - Easy-to-deploy solutions tailored to your business needs.",
-  testimonial: {
-    name: "Jackson",
-    location: "New York",
-    text: "Trying jewellery virtually before buying gave me complete confidence. The AR experience felt so real that I could see how it looked on me without stepping into the store."
-  },
+  testimonials: [
+    {
+      name: "Jackson",
+      location: "New York",
+      text: "Trying jewellery virtually before buying gave me complete confidence. The AR experience felt so real that I could see how it looked on me without stepping into the store.",
+      rating: 5
+    },
+    {
+      name: "Jordan",
+      location: "New York",
+      text: "Trying jewellery virtually before buying gave me complete confidence. The AR experience felt so real that I could see how it looked on me without stepping into the store.",
+      rating: 5
+    },
+    {
+      name: "Helen",
+      location: "New York",
+      text: "Trying jewellery virtually before buying gave me complete confidence. The AR experience felt so real that I could see how it looked on me without stepping into the store.",
+      rating: 5
+    }
+  ],
   contact: {
     address: "4180 Morgan Elizabeth Way, Cumming, GA - 30041, USA",
     phone: "+1 (762) 422 3803",
