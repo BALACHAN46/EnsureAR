@@ -96,13 +96,17 @@ export default function AdminMenuSettingsPage() {
     });
   };
 
-  const addChildItem = (parent) => runAction(() =>
-    createChildCategory(parent.parentCategoryId, {
+  const addChildItem = (parent) => runAction(() => {
+    const nextOrder = parent.children && parent.children.length > 0 
+      ? Math.max(...parent.children.map(c => c.displayOrder || 0)) + 1 
+      : 0;
+    return createChildCategory(parent.parentCategoryId, {
       name: 'New Sub-Category',
       slug: slugify(`${parent.name}-${(parent.children?.length || 0) + 1}`),
       trackingMode: 'Face',
-      displayOrder: parent.children?.length || 0,
-    }));
+      displayOrder: nextOrder,
+    });
+  });
 
   const saveChild = (child) => runAction(() =>
     updateChildCategory(child.childCategoryId, {
@@ -177,7 +181,7 @@ export default function AdminMenuSettingsPage() {
               )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                {menu.map((parent) => {
+                {[...menu].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)).map((parent) => {
                   const childCount = parent.children?.length || 0;
 
                   if (childCount <= 1) {
@@ -293,7 +297,7 @@ export default function AdminMenuSettingsPage() {
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                          {parent.children.map((child) => (
+                          {[...(parent.children || [])].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)).map((child) => (
                             <div key={child.childCategoryId} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '0.5rem', borderRadius: '4px', flexWrap: 'wrap' }}>
                               <input
                                 className="ar-guide-input"
