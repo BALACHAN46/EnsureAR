@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/admin/Sidebar';
 import { CATEGORY_ORDER as CATEGORIES } from '../constants/categoryMeta';
 import { loadSiteContentConfig, saveSiteContentConfig, DEFAULT_CONFIG } from '../utils/siteContentConfig';
+import { isAuthenticated } from '../utils/auth';
+import { logout } from '../services/authApi';
+import { getAllProducts } from '../services/productsApi';
 import MDEditor from '@uiw/react-md-editor';
 
 export default function AdminSiteSettingsPage() {
@@ -14,20 +17,18 @@ export default function AdminSiteSettingsPage() {
   const [activeTestimonialTab, setActiveTestimonialTab] = useState(0);
 
   useEffect(() => {
-    if (sessionStorage.getItem('sa_auth') !== 'true') {
+    if (!isAuthenticated()) {
       navigate('/admin');
       return;
     }
-    const initial = loadSiteContentConfig();
-    setConfig(initial);
-    setSavedConfigStr(JSON.stringify(initial));
+    loadSiteContentConfig().then(initial => {
+      setConfig(initial);
+      setSavedConfigStr(JSON.stringify(initial));
+    });
   }, [navigate]);
 
   useEffect(() => {
-    fetch('/models/catalog.json')
-      .then(r => r.json())
-      .then(d => { if (d?.models) setCatalog(d.models); })
-      .catch(() => {});
+    getAllProducts({ includeInactive: true }).then(setCatalog).catch(() => {});
   }, []);
 
   const modelCounts = CATEGORIES.reduce((acc, cat) => {
@@ -36,17 +37,23 @@ export default function AdminSiteSettingsPage() {
   }, {});
 
   const handleLogout = () => {
-    sessionStorage.removeItem('sa_auth');
+    logout();
     navigate('/admin');
   };
 
-  const handleSave = () => {
-    if (saveSiteContentConfig(config)) {
-      setSavedConfigStr(JSON.stringify(config));
+  // After a successful save, reload from the API rather than trusting local
+  // state — new testimonials only get a real id once the server creates
+  // them, and later edits need that id to PUT instead of re-creating them.
+  const handleSave = async () => {
+    const ok = await saveSiteContentConfig(config);
+    if (ok) {
+      const fresh = await loadSiteContentConfig();
+      setConfig(fresh);
+      setSavedConfigStr(JSON.stringify(fresh));
     }
   };
 
-  const handleResetSection = (section) => {
+  const handleResetSection = async (section) => {
     const newConfig = { ...config };
     if (section === 'about') {
       newConfig.aboutEnsureAR = DEFAULT_CONFIG.aboutEnsureAR;
@@ -61,8 +68,11 @@ export default function AdminSiteSettingsPage() {
       newConfig.socialMedia = DEFAULT_CONFIG.socialMedia;
     }
     setConfig(newConfig);
-    if (saveSiteContentConfig(newConfig)) {
-      setSavedConfigStr(JSON.stringify(newConfig));
+    const ok = await saveSiteContentConfig(newConfig);
+    if (ok) {
+      const fresh = await loadSiteContentConfig();
+      setConfig(fresh);
+      setSavedConfigStr(JSON.stringify(fresh));
     }
   };
 

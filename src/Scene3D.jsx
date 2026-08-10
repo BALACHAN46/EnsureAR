@@ -351,7 +351,7 @@ const useEarringTracker = (landmarksRef, leftGroupRef, rightGroupRef, occluderRe
   const stableCalibrationFrames = useRef(0);
   const emaLeftEarLength = useRef(null);
   const emaRightEarLength = useRef(null);
-  const smoothedPitchFactor = useRef(0);
+  const smoothedPitchFactor = useRef(null);
 
   useFrame((state, delta) => {
     const landmarks = landmarksRef.current;
@@ -526,7 +526,11 @@ const useEarringTracker = (landmarksRef, leftGroupRef, rightGroupRef, occluderRe
     // Dynamic Pitch Correction: When looking down, MediaPipe pulls the jaw forward onto the cheek.
     // We detect pitch-down and dynamically pull the earlobe back up to counteract the jaw sliding.
     const targetPitchFactor = Math.max(0, -headForwardYZ.y);
-    smoothedPitchFactor.current = THREE.MathUtils.lerp(smoothedPitchFactor.current, targetPitchFactor, 0.1);
+    if (smoothedPitchFactor.current === null) {
+      smoothedPitchFactor.current = targetPitchFactor;
+    } else {
+      smoothedPitchFactor.current = THREE.MathUtils.lerp(smoothedPitchFactor.current, targetPitchFactor, 0.1);
+    }
     const pitchDownFactor = smoothedPitchFactor.current;
 
     const yawFactor = Math.abs(headForward.x);
@@ -803,7 +807,7 @@ const EarringImageMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, left
 
 const EarringMesh = (props) => {
   const gltfPath = props.activeModel?.glbPath || '';
-  const isImage = gltfPath.toLowerCase().match(/\.(png|jpe?g|webp)$/i);
+  const isImage = gltfPath.toLowerCase().match(/\.(png|jpe?g|webp)(\?.*)?$/i);
   return isImage ? <EarringImageMesh {...props} /> : <EarringGLTFMesh {...props} />;
 };
 
@@ -1187,8 +1191,8 @@ const NosePinImageMesh = ({ landmarksRef, modelPos, modelRot, modelScale, modelS
 
 const NosePinMesh = (props) => {
   const path = props.activeModel?.glbPath || '';
-  const isObj = path.toLowerCase().endsWith('.obj');
-  const isImage = path.toLowerCase().match(/\.(png|jpe?g|webp)$/i);
+  const isObj = path.toLowerCase().split('?')[0].endsWith('.obj');
+  const isImage = path.toLowerCase().match(/\.(png|jpe?g|webp)(\?.*)?$/i);
   if (isImage) {
     return <NosePinImageMesh {...props} />;
   }
@@ -1639,8 +1643,7 @@ const WristMesh = ({ landmarksRef, modelPos, modelRot, leftModelPos, leftModelRo
   const groupRef = useRef();
   const innerGroupRef = useRef();
 
-  const gltfPath = activeModel?.glbPath;
-  const { scene } = useGLTF(gltfPath || '/models/watch/f2917202433f.glb');
+  const { scene } = useGLTF(activeModel.glbPath);
 
   const { clonedScene } = React.useMemo(() => {
     return applyAndExtractMaterials(scene, customMaterials);

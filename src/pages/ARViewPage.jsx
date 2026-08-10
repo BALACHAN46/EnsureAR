@@ -8,6 +8,8 @@ import { getModelConfig, saveModelConfig, resetModelConfig, configToPosition, co
 import { getCategoryMeta, orderCategories } from '../constants/categoryMeta';
 import ARGuideModal from '../components/ar/ARGuideModal';
 import { loadARGuideConfig } from '../utils/arGuideConfig';
+import { getAllProducts, getFilteredProducts } from '../services/productsApi';
+import { isAuthenticated } from '../utils/auth';
 
 const PREDEFINED_COLORS = [
   { id: 'original', name: 'Original 3D Model', color: 'transparent' },
@@ -72,6 +74,7 @@ function useAutoScroll(stripRef, trackRef, dependencies = [], speed = 40) {
       // so playback picks up exactly where the pause/drag left off.
       track.style.animationDelay = `-${(offset / speed).toFixed(3)}s`;
       track.style.transform = '';
+      track.style.animationName = '';
       track.style.animationPlayState = 'running';
     };
 
@@ -81,6 +84,7 @@ function useAutoScroll(stripRef, trackRef, dependencies = [], speed = 40) {
     const onDown = (clientX) => {
       const offset = currentOffset();
       pause();
+      track.style.animationName = 'none';
       track.style.transform = `translateX(${-offset}px)`;
       dragRef.current = { isDown: true, startX: clientX, startOffset: offset, moved: false };
     };
@@ -144,7 +148,6 @@ export default function ARViewPage() {
   const headerRef = useRef(null);
 
   const [catalog, setCatalog] = useState([]);
-  const [defaults, setDefaults] = useState({});
   const [activeModel, setActiveModel] = useState(null);
   const [activeCategoryModels, setActiveCategoryModels] = useState([]);
   const [showFaceMesh, setShowFaceMesh] = useState(false);
@@ -179,7 +182,8 @@ export default function ARViewPage() {
   // 3D Configurator only makes sense for real 3D models — 2D/flat uploads
   // (catalog entries whose modelPath is a .png, not .glb/.gltf) have no mesh
   // to recolor or view from other camera angles.
-  const isActiveModel3D = /\.(glb|gltf)$/i.test(activeModel?.modelPath || activeModel?.glbPath || '');
+  const _modelPathStr = (activeModel?.modelPath || activeModel?.glbPath || '').split('?')[0];
+  const isActiveModel3D = /\.(glb|gltf)$/i.test(_modelPathStr);
   const [autoRotate, setAutoRotate] = useState(true);
   const [resetTick, setResetTick] = useState(0);
   const [headerHeight, setHeaderHeight] = useState(112);
@@ -289,27 +293,36 @@ export default function ARViewPage() {
 
   const hasCustomizations = Object.keys(customMaterials).length > 0;
 
-  // Load catalog + defaults
+  // Load catalog (active models only — this is the public try-on page)
   useEffect(() => {
-    Promise.all([
-      fetch('/models/catalog.json').then(r => r.json()),
-      fetch('/models/model-defaults.json').then(r => r.json()),
-    ]).then(([catalogData, defaultsData]) => {
-      const models = (catalogData.models || []).filter(m => !m.deleted);
-      const defs = defaultsData.modelDefaults || {};
+    getAllProducts({ includeInactive: false }).then(models => {
       setCatalog(models);
-      setDefaults(defs);
+    }).catch(console.error);
+  }, []);
 
+  useEffect(() => {
+    if (!catalog.length || !category) return;
+
+    let active = true;
+
+    // Remove empty models from dropdown lists, keeping only valid ones
+    const materialFilterParams = materialFilter === 'all' ? null : materialFilter;
+
+    getFilteredProducts({ category, material: materialFilterParams, includeInactive: false }).then(async models => {
+      if (!active) return;
+      
       const catModels = models.filter(m => m.category === category);
       setActiveCategoryModels(catModels);
 
       const found = models.find(m => m.id === modelId) || catModels[0];
       if (found) {
-        setActiveModel(found);
-        applyModelConfig(found.id, defs);
+        await applyModelConfig(found.id);
+        if (active) setActiveModel(found);
       }
     }).catch(console.error);
-  }, [category, modelId]);
+
+    return () => { active = false; };
+  }, [category, modelId, materialFilter, catalog.length]);
 
   // If the selected model isn't a 3D one (or none is selected yet), the
   // Configurator tab is hidden — bounce back to Try On if it was left open
@@ -320,15 +333,19 @@ export default function ARViewPage() {
 
   // Show AR guide modal every time category changes (respects SuperAdmin config)
   useEffect(() => {
-    const cfg = loadARGuideConfig(); // Re-read in case admin changed it
-    setArGuideConfig(cfg);
-    if (category && cfg.entryModalEnabled) {
-      setGuideOpen(true);
-      setGuideAccepted(false);
-    } else {
-      setGuideOpen(false);
-      setGuideAccepted(!cfg.entryModalEnabled); // auto-accept if modal disabled
-    }
+    let cancelled = false;
+    loadARGuideConfig().then(cfg => { // Re-read in case admin changed it
+      if (cancelled) return;
+      setArGuideConfig(cfg);
+      if (category && cfg.entryModalEnabled) {
+        setGuideOpen(true);
+        setGuideAccepted(false);
+      } else {
+        setGuideOpen(false);
+        setGuideAccepted(!cfg.entryModalEnabled); // auto-accept if modal disabled
+      }
+    });
+    return () => { cancelled = true; };
   }, [category]);
 
   // Draggable help button handlers
@@ -381,8 +398,8 @@ export default function ARViewPage() {
     return () => ro.disconnect();
   }, [category, viewMode]);
 
-  const applyModelConfig = (id, defs) => {
-    const cfg = getModelConfig(id, defs);
+  const applyModelConfig = async (id) => {
+    const cfg = await getModelConfig(id);
     setModelPos(configToPosition(cfg));
     setModelRot(configToRotation(cfg));
     setLeftModelPos(configToLeftPosition(cfg));
@@ -391,11 +408,12 @@ export default function ARViewPage() {
     setModelScaleY(configToScaleY(cfg));
     setModelNecklaceBlur(configToNecklaceBlur(cfg));
     setModelSparkles(!!cfg.enableSparkles);
+    if (cfg.ring) setRingTuning(prev => ({ ...prev, ...cfg.ring }));
   };
 
-  const handleModelSelect = (model) => {
+  const handleModelSelect = async (model) => {
+    await applyModelConfig(model.id);
     setActiveModel(model);
-    applyModelConfig(model.id, defaults);
     setResetTick(t => t + 1);
     setCustomMaterials({});
     setModelMeshes([]);
@@ -403,10 +421,21 @@ export default function ARViewPage() {
     setCameraView(null);
   };
 
-  const handleCategorySwitch = (cat) => {
+  const handleCategorySwitch = async (cat) => {
     if (cat === category) return;
-    const firstOfCat = catalog.find(m => m.category === cat);
-    if (firstOfCat) navigate(`/ar/${cat}/${firstOfCat.id}`);
+    setMaterialFilter('all');
+    try {
+      // Fetch specifically for this category so the first item EXACTLY matches
+      // the first item that will appear in the UI grid, rather than relying on
+      // the unfiltered catalog which might have a different tie-breaker sort.
+      const models = await getFilteredProducts({ category: cat, includeInactive: false });
+      const firstOfCat = models.filter(m => m.category === cat)[0];
+      if (firstOfCat) {
+        navigate(`/ar/${cat}/${firstOfCat.id}`, { replace: true });
+      }
+    } catch (err) {
+      console.error('Error fetching category models for switch:', err);
+    }
   };
 
   const handleSaveTuning = async () => {
@@ -429,19 +458,16 @@ export default function ARViewPage() {
       necklaceBlur: modelNecklaceBlur,
       enableSparkles: modelSparkles,
       category: activeModel.category,
+      ring: category === 'rings' ? ringTuning : undefined,
     });
 
-    if (res && res.action === 'insert') {
-      setSaved('Inserted!');
-    } else {
-      setSaved('Updated!');
-    }
-    setTimeout(() => setSaved(false), 2000);
+    setSaved(res.success ? 'Saved!' : false);
+    if (res.success) setTimeout(() => setSaved(false), 2000);
   };
 
-  const handleResetTuning = () => {
+  const handleResetTuning = async () => {
     if (!activeModel) return;
-    resetModelConfig(activeModel.id);
+    await resetModelConfig(activeModel.id);
     setModelPos([0, 0, 0]);
     setModelRot([0, 0, 0]);
     setLeftModelPos([0, 0, 0]);
@@ -453,7 +479,7 @@ export default function ARViewPage() {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const isAdmin = sessionStorage.getItem('sa_auth') === 'true';
+  const isAdmin = isAuthenticated();
   const isHandTracking = category === 'watch' || category === 'bracelets' || category === 'rings';
 
   const availableCategories = [...new Set(catalog.map(m => m.category))];
@@ -487,6 +513,16 @@ export default function ARViewPage() {
     { key: 'others', label: <span style={{display:'flex', alignItems:'center'}}><OthersIcon /> Others</span>, keywords: ['others'] },
   ];
 
+  const isModelMatchMaterial = (model, tag) => {
+    if (!model || !tag) return false;
+    const mat = model.material?.toLowerCase().trim() || '';
+    const name = model.name?.toLowerCase().trim() || '';
+    if (mat) {
+      return mat === tag.key.toLowerCase() || tag.keywords.some(kw => mat.includes(kw));
+    }
+    return tag.keywords.some(kw => name.includes(kw));
+  };
+
   const availableMaterialFilters = useMemo(() => {
     if (category === 'watch') {
       return [];
@@ -499,21 +535,26 @@ export default function ARViewPage() {
     const alwaysShow = categoryAlwaysShow[category] ?? new Set(['gold', 'diamond']);
     const tags = MATERIAL_TAGS.filter(tag =>
       alwaysShow.has(tag.key) ||
-      activeCategoryModels.some(m =>
-        (m.material === tag.key) || (!m.material && tag.keywords.some(kw => m.name?.toLowerCase().includes(kw)))
-      )
+      activeCategoryModels.some(m => isModelMatchMaterial(m, tag))
     );
     return tags;
   }, [activeCategoryModels, category]);
 
-  const filteredModels = useMemo(() => {
-    if (materialFilter === 'all') return activeCategoryModels;
-    const tag = MATERIAL_TAGS.find(t => t.key === materialFilter);
-    if (!tag) return activeCategoryModels;
-    return activeCategoryModels.filter(m =>
-      (m.material === tag.key) || (!m.material && tag.keywords.some(kw => m.name?.toLowerCase().includes(kw)))
-    );
-  }, [activeCategoryModels, materialFilter]);
+  const [filteredModels, setFilteredModels] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    if (materialFilter === 'all') {
+      setFilteredModels(activeCategoryModels);
+    } else {
+      getFilteredProducts({ category, material: materialFilter })
+        .then(models => {
+          if (active) setFilteredModels(models);
+        })
+        .catch(console.error);
+    }
+    return () => { active = false; };
+  }, [category, materialFilter, activeCategoryModels]);
 
   const railTop = headerHeight + 12;
 
@@ -836,7 +877,7 @@ export default function ARViewPage() {
         title={model.name}
       >
         {model.thumbnailPath ? (
-          <img src={model.thumbnailPath} alt={model.name} />
+          <img src={model.thumbnailPath} alt={model.name} crossOrigin="anonymous" />
         ) : (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#94a3b8' }}>
             {model.name.charAt(0)}
@@ -1438,7 +1479,7 @@ export default function ARViewPage() {
                   >
                     <div className="icon-box">
                       <div className="corner-brackets"><div className="cb-inner"></div></div>
-                      {meta.icon ? <img src={meta.icon} alt="" style={{ width: '46px', height: '46px', objectFit: 'contain' }} /> : meta.emoji}
+                      {meta.icon ? <img src={meta.icon} alt="" style={{ width: '46px', height: '46px', objectFit: 'contain' }} draggable={false} /> : meta.emoji}
                     </div>
                     <span>{meta.label}</span>
                   </button>
@@ -1544,7 +1585,7 @@ export default function ARViewPage() {
                     >
                       <div className="icon-box">
                         <div className="corner-brackets"><div className="cb-inner"></div></div>
-                        {meta.icon ? <img src={meta.icon} alt="" /> : <span>{meta.emoji}</span>}
+                        {meta.icon ? <img src={meta.icon} alt="" draggable={false} /> : <span>{meta.emoji}</span>}
                       </div>
                       <span>{meta.label}</span>
                     </button>

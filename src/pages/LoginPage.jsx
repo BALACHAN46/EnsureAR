@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-
-const SUPERADMIN_USER = 'superadmin';
-const SUPERADMIN_PASS = 'Welcome@123';
+import { login } from '../services/authApi';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -12,20 +10,18 @@ export default function LoginPage() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    setTimeout(() => {
-      if (username === SUPERADMIN_USER && password === SUPERADMIN_PASS) {
-        sessionStorage.setItem('sa_auth', 'true');
-        navigate('/admin/dashboard');
-      } else {
-        setError('Invalid credentials. Please try again.');
-        setLoading(false);
-      }
-    }, 600);
+    try {
+      await login(username, password);
+      navigate('/admin/dashboard');
+    } catch (err) {
+      setError(err.message || 'Invalid credentials. Please try again.');
+      setLoading(false);
+    }
   };
 
   return (

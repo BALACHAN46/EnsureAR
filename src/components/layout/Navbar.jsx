@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { loadSiteContentConfig } from '../../utils/siteContentConfig';
+import { loadSiteContentConfig, DEFAULT_CONFIG } from '../../utils/siteContentConfig';
+import { getAllProducts } from '../../services/productsApi';
+import { getMenu } from '../../services/categoriesApi';
 
 export default function Navbar() {
     const [catalog, setCatalog] = useState([]);
-    const config = loadSiteContentConfig();
+    const [menu, setMenu] = useState([]);
+    const [config, setConfig] = useState(DEFAULT_CONFIG);
 
-    useEffect(() => {
-        fetch('/models/catalog.json')
-            .then(r => r.json())
-            .then(data => { if (data?.models) setCatalog(data.models.filter(m => !m.deleted)); })
-            .catch(() => { });
-    }, []);
+    useEffect(() => { loadSiteContentConfig().then(setConfig); }, []);
+    useEffect(() => { getAllProducts().then(setCatalog).catch(() => {}); }, []);
+    useEffect(() => { getMenu().then(setMenu).catch(() => {}); }, []);
 
     const getFirstModel = (cat) => {
         const found = catalog.find(m => m.category === cat);
@@ -40,20 +40,24 @@ export default function Navbar() {
                                         <li className="menu-item menu-item-has-children">
                                             <a href="#">Virtual Try-On</a>
                                             <ul className="sub-menu" data-lenis-prevent="true">
-                                                {config.virtualTryOnMenu?.map((parent) => (
-                                                    <li key={parent.id} className={parent.children?.length > 0 ? "menu-item menu-item-has-children" : "menu-item"}>
-                                                        <a href={parent.children?.length > 0 ? "#" : getFirstModel(parent.targetCategory)}>{parent.label}</a>
-                                                        {parent.children?.length > 0 && (
-                                                            <ul className="sub-menu" data-lenis-prevent="true">
-                                                                {parent.children.map((child) => (
-                                                                    <li key={child.id} className="menu-item">
-                                                                        <a href={getFirstModel(child.targetCategory)}>{child.label}</a>
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
-                                                        )}
-                                                    </li>
-                                                ))}
+                                                {menu.map((parent) => {
+                                                    const hasSubmenu = parent.children?.length > 1;
+                                                    const directSlug = parent.children?.[0]?.slug;
+                                                    return (
+                                                        <li key={parent.parentCategoryId} className={hasSubmenu ? "menu-item menu-item-has-children" : "menu-item"}>
+                                                            <a href={hasSubmenu ? "#" : getFirstModel(directSlug)}>{parent.name}</a>
+                                                            {hasSubmenu && (
+                                                                <ul className="sub-menu" data-lenis-prevent="true">
+                                                                    {parent.children.map((child) => (
+                                                                        <li key={child.childCategoryId} className="menu-item">
+                                                                            <a href={getFirstModel(child.slug)}>{child.name}</a>
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            )}
+                                                        </li>
+                                                    );
+                                                })}
                                             </ul>
                                         </li>
                                         <li className="menu-item"><a href="/contact">Contact Us</a></li>
@@ -87,9 +91,73 @@ export default function Navbar() {
             {/* Mobile Responsive Menu */}
             <div className="mr_menu" data-lenis-prevent="true">
                 <button type="button" className="mr_menu_close"><i className="bi bi-x-lg"></i></button>
-                <div className="logo"></div>
+                <div className="logo">
+                    <a href="/" className="light_logo"><img src="/img/EnsureAR.png" alt="logo" /></a>
+                    <a href="/" className="dark_logo"><img src="/img/EnsureAR_dark.png" alt="logo" /></a>
+                </div>
                 <h6>Menu</h6>
-                <div className="mr_navmenu"></div>
+                <div className="mr_navmenu">
+                    <ul className="main-menu">
+                        <li className="menu-item"><a href="/">Home</a></li>
+                        <li className="menu-item"><a href="/about">About Us</a></li>
+                        <li className="menu-item menu-item-has-children">
+                            <a href="#">Virtual Try-On</a>
+                            <ul className="sub-menu" data-lenis-prevent="true" style={{ display: 'none' }}>
+                                {menu.map((parent) => {
+                                    const hasSubmenu = parent.children?.length > 1;
+                                    const directSlug = parent.children?.[0]?.slug;
+                                    return (
+                                        <li key={parent.parentCategoryId} className={hasSubmenu ? "menu-item menu-item-has-children" : "menu-item"}>
+                                            <a href={hasSubmenu ? "#" : getFirstModel(directSlug)}>{parent.name}</a>
+                                            {hasSubmenu && (
+                                                <ul className="sub-menu" data-lenis-prevent="true" style={{ display: 'none' }}>
+                                                    {parent.children.map((child) => (
+                                                        <li key={child.childCategoryId} className="menu-item">
+                                                            <a href={getFirstModel(child.slug)}>{child.name}</a>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                            {hasSubmenu && (
+                                                <span 
+                                                    className="submenu_opener" 
+                                                    onClick={(e) => {
+                                                        const parentLi = e.currentTarget.parentElement;
+                                                        parentLi.classList.toggle('nav_open');
+                                                        const subMenu = parentLi.querySelector('.sub-menu');
+                                                        if (subMenu) {
+                                                            subMenu.style.display = subMenu.style.display === 'block' ? 'none' : 'block';
+                                                        }
+                                                        e.stopPropagation();
+                                                        e.preventDefault();
+                                                    }}
+                                                >
+                                                    <i className="bi bi-chevron-right"></i>
+                                                </span>
+                                            )}
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                            <span 
+                                className="submenu_opener" 
+                                onClick={(e) => {
+                                    const parentLi = e.currentTarget.parentElement;
+                                    parentLi.classList.toggle('nav_open');
+                                    const subMenu = parentLi.querySelector('.sub-menu');
+                                    if (subMenu) {
+                                        subMenu.style.display = subMenu.style.display === 'block' ? 'none' : 'block';
+                                    }
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                }}
+                            >
+                                <i className="bi bi-chevron-right"></i>
+                            </span>
+                        </li>
+                        <li className="menu-item"><a href="/contact">Contact Us</a></li>
+                    </ul>
+                </div>
             </div>
 
             <div className="aside_info_wrapper" data-lenis-prevent="true">
@@ -131,9 +199,9 @@ export default function Navbar() {
                     <h6>Follow Us</h6>
                     <div className="social-box style-square">
                         <ul>
-                            <li><a href={config.socialMedia.facebook}><i className="bi bi-facebook"></i></a></li>
-                            <li><a href={config.socialMedia.instagram}><i className="bi bi-instagram"></i></a></li>
-                            <li><a href={config.socialMedia.linkedin}><i className="bi bi-linkedin"></i></a></li>
+                            <li><a href={config.socialMedia.facebook} target="_blank" rel="noopener noreferrer"><i className="bi bi-facebook"></i></a></li>
+                            <li><a href={config.socialMedia.instagram} target="_blank" rel="noopener noreferrer"><i className="bi bi-instagram"></i></a></li>
+                            <li><a href={config.socialMedia.linkedin} target="_blank" rel="noopener noreferrer"><i className="bi bi-linkedin"></i></a></li>
                         </ul>
                     </div>
                 </div>

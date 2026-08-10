@@ -1,9 +1,40 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
-import { loadSiteContentConfig } from '../utils/siteContentConfig';
+import { loadSiteContentConfig, DEFAULT_CONFIG } from '../utils/siteContentConfig';
 
 export default function ContactUsPage() {
-  const config = loadSiteContentConfig();
+  const [config, setConfig] = useState(DEFAULT_CONFIG);
+  const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
+  const [status, setStatus] = useState({ loading: false, message: '', isError: false });
+
+  useEffect(() => { loadSiteContentConfig().then(setConfig); }, []);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus({ loading: true, message: '', isError: false });
+    
+    try {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/v1/contact/inquiry`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+        const data = await response.json();
+        
+        if (response.ok) {
+            setStatus({ loading: false, message: 'Your enquiry has been sent successfully.', isError: false });
+            setFormData({ name: '', email: '', subject: '', message: '' });
+        } else {
+            setStatus({ loading: false, message: data.message || 'Failed to send enquiry.', isError: true });
+        }
+    } catch (err) {
+        setStatus({ loading: false, message: 'An error occurred. Please try again later.', isError: true });
+    }
+  };
 
   return (
     <Layout>
@@ -48,44 +79,49 @@ export default function ContactUsPage() {
                 </div>
 
                 <div className="col-lg-7">
-                    <div className="ens-form--inner">
+                    <form className="ens-form--inner" onSubmit={handleSubmit}>
                         <div className="row">
                             <div className="col-lg-6 col-md-6 mb-4">
                                 <div className="form-group">
-                                    <input type="text" name="name" className="form-control" placeholder="Name*" required />
+                                    <input type="text" name="name" value={formData.name} onChange={handleChange} className="form-control" placeholder="Name*" required />
                                 </div>
                             </div>
 
                             <div className="col-lg-6 col-md-6 mb-4">
                                 <div className="form-group">
-                                    <input type="email" name="email" className="form-control" placeholder="E-mail*" required />
+                                    <input type="email" name="email" value={formData.email} onChange={handleChange} className="form-control" placeholder="E-mail*" required />
                                 </div>
                             </div>
 
                             <div className="col-lg-12 col-md-12 mb-4">
                                 <div className="form-group">
-                                    <input type="text" name="subject" className="form-control" placeholder="Subject" />
+                                    <input type="text" name="subject" value={formData.subject} onChange={handleChange} className="form-control" placeholder="Subject" />
                                 </div>
                             </div>
 
                             <div className="col-md-12 col-lg-12 mb-4">
                                 <div className="form-group">
-                                    <textarea name="message" className="form-control" placeholder="Text"></textarea>
+                                    <textarea name="message" value={formData.message} onChange={handleChange} className="form-control" placeholder="Text"></textarea>
                                 </div>
                             </div>
 
                             <div className="col-md-12 col-lg-12">
+                                {status.message && (
+                                    <div className={`alert ${status.isError ? 'alert-danger' : 'alert-success'} mb-3`}>
+                                        {status.message}
+                                    </div>
+                                )}
                                 <div className="ens-item--button">
-                                    <button className="btn" type="button" id="sendEmailContactUs">
+                                    <button className="btn" type="submit" disabled={status.loading}>
                                         <span className="btn-wrap">
-                                            <span className="text-first">Send Mail</span>
+                                            <span className="text-first">{status.loading ? 'Sending...' : 'Send Mail'}</span>
                                         </span>
                                     </button>
                                 </div>
                             </div>
 
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>

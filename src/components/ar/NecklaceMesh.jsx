@@ -435,7 +435,7 @@ export default function NecklaceMesh({ landmarksRef, poseLandmarksRef, activeMod
   const modelPath = activeModel?.glbPath || activeModel?.modelPath;
   if (!modelPath) return null;
 
-  const isImage = /\.(png|jpe?g|svg)$/i.test(modelPath);
+  const isImage = /\.(png|jpe?g|svg)(\?.*)?$/i.test(modelPath);
 
   if (isImage) {
     return (
@@ -497,8 +497,7 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
     uFadeDistTip: { value: 10 }
   });
 
-  const boxHeightRef = useRef(0);
-  const boxWidthRef = useRef(1);
+  // refs moved to after hasInitializedRef
 
   // Inject custom shader logic to beautifully fade out the back of the chain!
   React.useEffect(() => {
@@ -590,7 +589,7 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
   const smoothedRotRef = useRef(null);
   // Smooths yaw specifically for the width-correction multiplier below (kept independent
   // of smoothedRotRef so it's available regardless of code ordering within the frame).
-  const smoothedYawForScaleRef = useRef(0);
+  const smoothedYawForScaleRef = useRef(null);
   // Low-pass filter for the raw per-frame anchor (landmark tracking noise) — the
   // position/quaternion lerp below already smooths toward the target, but its adaptive
   // factor ramps to ~1.0 for anything but the tiniest motion, so noisy input was passing
@@ -601,6 +600,9 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
   // default origin at (0,0,0)). If we show it at origin first, it appears over the face for
   // 1 frame, making the model's head temporarily invisible — which is what the user reported.
   const hasInitializedRef = useRef(false);
+
+  const boxHeightRef = useRef(0);
+  const boxWidthRef = useRef(0);
 
   // Auto-center the 3D model's pivot point to its true geometric center
   // This fixes models that were exported with off-center origins.
@@ -628,6 +630,11 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
 
   useFrame((state) => {
     if (!groupRef.current) return;
+
+    if (boxWidthRef.current === 0) {
+      groupRef.current.visible = false;
+      return;
+    }
 
     const landmarks = landmarksRef.current;
     const poseLandmarks = poseLandmarksRef?.current;
@@ -697,10 +704,14 @@ const NecklaceMeshInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos,
       }
     }
 
-    // Yaw + face width — velocity-adaptive
-    const yawDelta = Math.abs(cb.yaw - smoothedYawForScaleRef.current);
-    const yawEMA = getAdaptiveFactor(yawDelta, 35.0, 0.08);
-    smoothedYawForScaleRef.current += (cb.yaw - smoothedYawForScaleRef.current) * yawEMA;
+    // Yaw + face width
+    if (smoothedYawForScaleRef.current === null) {
+      smoothedYawForScaleRef.current = cb.yaw;
+    } else {
+      const yawDelta = Math.abs(cb.yaw - smoothedYawForScaleRef.current);
+      const yawEMA = getAdaptiveFactor(yawDelta, 35.0, 0.08);
+      smoothedYawForScaleRef.current += (cb.yaw - smoothedYawForScaleRef.current) * yawEMA;
+    }
     const yawCorrection = 1 - Math.min(1, Math.abs(smoothedYawForScaleRef.current)) * 0.35;
     const correctedFaceWidth = cb.faceWidth * yawCorrection;
     if (stableFaceWidthRef.current === 0) {
@@ -835,7 +846,7 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
   }, [texture]);
 
   // aspect ratio for scaling
-  const aspect = texture.image ? (texture.image.width / texture.image.height) : 1;
+  const aspect = texture.image ? (texture.image.width / texture.image.height) : 0;
 
   // Soft top-edge fade so the flat 2D chain doesn't end in a hard cutoff line —
   // mirrors the tip-blur the 3D GLTF necklace gets from its shader (see NecklaceMeshInner).
@@ -913,13 +924,18 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
   // (atan2-based angles are very noise-sensitive, and this fed the quaternion raw).
   const smoothedShoulderAngleRef = useRef(null);
   // Smooths yaw specifically for the width-correction multiplier below.
-  const smoothedYawForScaleRef = useRef(0);
+  const smoothedYawForScaleRef = useRef(null);
   // First-frame snap guard: same rationale as NecklaceMeshInner — prevents the 2D plane
   // from appearing at Three.js origin (0,0,0) for one frame, which sits over the face.
   const hasInitializedRef = useRef(false);
 
   useFrame((state) => {
     if (!groupRef.current) return;
+
+    if (aspect === 0) {
+      groupRef.current.visible = false;
+      return;
+    }
 
     const landmarks = landmarksRef.current;
     const poseLandmarks = poseLandmarksRef?.current;
@@ -958,11 +974,16 @@ const NecklaceImageInner = ({ groupRef, landmarksRef, poseLandmarksRef, modelPos
     const anchor = smoothedAnchorRef.current;
 
     // Velocity-adaptive yaw + face width
-    const yawDelta = Math.abs(cb.yaw - smoothedYawForScaleRef.current);
-    const yawEMA = getAdaptiveFactor(yawDelta, 35.0, 0.08);
-    smoothedYawForScaleRef.current += (cb.yaw - smoothedYawForScaleRef.current) * yawEMA;
+    if (smoothedYawForScaleRef.current === null) {
+      smoothedYawForScaleRef.current = cb.yaw;
+    } else {
+      const yawDelta = Math.abs(cb.yaw - smoothedYawForScaleRef.current);
+      const yawEMA = getAdaptiveFactor(yawDelta, 35.0, 0.08);
+      smoothedYawForScaleRef.current += (cb.yaw - smoothedYawForScaleRef.current) * yawEMA;
+    }
     const yawCorrection = 1 - Math.min(1, Math.abs(smoothedYawForScaleRef.current)) * 0.35;
     const correctedFaceWidth = cb.faceWidth * yawCorrection;
+    
     if (stableFaceWidthRef.current === 0) {
       stableFaceWidthRef.current = correctedFaceWidth;
     } else {

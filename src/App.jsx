@@ -15,7 +15,9 @@ import ModelEditPage from './pages/ModelEditPage';
 import ARGuideSettingsPage from './pages/ARGuideSettingsPage';
 import AdminSiteSettingsPage from './pages/AdminSiteSettingsPage';
 import AdminMenuSettingsPage from './pages/AdminMenuSettingsPage';
+import AdminEmailSettingsPage from './pages/AdminEmailSettingsPage';
 import UploadPage from './pages/UploadPage';
+import AdminDeletedModels from './pages/AdminDeletedModels';
 
 // AR page
 import ARViewPage from './pages/ARViewPage';
@@ -40,7 +42,9 @@ function AppRoutes() {
       <Route path="/admin/ar-guide" element={<ARGuideSettingsPage />} />
       <Route path="/admin/site-settings" element={<AdminSiteSettingsPage />} />
       <Route path="/admin/menu-settings" element={<AdminMenuSettingsPage />} />
+      <Route path="/admin/email-settings" element={<AdminEmailSettingsPage />} />
       <Route path="/admin/upload" element={<UploadPage />} />
+      <Route path="/admin/deleted-models" element={<AdminDeletedModels />} />
 
       {/* ── AR Try-On Route (DO NOT MODIFY) ── */}
       <Route path="/ar/:category/:modelId" element={<ARViewPage />} />

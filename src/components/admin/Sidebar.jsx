@@ -11,7 +11,7 @@ export default function Sidebar({ activeNav, categories, activeCategory, modelCo
       <aside className={`admin-sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-header-inner">
-            <div className="sidebar-logo">
+            <div className="sidebar-logo" onClick={() => navigate('/admin/dashboard')} style={{ cursor: 'pointer' }} title="Go to Overview">
               <img src="/ENSUREAR.png" alt="EnsureAR Logo" style={{ width: '200px', objectFit: 'contain', marginBottom: '4px' }} />
               <div className="sidebar-role-badge">SuperAdmin</div>
             </div>
@@ -83,6 +83,31 @@ export default function Sidebar({ activeNav, categories, activeCategory, modelCo
                 </svg>
               </span>
               <span className="sidebar-item-label">Menu Settings</span>
+            </button>
+
+            <button
+              className={`sidebar-item ${activeNav === 'email-settings' ? 'active' : ''}`}
+              onClick={() => navigate('/admin/email-settings')}
+            >
+              <span className="sidebar-item-icon" style={{ background: 'rgba(16,185,129,0.14)', color: '#10b981' }}>
+                <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
+                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                  <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                </svg>
+              </span>
+              <span className="sidebar-item-label">Email Settings</span>
+            </button>
+
+            <button
+              className={`sidebar-item ${activeNav === 'deleted-models' ? 'active' : ''}`}
+              onClick={() => navigate('/admin/deleted-models')}
+            >
+              <span className="sidebar-item-icon" style={{ background: 'rgba(239,68,68,0.14)', color: '#ef4444' }}>
+                <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
+                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </span>
+              <span className="sidebar-item-label">Deleted Models</span>
             </button>
           </div>
 

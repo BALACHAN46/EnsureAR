@@ -39,9 +39,9 @@
         // Mobile Responsive Menu 
         var mobileLogoContent = $('header .logo').html();
         var mobileMenuContent = $('.mainnav').html();
-		$('.mr_menu .logo').append(mobileLogoContent);
-		$('.mr_menu .mr_navmenu').append(mobileMenuContent);
-        $('.mr_menu .mr_navmenu ul.main-menu li.menu-item-has-children').append( $( "<span class='submenu_opener'><i class='bi bi-chevron-right'></i></span>" ) );
+		// $('.mr_menu .logo').append(mobileLogoContent);
+		// $('.mr_menu .mr_navmenu').append(mobileMenuContent);
+        // $('.mr_menu .mr_navmenu ul.main-menu li.menu-item-has-children').append( $( "<span class='submenu_opener'><i class='bi bi-chevron-right'></i></span>" ) );
 
         // Sub-Menu Open On-Click
         $('.mr_menu ul.main-menu li.menu-item-has-children .submenu_opener').on("click", function(e){

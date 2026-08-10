@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/admin/Sidebar';
 import ModelCard from '../components/admin/ModelCard';
-import { hasCustomConfig } from '../utils/modelConfig';
 import { getCategoryMeta, orderCategories } from '../constants/categoryMeta';
+import { isAuthenticated } from '../utils/auth';
+import { logout } from '../services/authApi';
+import { getAllProducts } from '../services/productsApi';
 
 const RECENT_COUNT = 8;
 
@@ -15,23 +17,26 @@ export default function AdminOverview() {
 
   // Auth guard
   useEffect(() => {
-    if (sessionStorage.getItem('sa_auth') !== 'true') {
+    if (!isAuthenticated()) {
       navigate('/admin');
     }
   }, []);
 
-  useEffect(() => {
-    fetch('/models/catalog.json')
-      .then(res => res.json())
-      .then(data => {
-        setCatalog(data?.models || []);
+  const fetchModels = () => {
+    getAllProducts({ includeInactive: true })
+      .then(models => {
+        setCatalog(models);
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchModels();
   }, []);
 
   const handleLogout = () => {
-    sessionStorage.removeItem('sa_auth');
+    logout();
     navigate('/admin');
   };
 
@@ -44,17 +49,19 @@ export default function AdminOverview() {
     );
   }
 
-  const categories = orderCategories([...new Set(catalog.map(m => m.category))]);
+  const activeCatalog = catalog.filter(m => !m.deleted);
+
+  const categories = orderCategories([...new Set(activeCatalog.map(m => m.category))]);
   const modelCounts = categories.reduce((acc, cat) => {
-    acc[cat] = catalog.filter(m => m.category === cat).length;
+    acc[cat] = activeCatalog.filter(m => m.category === cat).length;
     return acc;
   }, {});
 
-  const totalModels = catalog.length;
-  const tunedCount = catalog.filter(m => hasCustomConfig(m.id)).length;
+  const totalModels = activeCatalog.length;
+  const tunedCount = activeCatalog.filter(m => m.isTuned).length;
   const untunedCount = totalModels - tunedCount;
 
-  const recentModels = [...catalog]
+  const recentModels = [...activeCatalog]
     .sort((a, b) => new Date(b.uploadedAt || 0) - new Date(a.uploadedAt || 0))
     .slice(0, RECENT_COUNT);
 
@@ -169,7 +176,12 @@ export default function AdminOverview() {
               </div>
               <div className="admin-model-grid overview-recent-grid">
                 {recentModels.map(model => (
-                  <ModelCard key={model.id} model={model} />
+                  <ModelCard 
+                    key={model.id} 
+                    model={model} 
+                    isDeletedView={false} 
+                    onStatusChange={fetchModels} 
+                  />
                 ))}
               </div>
             </>

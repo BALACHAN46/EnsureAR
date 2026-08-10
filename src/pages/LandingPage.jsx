@@ -1,10 +1,49 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
-import { loadSiteContentConfig } from '../utils/siteContentConfig';
+import { loadSiteContentConfig, DEFAULT_CONFIG } from '../utils/siteContentConfig';
 import ReactMarkdown from 'react-markdown';
+import { getAllProducts } from '../services/productsApi';
 
 export default function LandingPage() {
-  const config = loadSiteContentConfig();
+  const [config, setConfig] = useState(DEFAULT_CONFIG);
+  const [catalog, setCatalog] = useState([]);
+  useEffect(() => { loadSiteContentConfig().then(setConfig); }, []);
+  useEffect(() => { getAllProducts().then(setCatalog).catch(() => {}); }, []);
+
+  const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
+  const [status, setStatus] = useState({ loading: false, message: null, isError: false });
+
+  const handleChange = (e) => {
+      setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+      e.preventDefault();
+      setStatus({ loading: true, message: null, isError: false });
+      
+      try {
+          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/v1/contact/inquiry`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(formData)
+          });
+          const data = await response.json();
+          
+          if (response.ok) {
+              setStatus({ loading: false, message: 'Your enquiry has been sent successfully.', isError: false });
+              setFormData({ name: '', email: '', subject: '', message: '' });
+          } else {
+              setStatus({ loading: false, message: data.message || 'Failed to send enquiry.', isError: true });
+          }
+      } catch (err) {
+          setStatus({ loading: false, message: 'An error occurred. Please try again later.', isError: true });
+      }
+  };
+
+  const getNecklaceUrl = () => {
+    const found = catalog.find(m => m.category === 'necklace');
+    return found ? `/ar/necklace/${found.id}` : '#';
+  };
 
   return (
     <Layout>
@@ -232,7 +271,7 @@ export default function LandingPage() {
                             <img src="/img/04.png" alt="img" />
 
                             <div className="ens-item--button about-btn">
-                                <a href="#" className="btn btn-two creative text-uppercase">
+                                <a href={getNecklaceUrl()} className="btn btn-two creative text-uppercase">
                                     <span className="btn-wrap">
                                         <span className="text-first">Try-On Now</span>
                                         <span className="text-second"><i className="bi bi-arrow-up-right"></i> <i className="bi bi-arrow-up-right"></i></span>
@@ -294,41 +333,48 @@ export default function LandingPage() {
             <div className="row">
                 <div className="col-lg-8 offset-lg-2">
                     <div className="ens-form--inner">
-                        <div className="row">
-                            <div className="col-lg-6 col-md-6 mb-4">
-                                <div className="form-group">
-                                    <input type="text" name="name" className="form-control" placeholder="Name*" required />
+                        <form onSubmit={handleSubmit}>
+                            <div className="row">
+                                <div className="col-lg-6 col-md-6 mb-4">
+                                    <div className="form-group">
+                                        <input type="text" name="name" value={formData.name} onChange={handleChange} className="form-control" placeholder="Name*" required />
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="col-lg-6 col-md-6 mb-4">
-                                <div className="form-group">
-                                    <input type="email" name="email" className="form-control" placeholder="E-mail*" required />
+                                <div className="col-lg-6 col-md-6 mb-4">
+                                    <div className="form-group">
+                                        <input type="email" name="email" value={formData.email} onChange={handleChange} className="form-control" placeholder="E-mail*" required />
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="col-lg-12 col-md-12 mb-4">
-                                <div className="form-group">
-                                    <input type="text" name="subject" className="form-control" placeholder="Subject" />
+                                <div className="col-lg-12 col-md-12 mb-4">
+                                    <div className="form-group">
+                                        <input type="text" name="subject" value={formData.subject} onChange={handleChange} className="form-control" placeholder="Subject" />
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="col-md-12 col-lg-12 mb-4">
-                                <div className="form-group">
-                                    <textarea name="message" className="form-control" placeholder="Text"></textarea>
+                                <div className="col-md-12 col-lg-12 mb-4">
+                                    <div className="form-group">
+                                        <textarea name="message" value={formData.message} onChange={handleChange} className="form-control" placeholder="Text"></textarea>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="col-md-12 col-lg-12">
-                                <div className="ens-item--button text-center">
-                                    <button className="btn white-opacity creative text-uppercase" type="button" id="sendEmailContactUs">
-                                        <span className="btn-wrap">
-                                            <span className="text-first">Send Mail</span>
-                                        </span>
-                                    </button>
+                                <div className="col-md-12 col-lg-12">
+                                    <div className="ens-item--button text-center">
+                                        <button className="btn white-opacity creative text-uppercase" type="submit" id="sendEmailContactUs" disabled={status.loading}>
+                                            <span className="btn-wrap">
+                                                <span className="text-first">{status.loading ? 'Sending...' : 'Send Mail'}</span>
+                                            </span>
+                                        </button>
+                                        {status.message && (
+                                            <div className={`mt-3 ${status.isError ? 'text-danger' : 'text-success'}`}>
+                                                {status.message}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </form>
                     </div>
 
                 </div>

@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getModelConfig, saveModelConfig, resetModelConfig, hasCustomConfig, updateModelMaterial } from '../utils/modelConfig';
+import { getModelConfig, saveModelConfig, resetModelConfig, updateModelMaterial } from '../utils/modelConfig';
+import { getProductByCode } from '../services/productsApi';
+import { isAuthenticated } from '../utils/auth';
+
+const NEUTRAL_DEFAULTS = { posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1, scaleY: 1 };
 
 const SLIDER_CONFIG = [
   {
@@ -91,9 +95,7 @@ export default function ModelEditPage() {
   const modelId = routeParams?.id;
 
   const [model, setModel] = useState(null);
-  const [defaults, setDefaults] = useState({});
   const [config, setConfig] = useState({ posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1, scaleY: 1, enableSparkles: false });
-  const [originalDefaults, setOriginalDefaults] = useState(null);
   const [saved, setSaved] = useState(false);
   const [isCustomized, setIsCustomized] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -101,36 +103,25 @@ export default function ModelEditPage() {
 
   // Auth guard
   useEffect(() => {
-    if (sessionStorage.getItem('sa_auth') !== 'true') {
+    if (!isAuthenticated()) {
       navigate('/admin');
       return;
     }
   }, []);
 
-  // Load model info + defaults
+  // Load model info + current AR tuning (both live from the API now — there's
+  // no separate "JSON baseline vs override" layer anymore, the DB row is it).
   useEffect(() => {
     if (!modelId) return;
 
     Promise.all([
-      fetch('/models/catalog.json').then(r => r.json()),
-      fetch('/models/model-defaults.json').then(r => r.json()),
-    ]).then(([catalogData, defaultsData]) => {
-      const found = catalogData.models?.find(m => m.id === modelId);
-      setModel(found || null);
-      if (found) {
-        setMaterialTag(found.material || '');
-      }
-
-      const defs = defaultsData.modelDefaults || {};
-      setDefaults(defs);
-
-      const jsonDefault = defs[modelId] || { posX: 0, posY: 0, posZ: 0, rotX: 0, rotY: 0, rotZ: 0, scale: 1, scaleY: 1 };
-      setOriginalDefaults(jsonDefault);
-
-      // Load current config (localStorage override or JSON default)
-      const current = getModelConfig(modelId, defs);
+      getProductByCode(modelId),
+      getModelConfig(modelId),
+    ]).then(([product, current]) => {
+      setModel(product);
+      setMaterialTag(product.material || '');
       setConfig(current);
-      setIsCustomized(hasCustomConfig(modelId));
+      setIsCustomized(!!product.isTuned);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [modelId]);
@@ -140,20 +131,20 @@ export default function ModelEditPage() {
     setSaved(false);
   }, []);
 
-  const handleSave = () => {
-    saveModelConfig(modelId, config);
-    setIsCustomized(true);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+  const handleSave = async () => {
+    const res = await saveModelConfig(modelId, config);
+    if (res.success) {
+      setIsCustomized(true);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    }
   };
 
-  const handleReset = () => {
-    if (originalDefaults) {
-      resetModelConfig(modelId);
-      setConfig({ posX: originalDefaults.posX ?? 0, ...originalDefaults, scale: originalDefaults.scale ?? 1, scaleY: originalDefaults.scaleY ?? 1 });
-      setIsCustomized(false);
-      setSaved(false);
-    }
+  const handleReset = async () => {
+    await resetModelConfig(modelId);
+    setConfig({ ...NEUTRAL_DEFAULTS, enableSparkles: false });
+    setIsCustomized(false);
+    setSaved(false);
   };
 
   const handleBack = () => navigate('/admin/models');
@@ -215,7 +206,7 @@ export default function ModelEditPage() {
           <div className="edit-model-card">
             <div className="edit-model-thumb">
               {model.thumbnailPath ? (
-                <img src={model.thumbnailPath} alt={model.name} />
+                <img src={model.thumbnailPath} alt={model.name} crossOrigin="anonymous" />
               ) : (
                 <div className="edit-model-thumb-placeholder">
                   {model.name.charAt(0).toUpperCase()}
@@ -266,11 +257,11 @@ export default function ModelEditPage() {
           {/* Default Values Reference */}
           <div className="edit-defaults-panel">
             <h4>Default Values</h4>
-            {originalDefaults && SLIDER_CONFIG.map(s => (
+            {SLIDER_CONFIG.map(s => (
               <div key={s.key} className="edit-default-row">
                 <span>{s.label.split(' (')[0]}</span>
                 <span className="edit-default-val">
-                  {s.format(originalDefaults[s.key] ?? 0)}{s.unit}
+                  {s.format(NEUTRAL_DEFAULTS[s.key] ?? 0)}{s.unit}
                 </span>
               </div>
             ))}
@@ -338,7 +329,7 @@ export default function ModelEditPage() {
             <button
               className="tuning-reset-btn"
               onClick={handleReset}
-              title="Reset to default values from model-defaults.json"
+              title="Reset to neutral default values"
             >
               <svg viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />

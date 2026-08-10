@@ -8,7 +8,10 @@ import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { orderCategories } from '../constants/categoryMeta';
-import { loadSiteContentConfig } from '../utils/siteContentConfig';
+import { isAuthenticated } from '../utils/auth';
+import { logout } from '../services/authApi';
+import { getAllProducts, createProduct } from '../services/productsApi';
+import { getMenu } from '../services/categoriesApi';
 
 // ─── Categories ────────────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -39,7 +42,7 @@ export default function UploadPage() {
 
   // ── Auth guard ────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (sessionStorage.getItem('sa_auth') !== 'true') {
+    if (!isAuthenticated()) {
       navigate('/admin');
     }
   }, []);
@@ -54,18 +57,14 @@ export default function UploadPage() {
   }, {});
 
   useEffect(() => {
-    fetch('/models/catalog.json')
-      .then(r => r.json())
-      .then(d => setCatalog(d?.models || []))
-      .catch(() => {});
+    getAllProducts({ includeInactive: true }).then(setCatalog).catch(() => {});
   }, []);
 
   // ── Menu Settings (Parent / Child Category) ───────────────────────────────
-  const [menuConfig, setMenuConfig] = useState(null);
+  const [menuTree, setMenuTree] = useState([]);
   useEffect(() => {
-    setMenuConfig(loadSiteContentConfig());
+    getMenu().then(setMenuTree).catch(() => {});
   }, []);
-  const menuTree = menuConfig?.virtualTryOnMenu || [];
 
   // ── Form state ────────────────────────────────────────────────────────────
   const [modelFile, setModelFile]       = useState(null);
@@ -89,24 +88,26 @@ export default function UploadPage() {
   const [dragOver, setDragOver]         = useState(false);
 
   // ── Parent / Child Category derived data & handlers ───────────────────────
-  const selectedParent = menuTree.find(p => p.id === parentCategoryId) || null;
+  // parentCategoryId/childCategoryId are kept as strings (native <select> value
+  // type) but hold the real numeric ChildCategoryMaster/ParentCategoryMaster ids.
+  const selectedParent = menuTree.find(p => String(p.parentCategoryId) === parentCategoryId) || null;
   const childOptions   = selectedParent?.children || [];
-  const selectedChild  = childOptions.find(c => c.id === childCategoryId) || null;
+  const selectedChild  = childOptions.find(c => String(c.childCategoryId) === childCategoryId) || null;
 
   const handleParentChange = useCallback((id) => {
     setParentCategoryId(id);
     setChildCategoryId('');
-    const parent = menuTree.find(p => p.id === id);
-    if (parent && (!parent.children || parent.children.length === 0) && parent.targetCategory) {
-      setCategory(parent.targetCategory);
+    const parent = menuTree.find(p => String(p.parentCategoryId) === id);
+    if (parent && (!parent.children || parent.children.length === 0)) {
+      setCategory('');
     }
   }, [menuTree]);
 
   const handleChildChange = useCallback((id) => {
     setChildCategoryId(id);
-    const child = selectedParent?.children?.find(c => c.id === id);
-    if (child && child.targetCategory) {
-      setCategory(child.targetCategory);
+    const child = selectedParent?.children?.find(c => String(c.childCategoryId) === id);
+    if (child) {
+      setCategory(child.slug);
     }
   }, [selectedParent]);
 
@@ -474,7 +475,7 @@ export default function UploadPage() {
     }
   }, [category, showToast]);
 
-  // ── Perform actual upload (same logic as MVC) ─────────────────────────────
+  // ── Perform actual upload (real multipart POST to the API) ────────────────
   const performUpload = useCallback(async () => {
     setUploading(true);
     setProgress(0);
@@ -484,87 +485,67 @@ export default function UploadPage() {
     }, 150);
 
     try {
-      const toBase64 = file => new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-      });
+      const formData = new FormData();
+      formData.append('Name', name);
+      formData.append('ChildCategoryId', String(selectedChild?.childCategoryId ?? ''));
+      if (materialTag) {
+        formData.append('Material', materialTag.toLowerCase());
+      }
 
-      const payload = {
-        name,
-        category,
-        parentCategoryId: parentCategoryId || null,
-        parentCategory: selectedParent?.label || '',
-        childCategoryId: childCategoryId || null,
-        childCategory: selectedChild?.label || '',
-        material: materialTag ? materialTag.toLowerCase() : '',
-        scale: [scaleX, scaleY, scaleZ],
-        offset: [offsetX, offsetY, offsetZ],
-        rotationOffset: [rotX, rotY, rotZ]
-      };
+      let scale = [scaleX, scaleY, scaleZ];
+      let offset = [offsetX, offsetY, offsetZ];
+      let rotationOffset = [rotX, rotY, rotZ];
 
       if (is3DModeRef.current && modelObjectRef.current) {
         // 3D pipeline: export baked GLB + auto thumbnail
         const { glbBlob, thumbnailBlob } = await exportCurrentModel(category);
-        payload.modelFile = await toBase64(glbBlob);
-        payload.modelFileName = 'model.glb';
-        
-        if (thumbFile && thumbFile.size > 0) {
-          payload.thumbnailFile = await toBase64(thumbFile);
-          payload.thumbnailFileName = thumbFile.name;
-        } else {
-          payload.thumbnailFile = await toBase64(thumbnailBlob);
-          payload.thumbnailFileName = 'thumbnail.png';
-        }
-        
+        formData.append('ModelFile', glbBlob, 'model.glb');
+        formData.append('ThumbnailFile', (thumbFile && thumbFile.size > 0) ? thumbFile : thumbnailBlob, (thumbFile && thumbFile.size > 0) ? thumbFile.name : 'thumbnail.png');
+
         // Baked — reset transforms to identity
-        payload.scale = [1, 1, 1];
-        payload.offset = [0, 0, 0];
-        payload.rotationOffset = [0, 0, 0];
+        scale = [1, 1, 1];
+        offset = [0, 0, 0];
+        rotationOffset = [0, 0, 0];
       } else {
         // PNG / direct upload
-        payload.modelFile = await toBase64(modelFile);
-        payload.modelFileName = modelFile.name;
-        
-        if (thumbFile) {
-          payload.thumbnailFile = await toBase64(thumbFile);
-          payload.thumbnailFileName = thumbFile.name;
-        }
+        formData.append('ModelFile', modelFile, modelFile.name);
+        if (thumbFile) formData.append('ThumbnailFile', thumbFile, thumbFile.name);
       }
 
-      const resp = await fetch('/api/mock-upload', { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await resp.json();
+      formData.append('ScaleX', String(scale[0]));
+      formData.append('ScaleY', String(scale[1]));
+      formData.append('ScaleZ', String(scale[2]));
+      formData.append('PosX', String(offset[0]));
+      formData.append('PosY', String(offset[1]));
+      formData.append('PosZ', String(offset[2]));
+      formData.append('RotX', String(rotationOffset[0]));
+      formData.append('RotY', String(rotationOffset[1]));
+      formData.append('RotZ', String(rotationOffset[2]));
+
+      await createProduct(formData);
 
       clearInterval(interval);
       setProgress(100);
 
-      if (data.success) {
-        showToast('✓ ' + data.message, 'success');
-        setTimeout(() => {
-          setShowModal(false);
-          navigate('/admin/models');
-        }, 1200);
-      } else {
-        showToast('✗ ' + data.message, 'error');
-      }
+      showToast('✓ Model uploaded successfully', 'success');
+      setTimeout(() => {
+        setShowModal(false);
+        navigate('/admin/models');
+      }, 1200);
     } catch (err) {
       clearInterval(interval);
-      showToast('✗ Pipeline failed: ' + err.message, 'error');
+      showToast('✗ ' + (err.message || 'Upload failed'), 'error');
     } finally {
       setTimeout(() => { setUploading(false); setProgress(0); }, 1500);
     }
-  }, [name, category, parentCategoryId, childCategoryId, selectedParent, selectedChild, modelFile, mtlFile, textureFiles, thumbFile, scaleX, scaleY, scaleZ, offsetX, offsetY, offsetZ, rotX, rotY, rotZ, exportCurrentModel, showToast, navigate]);
+  }, [name, category, selectedChild, modelFile, thumbFile, scaleX, scaleY, scaleZ, offsetX, offsetY, offsetZ, rotX, rotY, rotZ, exportCurrentModel, showToast, navigate]);
 
   // ── "Continue to Alignment" button ────────────────────────────────────────
   const handleContinue = useCallback(async () => {
     if (!name.trim()) { showToast('Please enter a model name.', 'error'); return; }
     if (!parentCategoryId) { showToast('Please select a Parent Category.', 'error'); return; }
-    if (childOptions.length > 0 && !childCategoryId) { showToast('Please select a Child Category.', 'error'); return; }
+    if (childOptions.length === 0) { showToast('This category has no sub-categories. Please add one in Menu Settings first.', 'error'); return; }
+    if (!childCategoryId) { showToast('Please select a Child Category.', 'error'); return; }
     if (!modelFile)   { showToast('Please select a 3D model file first.', 'error'); return; }
 
     const ext = modelFile.name.split('.').pop().toLowerCase();
@@ -587,7 +568,8 @@ export default function UploadPage() {
   const handleConfirm = useCallback(async () => {
     if (!name.trim()) { showToast('Model name is required.', 'error'); return; }
     if (!parentCategoryId) { showToast('Please select a Parent Category.', 'error'); return; }
-    if (childOptions.length > 0 && !childCategoryId) { showToast('Please select a Child Category.', 'error'); return; }
+    if (childOptions.length === 0) { showToast('This category has no sub-categories. Please add one in Menu Settings first.', 'error'); return; }
+    if (!childCategoryId) { showToast('Please select a Child Category.', 'error'); return; }
     await performUpload();
   }, [name, parentCategoryId, childCategoryId, childOptions, performUpload, showToast]);
 
@@ -671,7 +653,7 @@ export default function UploadPage() {
     }
   };
 
-  const handleLogout = () => { sessionStorage.removeItem('sa_auth'); navigate('/admin'); };
+  const handleLogout = () => { logout(); navigate('/admin'); };
 
   // ── GROUPS for analysis checklist rendering ────────────────────────────────
   const analysisGroup = ANALYSIS_CHECKS.filter(c => c.group === 'Analysis');
@@ -727,7 +709,7 @@ export default function UploadPage() {
               <div className="drop-icon-react">📦</div>
               <p><strong>Drop your 3D/2D model here</strong> or click to browse</p>
               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', marginTop: '4px' }}>
-                Accepted: .glb, .gltf, .obj, .png (max 100 MB)
+                Accepted: .glb, .gltf, .obj, .png (max 500 MB)
               </p>
               {modelFile && (
                 <div className="drop-filename-react">✓ {modelFile.name}</div>
@@ -751,12 +733,12 @@ export default function UploadPage() {
                 <label htmlFor="upload-parent-category">Parent Category *</label>
                 <select id="upload-parent-category" value={parentCategoryId} onChange={e => handleParentChange(e.target.value)}>
                   <option value="">Select Parent Category…</option>
-                  {menuTree.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+                  {menuTree.map(p => <option key={p.parentCategoryId} value={p.parentCategoryId}>{p.name}</option>)}
                 </select>
               </div>
 
               <div className="upload-form-group">
-                <label htmlFor="upload-child-category">Child Category {childOptions.length > 0 ? '*' : ''}</label>
+                <label htmlFor="upload-child-category">Child Category *</label>
                 <select
                   id="upload-child-category"
                   value={childCategoryId}
@@ -764,7 +746,7 @@ export default function UploadPage() {
                   disabled={!selectedParent || childOptions.length === 0}
                 >
                   <option value="">{childOptions.length ? 'Select Child Category…' : '(No sub-categories)'}</option>
-                  {childOptions.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                  {childOptions.map(c => <option key={c.childCategoryId} value={c.childCategoryId}>{c.name}</option>)}
                 </select>
               </div>
 
@@ -893,7 +875,7 @@ export default function UploadPage() {
                   <label>Parent Category *</label>
                   <select value={parentCategoryId} onChange={e => handleParentChange(e.target.value)}>
                     <option value="">Select Parent Category…</option>
-                    {menuTree.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+                    {menuTree.map(p => <option key={p.parentCategoryId} value={p.parentCategoryId}>{p.name}</option>)}
                   </select>
                 </div>
                 <div className="upload-form-group">
@@ -904,7 +886,7 @@ export default function UploadPage() {
                     disabled={!selectedParent || childOptions.length === 0}
                   >
                     <option value="">{childOptions.length ? 'Select Child Category…' : '(No sub-categories)'}</option>
-                    {childOptions.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                    {childOptions.map(c => <option key={c.childCategoryId} value={c.childCategoryId}>{c.name}</option>)}
                   </select>
                 </div>
                 <div className="upload-form-group">

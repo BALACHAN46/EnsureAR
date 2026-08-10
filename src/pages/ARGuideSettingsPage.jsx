@@ -4,6 +4,12 @@ import Sidebar from '../components/admin/Sidebar';
 import { loadARGuideConfig, saveARGuideConfig, resetARGuideConfig } from '../utils/arGuideConfig';
 import { CATEGORY_META, CATEGORY_ORDER, getCategoryMeta, orderCategories } from '../constants/categoryMeta';
 import ARGuideModal, { CATEGORY_GUIDES, FALLBACK_GUIDE } from '../components/ar/ARGuideModal';
+import ConfirmModal from '../components/admin/ConfirmModal';
+import { isAuthenticated } from '../utils/auth';
+import { logout } from '../services/authApi';
+import { getAllProducts } from '../services/productsApi';
+
+const EMPTY_GUIDE_CONFIG = { entryModalEnabled: true, helpIconEnabled: true, categoryOverrides: {} };
 
 // Default step titles/descs imported from guide data (mirrors ARGuideModal's CATEGORY_GUIDES)
 const DEFAULT_STEP_LABELS = {
@@ -25,32 +31,36 @@ export default function ARGuideSettingsPage() {
 
   // Auth guard
   useEffect(() => {
-    if (sessionStorage.getItem('sa_auth') !== 'true') navigate('/admin');
+    if (!isAuthenticated()) navigate('/admin');
   }, []);
 
   useEffect(() => {
-    fetch('/models/catalog.json')
-      .then(r => r.json())
-      .then(d => {
-        if (d?.models) {
-          setCatalog(d.models);
-          setCategories(orderCategories([...new Set(d.models.map(m => m.category))]));
-        }
+    getAllProducts({ includeInactive: true })
+      .then(models => {
+        setCatalog(models);
+        setCategories(orderCategories([...new Set(models.map(m => m.category))]));
       })
       .catch(() => { });
   }, []);
 
-  const [config, setConfig] = useState(() => loadARGuideConfig());
-  const [savedConfigStr, setSavedConfigStr] = useState(() => JSON.stringify(loadARGuideConfig()));
+  const [config, setConfig] = useState(EMPTY_GUIDE_CONFIG);
+  const [savedConfigStr, setSavedConfigStr] = useState(() => JSON.stringify(EMPTY_GUIDE_CONFIG));
+  useEffect(() => {
+    loadARGuideConfig().then(cfg => {
+      setConfig(cfg);
+      setSavedConfigStr(JSON.stringify(cfg));
+    });
+  }, []);
   const isDirty = JSON.stringify(config) !== savedConfigStr;
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
   const [saved, setSaved] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState('entry');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [confirmState, setConfirmState] = useState({ isOpen: false, message: '', action: null, title: 'Confirm' });
 
   const handleLogout = () => {
-    sessionStorage.removeItem('sa_auth');
+    logout();
     navigate('/admin');
   };
 
@@ -108,19 +118,27 @@ export default function ARGuideSettingsPage() {
     setOverrideField(cat, 'steps', steps);
   };
 
-  const handleSave = () => {
-    saveARGuideConfig(config);
-    setSavedConfigStr(JSON.stringify(config));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+  const handleSave = async () => {
+    const ok = await saveARGuideConfig(config);
+    if (ok) {
+      setSavedConfigStr(JSON.stringify(config));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    }
   };
 
   const handleReset = () => {
-    if (!window.confirm('Reset all AR Guide settings to defaults?')) return;
-    resetARGuideConfig();
-    const newConfig = loadARGuideConfig();
-    setConfig(newConfig);
-    setSavedConfigStr(JSON.stringify(newConfig));
+    setConfirmState({
+      isOpen: true,
+      title: 'Reset AR Guides',
+      message: 'Reset all AR Guide settings to defaults?',
+      action: async () => {
+        await resetARGuideConfig();
+        const newConfig = await loadARGuideConfig();
+        setConfig(newConfig);
+        setSavedConfigStr(JSON.stringify(newConfig));
+      }
+    });
   };
 
   const catMeta = getCategoryMeta(activeCategory);
@@ -354,6 +372,19 @@ export default function ARGuideSettingsPage() {
           overrides={ov}
         />
       )}
+
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        title={confirmState.title}
+        message={confirmState.message}
+        onConfirm={async () => {
+          if (confirmState.action) await confirmState.action();
+          setConfirmState({ isOpen: false, message: '', action: null, title: '' });
+        }}
+        onCancel={() => setConfirmState({ isOpen: false, message: '', action: null, title: '' })}
+        confirmText="Reset"
+        confirmStyle="danger"
+      />
     </div>
   );
 }

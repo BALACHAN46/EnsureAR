@@ -1,21 +1,45 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { hasCustomConfig } from '../../utils/modelConfig';
+import { updateProductStatus } from '../../services/productsApi';
+import ConfirmModal from './ConfirmModal';
 
-export default function ModelCard({ model }) {
+export default function ModelCard({ model, isDeletedView, onStatusChange }) {
   const navigate = useNavigate();
-  const isCustomized = hasCustomConfig(model.id);
+  const isCustomized = !!model.isTuned;
 
   const handleEdit = () => navigate(`/admin/model/${model.id}/edit`);
   const handlePreview = () => navigate(`/ar/${model.category}/${model.id}`);
 
   const canPreview = ['eyewear', 'watch', 'bracelets', 'rings', 'necklace', 'earrings', 'nosepin'].includes(model.category);
 
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const handleDelete = () => setShowConfirm(true);
+
+  const confirmDelete = async () => {
+    setShowConfirm(false);
+    try {
+      await updateProductStatus(model.id, false);
+      if (onStatusChange) onStatusChange();
+    } catch (err) {
+      alert('Failed to delete model.');
+    }
+  };
+
+  const handleRecover = async () => {
+    try {
+      await updateProductStatus(model.id, true);
+      if (onStatusChange) onStatusChange();
+    } catch (err) {
+      alert('Failed to recover model.');
+    }
+  };
+
   return (
     <div className="model-card" tabIndex={0}>
       <div className="model-card-media">
         {model.thumbnailPath ? (
-          <img src={model.thumbnailPath} alt={model.name} loading="lazy" />
+          <img src={model.thumbnailPath} alt={model.name} loading="lazy" crossOrigin="anonymous" />
         ) : (
           <div className="model-card-thumb-placeholder">
             <span>{model.name.charAt(0).toUpperCase()}</span>
@@ -45,6 +69,7 @@ export default function ModelCard({ model }) {
           <p className="model-card-id">ID: {model.id.slice(0, 12)}…</p>
 
           <div className="model-card-actions">
+            {!isDeletedView && (
               <button
                 id={`edit-model-${model.id}`}
                 className="model-card-btn model-card-btn--edit"
@@ -55,7 +80,8 @@ export default function ModelCard({ model }) {
                 </svg>
                 Edit
               </button>
-            {canPreview && (
+            )}
+            {canPreview && !isDeletedView && (
               <button
                 id={`preview-model-${model.id}`}
                 className="model-card-btn model-card-btn--preview"
@@ -68,9 +94,44 @@ export default function ModelCard({ model }) {
                 Try
               </button>
             )}
+            
+            {!isDeletedView ? (
+              <button
+                className="model-card-btn model-card-btn--delete"
+                onClick={handleDelete}
+                style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
+                </svg>
+                Delete
+              </button>
+            ) : (
+              <button
+                className="model-card-btn model-card-btn--preview"
+                onClick={handleRecover}
+                style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                </svg>
+                Recover
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={showConfirm}
+        title="Delete Model"
+        message={`Are you sure you want to delete "${model.name}"? This action can be reversed later from the Deleted Models page.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmStyle="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setShowConfirm(false)}
+      />
     </div>
   );
 }

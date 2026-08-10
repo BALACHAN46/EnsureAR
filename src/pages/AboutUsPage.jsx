@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import Layout from '../components/layout/Layout';
-import { loadSiteContentConfig } from '../utils/siteContentConfig';
+import { loadSiteContentConfig, DEFAULT_CONFIG } from '../utils/siteContentConfig';
 
 export default function AboutUsPage() {
   const [activeAccordion, setActiveAccordion] = useState(0);
-  const config = loadSiteContentConfig();
+  const [config, setConfig] = useState(DEFAULT_CONFIG);
+  useEffect(() => { loadSiteContentConfig().then(setConfig); }, []);
 
   const toggleAccordion = (index, e) => {
     e.preventDefault();

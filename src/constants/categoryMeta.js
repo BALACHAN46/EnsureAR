@@ -12,7 +12,7 @@ export const CATEGORY_META = {
   bracelets: { emoji: '🔗', icon: '/bracelets.png', color: '#10b981', label: 'Bracelets' },
   watch: { emoji: '⌚', icon: '/watch.png', color: '#3b82f6', label: 'Watches' },
   earrings: { emoji: '💎', icon: '/earrings_thumbnail.png', color: '#a78bfa', label: 'Earrings' },
-  nosepin: { emoji: '✨', icon: '/models/nosepin/nosepin_thumnail.png', color: '#14b8a6', label: 'Nose Pin' },
+  nosepin: { emoji: '✨', icon: '/nosepin_category_icon.png', color: '#14b8a6', label: 'Nose Pin' },
 };
 
 export const FALLBACK_CATEGORY_META = { emoji: '📦', color: '#64748b', label: 'Other' };
