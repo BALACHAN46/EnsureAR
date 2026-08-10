@@ -262,6 +262,7 @@ export default function ARViewPage() {
   // Mobile categories auto-scroll refs
   const mobileCategoryStripRef = useRef(null);
   const mobileCategoryTrackRef = useRef(null);
+  const modelsTrackRef = useRef(null);
   const mobileCategoryDragRef = useAutoScroll(mobileCategoryStripRef, mobileCategoryTrackRef, [mobileSheetOpen, isMobileLayout, viewMode], 25);
 
   // Draggable help button position
@@ -544,6 +545,9 @@ export default function ARViewPage() {
 
   useEffect(() => {
     let active = true;
+    if (modelsTrackRef.current) {
+      modelsTrackRef.current.scrollLeft = 0;
+    }
     if (materialFilter === 'all') {
       setFilteredModels(activeCategoryModels);
     } else {
@@ -904,7 +908,7 @@ export default function ARViewPage() {
 
     return (
       <>
-        <div className="carousel-track grid">
+        <div className="carousel-track grid" ref={modelsTrackRef}>
           {isMobileLayout
             ? mobilePages.map((page, pageIdx) => (
                 <div className="tryon-mobile-model-page" key={pageIdx}>
@@ -1594,6 +1598,28 @@ export default function ARViewPage() {
               </div>
             </div>
           </div>
+
+          {availableMaterialFilters.length > 0 && (
+            <div className="material-filter-row" style={{ padding: '0.5rem 1rem', overflowX: 'auto', flexWrap: 'nowrap', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <button
+                className={`material-filter-chip ${materialFilter === 'all' ? 'active' : ''}`}
+                onClick={() => { setMaterialFilter('all'); setModelPage(0); }}
+                style={{ flexShrink: 0 }}
+              >
+                All
+              </button>
+              {availableMaterialFilters.map(tag => (
+                <button
+                  key={tag.key}
+                  className={`material-filter-chip ${materialFilter === tag.key ? 'active' : ''}`}
+                  onClick={() => { setMaterialFilter(tag.key); setModelPage(0); }}
+                  style={{ flexShrink: 0 }}
+                >
+                  {tag.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="tryon-mobile-models-wrapper">
             {renderModelGridAndPromo()}
