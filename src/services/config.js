@@ -15,8 +15,11 @@
  * public/). Media URLs always need the API's real origin prepended.
  */
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-export const MEDIA_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5278';
+// Change this URL to your ngrok URL or backend URL to apply it everywhere
+const COMMON_API_URL = import.meta.env.VITE_API_BASE_URL || 'https://affront-cherisher-purse.ngrok-free.dev';
+
+export const API_BASE_URL = COMMON_API_URL;
+export const MEDIA_BASE_URL = COMMON_API_URL;
 
 /** Resolves a model/thumbnail path returned by the API into a fully-qualified URL. */
 export function resolveMediaUrl(path) {
