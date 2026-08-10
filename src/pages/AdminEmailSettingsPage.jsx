@@ -5,6 +5,7 @@ import { orderCategories } from '../constants/categoryMeta';
 import { isAuthenticated, getToken } from '../utils/auth';
 import { logout } from '../services/authApi';
 import { getAllProducts } from '../services/productsApi';
+import { apiClient } from '../services/apiClient';
 
 export default function AdminEmailSettingsPage() {
   const navigate = useNavigate();
@@ -60,21 +61,18 @@ export default function AdminEmailSettingsPage() {
 
     const loadEmailSettings = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/v1/admin/email-settings`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
+        const data = await apiClient.get('/api/v1/admin/email-settings');
+        if (data) {
           setSettings({
-            smtpHost: data.data.smtpHost || '',
-            smtpPort: data.data.smtpPort || 587,
-            smtpMail: data.data.smtpMail || '',
-            smtpPassword: data.data.smtpPassword || '',
-            smtpEnableSsl: data.data.smtpEnableSsl ?? true,
-            smtpDisplayName: data.data.smtpDisplayName || '',
-            receiverEmail: data.data.receiverEmail || '',
-            adminEmailTemplate: data.data.adminEmailTemplate || '',
-            userEmailTemplate: data.data.userEmailTemplate || ''
+            smtpHost: data.smtpHost || '',
+            smtpPort: data.smtpPort || 587,
+            smtpMail: data.smtpMail || '',
+            smtpPassword: data.smtpPassword || '',
+            smtpEnableSsl: data.smtpEnableSsl ?? true,
+            smtpDisplayName: data.smtpDisplayName || '',
+            receiverEmail: data.receiverEmail || '',
+            adminEmailTemplate: data.adminEmailTemplate || '',
+            userEmailTemplate: data.userEmailTemplate || ''
           });
         }
       } catch (err) {
@@ -99,23 +97,11 @@ export default function AdminEmailSettingsPage() {
     setMessage('');
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/v1/admin/email-settings`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getToken()}`
-        },
-        body: JSON.stringify({
-            ...settings,
-            smtpPort: parseInt(settings.smtpPort, 10)
-        })
+      await apiClient.put('/api/v1/admin/email-settings', {
+          ...settings,
+          smtpPort: parseInt(settings.smtpPort, 10)
       });
-
-      if (response.ok) {
-        setMessage('Email Settings saved successfully.');
-      } else {
-        setMessage('Failed to save settings.');
-      }
+      setMessage('Email Settings saved successfully.');
     } catch (err) {
       console.error(err);
       setMessage('Error saving settings.');
