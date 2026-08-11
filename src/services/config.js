@@ -15,8 +15,8 @@
  * public/). Media URLs always need the API's real origin prepended.
  */
 
-// Change this URL to your ngrok URL or backend URL to apply it everywhere
-const COMMON_API_URL = import.meta.env.VITE_API_BASE_URL || 'https://affront-cherisher-purse.ngrok-free.dev';
+// Change this URL to your backend URL to apply it everywhere
+const COMMON_API_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 export const API_BASE_URL = COMMON_API_URL;
 export const MEDIA_BASE_URL = COMMON_API_URL;

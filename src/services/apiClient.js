@@ -12,9 +12,7 @@ import { API_BASE_URL } from './config';
 import { getToken, clearAuth } from '../utils/auth';
 
 async function request(path, { method = 'GET', body, isForm = false, auth = true } = {}) {
-  const headers = {
-    'ngrok-skip-browser-warning': 'true'
-  };
+  const headers = {};
   if (!isForm && body !== undefined) headers['Content-Type'] = 'application/json';
   let tokenAttached = false;
   if (auth) {

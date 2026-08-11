@@ -1,9 +1,0 @@
-{
-  "name": "ensure-ar",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
-}

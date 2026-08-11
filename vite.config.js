@@ -18,6 +18,7 @@ export default defineConfig({
     proxy: {
       '/api': { target: API_PROXY_TARGET, changeOrigin: true },
       '/hubs': { target: API_PROXY_TARGET, changeOrigin: true, ws: true },
+      '/models': { target: API_PROXY_TARGET, changeOrigin: true },
     },
   },
 })
