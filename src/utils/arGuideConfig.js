@@ -25,10 +25,13 @@ const DEFAULT_CONFIG = {
 
 function stepsToArray(steps) {
   const byOrder = new Map((steps || []).map(s => [s.stepOrder, s]));
-  return [1, 2, 3, 4].map(order => ({
-    title: byOrder.get(order)?.title || '',
-    desc: byOrder.get(order)?.description || '',
-  }));
+  return [1, 2, 3, 4].map(order => {
+    const s = byOrder.get(order);
+    return {
+      ...(s?.title && { title: s.title }),
+      ...(s?.description && { desc: s.description })
+    };
+  });
 }
 
 function mapApiToConfig(apiResult) {

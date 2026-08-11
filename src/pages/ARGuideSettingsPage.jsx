@@ -338,13 +338,13 @@ export default function ARGuideSettingsPage() {
                       <div style={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         <input
                           className="ar-guide-input"
-                          placeholder={`Step ${i + 1} title`}
+                          placeholder={defaultSteps[i]?.title || `Step ${i + 1} title`}
                           value={stepOv.title !== undefined ? stepOv.title : (defaultSteps[i]?.title || '')}
                           onChange={e => setStepField(activeCategory, i, 'title', e.target.value)}
                         />
                         <textarea
                           className="ar-guide-input ar-guide-textarea"
-                          placeholder="Description..."
+                          placeholder={defaultSteps[i]?.desc || "Description..."}
                           rows={2}
                           value={stepOv.desc !== undefined ? stepOv.desc : (defaultSteps[i]?.desc || '')}
                           onChange={e => setStepField(activeCategory, i, 'desc', e.target.value)}
