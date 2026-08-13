@@ -3,6 +3,7 @@ import Layout from '../components/layout/Layout';
 import { loadSiteContentConfig, DEFAULT_CONFIG } from '../utils/siteContentConfig';
 import ReactMarkdown from 'react-markdown';
 import { getAllProducts } from '../services/productsApi';
+import Toast from '../components/ui/Toast';
 
 export default function LandingPage() {
   const [config, setConfig] = useState(DEFAULT_CONFIG);
@@ -47,6 +48,14 @@ export default function LandingPage() {
 
   return (
     <Layout>
+      {/* Toast notification */}
+      {status.message && (
+        <Toast
+          message={status.message}
+          isError={status.isError}
+          onClose={() => setStatus(s => ({ ...s, message: null }))}
+        />
+      )}
 
 {/*  Slider Section  */}
 <section className="ens-slider style2" style={{position:'relative', overflow:'hidden'}}>
@@ -366,11 +375,6 @@ export default function LandingPage() {
                                                 <span className="text-first">{status.loading ? 'Sending...' : 'Send Mail'}</span>
                                             </span>
                                         </button>
-                                        {status.message && (
-                                            <div className={`mt-3 ${status.isError ? 'text-danger' : 'text-success'}`}>
-                                                {status.message}
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             </div>

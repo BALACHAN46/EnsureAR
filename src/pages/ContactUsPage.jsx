@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
 import { loadSiteContentConfig, DEFAULT_CONFIG } from '../utils/siteContentConfig';
+import Toast from '../components/ui/Toast';
 
 export default function ContactUsPage() {
   const [config, setConfig] = useState(DEFAULT_CONFIG);
@@ -38,6 +39,14 @@ export default function ContactUsPage() {
 
   return (
     <Layout>
+      {/* Toast notification */}
+      {status.message && (
+        <Toast
+          message={status.message}
+          isError={status.isError}
+          onClose={() => setStatus(s => ({ ...s, message: '' }))}
+        />
+      )}
 
 <section className="ens-contact-form bg-image-5" style={{ backgroundImage: `url('/../assets/img/background/bg-9.jpg')` }}>
     <div className="container">
@@ -106,11 +115,6 @@ export default function ContactUsPage() {
                             </div>
 
                             <div className="col-md-12 col-lg-12">
-                                {status.message && (
-                                    <div className={`alert ${status.isError ? 'alert-danger' : 'alert-success'} mb-3`}>
-                                        {status.message}
-                                    </div>
-                                )}
                                 <div className="ens-item--button">
                                     <button className="btn" type="submit" disabled={status.loading}>
                                         <span className="btn-wrap">
